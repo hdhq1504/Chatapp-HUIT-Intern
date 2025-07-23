@@ -1,14 +1,12 @@
-import { useState } from 'react'
-import './App.css'
+import "./App.css";
+import LogIn from "./pages/LogIn";
 
 function App() {
   return (
     <>
-      <h1 class="text-3xl font-bold underline">
-        Hello world!
-      </h1>
+      <LogIn />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
