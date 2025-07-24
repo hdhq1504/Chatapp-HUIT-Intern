@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import leftGradient from "../assets/images/left-gradient.png";
 import { Eye, EyeOff } from "lucide-react";
 
-function LogIn() {
+function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -13,16 +13,8 @@ function LogIn() {
         <img
           src={leftGradient}
           alt="Background"
-          className="absolute inset-0 w-full h-full object-cover rounded-r-2xl overflow-hidden"
+          className="absolute inset-0 w-full h-full object-cover rounded-r-4xl overflow-hidden"
         />
-        {/* <div className="relative z-10 text-white text-center px-8">
-          <h1 className="text-4xl font-bold mb-4 drop-shadow-lg">
-            Welcome to ChatApp
-          </h1>
-          <p className="text-lg opacity-80">
-            Connect, chat, and collaborate instantly.
-          </p>
-        </div> */}
       </div>
 
       {/* Right form section */}
@@ -32,7 +24,9 @@ function LogIn() {
             {isSignUp ? "Create an account" : "Welcome back"}
           </h1>
           <p className="mb-6 text-gray-500 font-medium">
-            {isSignUp ? "Please sign up to create an account" : "Please log in to your account to continue"}
+            {isSignUp
+              ? "Please sign up to create an account"
+              : "Please log in to your account to continue"}
           </p>
           <form className="space-y-5">
             {isSignUp && (
@@ -126,4 +120,4 @@ function LogIn() {
   );
 }
 
-export default LogIn;
+export default LoginPage;
