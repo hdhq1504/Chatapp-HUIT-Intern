@@ -9,8 +9,10 @@ function ChatPage() {
     <>
       <div className="flex min-h-screen bg-gray-100 text-black dark:bg-[#303030] dark:text-white">
         <Sidebar />
-        <ChatContainer setShowDetails={setShowDetails} />
-        {showDetails && <Details />}
+        <div className={`flex-1 ml-80 flex ${showDetails ? "mr-80" : ""}`}>
+          <ChatContainer setShowDetails={setShowDetails} />
+          {showDetails && <Details />}
+        </div>
       </div>
     </>
   );

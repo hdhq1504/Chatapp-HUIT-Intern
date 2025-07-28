@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut } from "lucide-react";
+import {
+  MoreHorizontal,
+  UserRound,
+  Settings,
+  Search,
+  Plus,
+  LogOut,
+} from "lucide-react";
+import { customScrollbarStyles } from "../utils/styles.jsx";
 
 // Sample data
 const contacts = [
@@ -46,19 +54,10 @@ const contacts = [
   },
 ];
 
-// Custom scrollbar
-const customScrollbarStyles =" \
-  [&::-webkit-scrollbar]:w-2 \
-  [&::-webkit-scrollbar-track]:rounded-full \
-  [&::-webkit-scrollbar-track]:bg-gray-100 \
-  [&::-webkit-scrollbar-thumb]:rounded-full \
-  [&::-webkit-scrollbar-thumb]:bg-gray-300 \
-  dark:[&::-webkit-scrollbar-track]:bg-neutral-700 \
-  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 \
-";
-
 function Sidebar() {
   const [open, setOpen] = useState(false);
+
+  // Handle click outside to close the dropdown menu
   const menuRef = useRef(null);
   useEffect(() => {
     function handleClickOutside(event) {
@@ -76,8 +75,8 @@ function Sidebar() {
 
   return (
     <>
-      <div className="w-80 bg-[#f9f9f9] dark:bg-[#181818] h-screen flex flex-col">
-        {/* Header */}
+      <div className="fixed left-0 top-0 w-80 h-screen bg-[#f9f9f9] dark:bg-[#181818] flex flex-col z-30">
+        {/* Header Info */}
         <div className="p-4">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
@@ -89,30 +88,39 @@ function Sidebar() {
             <div className="flex space-x-2">
               <div className="relative inline-block" ref={menuRef}>
                 <button
-                  className="p-1 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg"
+                  className="p-1 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer"
                   onClick={() => setOpen((prev) => !prev)}
                 >
                   <MoreHorizontal size={20} />
                 </button>
                 {open && (
-                  <div className="absolute right-0 z-10 mt-2 w-56 p-2 origin-top-right divide-y divide-gray-200 dark:divide-[#3F3F3F] rounded-md bg-[#F9F9F9] dark:bg-[#303030] shadow-lg ring-1 ring-black/5 focus:outline-hidden">
-                    <div className="py-1">
+                  <div className="absolute right-0 z-10 mt-1 w-56 p-2 origin-top-right divide-y divide-gray-200 dark:divide-[#3F3F3F] rounded-lg bg-[#F9F9F9] dark:bg-[#303030] shadow-lg ring-1 ring-black/5 focus:outline-hidden">
+                    <div className="pt-0 pb-2">
                       <div>
-                        <a href="#" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg">
+                        <a
+                          href="/profile"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg"
+                        >
                           <UserRound size={18} />
                           <span>My Profile</span>
                         </a>
                       </div>
                       <div>
-                        <a href="#" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg">
+                        <a
+                          href="#"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg"
+                        >
                           <Settings size={18} />
                           <span>Settings</span>
                         </a>
                       </div>
                     </div>
-                    <div className="pb-1 pt-2">
+                    <div className="pb-0 pt-2">
                       <div>
-                        <a href="/login" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg">
+                        <a
+                          href="/login"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#EFEFEF] dark:hover:bg-[#3F3F3F] hover:text-gray-900 dark:hover:text-white focus:outline-none rounded-lg"
+                        >
                           <LogOut size={18} />
                           <span>Sign Out</span>
                         </a>
@@ -135,7 +143,7 @@ function Sidebar() {
               placeholder="Search"
               className="w-full bg-gray-200 dark:bg-[#303030] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none"
             />
-            <button className="p-2 ml-3 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030] rounded-lg">
+            <button className="p-2 ml-3 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030] rounded-lg cursor-pointer">
               <Plus size={20} />
             </button>
           </div>
@@ -146,7 +154,7 @@ function Sidebar() {
           {contacts.map((contact, index) => (
             <div
               key={index}
-              className={`flex items-center space-x-3 p-3 hover:bg-[#EFEFEF] dark:hover:bg-slate-800 cursor-pointer ${
+              className={`flex items-center space-x-3 px-3 py-4 hover:bg-[#EFEFEF] dark:hover:bg-slate-800 cursor-pointer ${
                 contact.active
                   ? "bg-blue-100 dark:bg-slate-800 border-l-2 border-blue-500"
                   : ""
@@ -159,7 +167,7 @@ function Sidebar() {
                   </span>
                 </div>
                 {contact.active && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#181818]"></div>
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-transparent dark:border-[#181818]"></div>
                 )}
               </div>
               <div className="flex-1 min-w-0">

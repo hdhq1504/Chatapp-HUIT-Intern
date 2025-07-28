@@ -1,27 +1,22 @@
 import React, { useState } from "react";
-import { ChevronUp, ChevronDown, Image, MoreHorizontal } from "lucide-react";
-
-const customScrollbarStyles =" \
-  [&::-webkit-scrollbar]:w-2 \
-  [&::-webkit-scrollbar-track]:rounded-full \
-  [&::-webkit-scrollbar-track]:bg-gray-100 \
-  [&::-webkit-scrollbar-thumb]:rounded-full \
-  [&::-webkit-scrollbar-thumb]:bg-gray-300 \
-  dark:[&::-webkit-scrollbar-track]:bg-neutral-700 \
-  dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 \
-";
+import { ChevronUp, ChevronDown, Image, Download, Share2 } from "lucide-react";
+import { customScrollbarStyles } from "../utils/styles.jsx";
+import Photo1 from "../assets/images/photo_2025_1.png";
+import Photo2 from "../assets/images/photo_2025_2.png";
+import Photo3 from "../assets/images/photo_2025_3.png";
+import Photo4 from "../assets/images/photo_2025_4.png";
 
 function Details() {
   const [chatSettingsOpen, setChatSettingsOpen] = useState(true);
   const [privacyHelpOpen, setPrivacyHelpOpen] = useState(true);
   const [sharedPhotosOpen, setSharedPhotosOpen] = useState(false);
   const [sharedFilesOpen, setSharedFilesOpen] = useState(false);
-  
+
   const sharedPhotos = [
-    { name: "", thumbnail: "" },
-    { name: "", thumbnail: "" },
-    { name: "", thumbnail: "" },
-    { name: "", thumbnail: "" },
+    { name: "", thumbnail: Photo1 },
+    { name: "", thumbnail: Photo2 },
+    { name: "", thumbnail: Photo3 },
+    { name: "", thumbnail: Photo4 },
   ];
 
   const sharedFiles = [
@@ -38,7 +33,7 @@ function Details() {
   ];
 
   return (
-    <div className="flex flex-col w-80 bg-[#F9F9F9] dark:bg-[#181818]">
+    <div className="fixed right-0 top-0 h-screen w-80 flex flex-col bg-[#F9F9F9] dark:bg-[#181818] z-30">
       <div>
         {/* Profile Header */}
         <div className="p-4 text-center">
@@ -93,23 +88,29 @@ function Details() {
                 <ChevronDown size={16} />
               )}
             </button>
-            {sharedPhotosOpen && (
-              <div className="mt-2 space-y-2">
-                <div className="grid grid-cols-3 gap-4 py-2">
-                  {sharedPhotos.map((photo, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-center"
-                    >
-                      <img
-                        src={photo.thumbnail}
-                        className="w-22 h-22 rounded object-cover"
-                      />
-                    </div>
-                  ))}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                sharedPhotosOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              {sharedPhotosOpen && (
+                <div className="mt-2 space-y-2">
+                  <div className="grid grid-cols-3 gap-4 md:gap-3 py-2">
+                    {sharedPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-center"
+                      >
+                        <img
+                          src={photo.thumbnail}
+                          className="w-22 h-22 rounded object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Shared Files */}
@@ -126,7 +127,11 @@ function Details() {
               )}
             </button>
             <div
-              className={`mt-2 space-y-2 transition-all duration-300 ease-in-out overflow-hidden ${sharedFilesOpen ? 'max-h-100 opacity-100' : 'max-h-0 opacity-0'} ${customScrollbarStyles}`}
+              className={`mt-2 space-y-2 transition-all duration-300 ease-in-out overflow-hidden ${
+                sharedFilesOpen
+                  ? "max-h-100 md:max-h-64 opacity-100"
+                  : "max-h-0 opacity-0"
+              } ${customScrollbarStyles}`}
             >
               {sharedFiles.map((file, index) => (
                 <div
@@ -139,12 +144,23 @@ function Details() {
                     </div>
                   </div>
                   <div className="flex flex-col flex-1 ml-3">
-                    <span className="font-medium">{file.name}</span>
-                    <span className="text-sm font-light">{file.size}</span>
+                    <span
+                      className={`font-medium ${
+                        file.name.length > 20 ? "line-clamp-1" : ""
+                      }`}
+                    >
+                      {file.name}
+                    </span>
+                    <span className="text-[12px] font-light">{file.size}</span>
                   </div>
-                  <button className="p-1 hover:bg-slate-700 rounded">
-                    <MoreHorizontal size={14} />
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button className="p-2 hover:bg-[#303030] rounded">
+                      <Download size={18} />
+                    </button>
+                    <button className="p-2 hover:bg-[#303030] rounded">
+                      <Share2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

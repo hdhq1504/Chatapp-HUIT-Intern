@@ -96,12 +96,12 @@ function LoginPage() {
                 />
               </div>
             )}
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+            <a
+              href="/"
+              className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-center font-semibold rounded-lg shadow-md transition-colors"
             >
               {isSignUp ? "Sign Up" : "Log In"}
-            </button>
+            </a>
           </form>
           <div className="mt-6 text-center">
             <span>

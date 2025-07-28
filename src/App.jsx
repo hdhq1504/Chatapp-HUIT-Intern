@@ -1,7 +1,8 @@
 import React from "react";
 import ChatPage from "./pages/ChatPage";
 import LoginPage from "./pages/LoginPage";
-import { Router, Routes, Route } from "react-router-dom";
+import MyProfilePage from "./pages/MyProfilePage";
+import { Routes, Route } from "react-router-dom";
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ChatPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<MyProfilePage />} />
       </Routes>
     </>
   );
