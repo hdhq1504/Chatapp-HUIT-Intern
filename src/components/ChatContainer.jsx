@@ -1,15 +1,17 @@
 import React from "react";
-import Photo3 from "../assets/images/photo_2025_3.png";
+import Photo1 from "../assets/images/photo_2025_1.png";
 import MessageHeader from "./MessageHeader.jsx";
+import MessageBubble from "./MessageBubble.jsx";
 import InputMessage from "./InputMessage.jsx";
 
+// Dữ liệu mẫu tin nhắn - có thể chuyển ra file riêng hoặc từ API
 const messages = [
   {
     id: 1,
-    type: "image",
-    content: Photo3,
+    type: "image", // Loại tin nhắn: "text" hoặc "image"
+    content: Photo1, // Nội dung: text hoặc đường dẫn ảnh
     timestamp: "48 minutes ago",
-    sender: "other",
+    sender: "other", // Người gửi: "self" (tôi) hoặc "other" (người khác)
   },
   {
     id: 2,
@@ -49,75 +51,43 @@ const messages = [
   },
 ];
 
+/**
+ * Component chính chứa nội dung chat
+ * @param {Function} setShowDetails - Hàm để toggle hiển thị panel chi tiết
+ */
 function ChatContainer({ setShowDetails }) {
   return (
-    <>
-      <div className="flex-1 flex flex-col relative h-full">
-        <MessageHeader setShowDetails={setShowDetails} />
-        <div className="flex-1 overflow-y-auto p-4">
-          {messages.map((msg, idx) => {
-            const prev = messages[idx - 1];
-            const next = messages[idx + 1];
-            const isFirst = !prev || prev.sender !== msg.sender;
-            const isLast = !next || next.sender !== msg.sender;
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.sender === "self" ? "justify-end" : "justify-start"
-                } ${isFirst ? "mt-4" : "mt-1"}`}
-              >
-                <div className="flex gap-2 items-end">
-                  {msg.sender === "other" &&
-                    (isFirst ? (
-                      <div className="w-8 h-8 min-w-[2rem] min-h-[2rem] rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center">
-                        <span className="text-xs font-semibold">M</span>
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 min-w-[2rem] min-h-[2rem]" />
-                    ))}
-                  <div className="flex flex-col">
-                    {msg.type === "image" ? (
-                      <div
-                        className={`rounded-lg overflow-hidden ${
-                          msg.sender === "self" ? "ml-auto" : ""
-                        }`}
-                      >
-                        <img
-                          src={msg.content}
-                          alt="Shared image"
-                          className="w-full h-55 object-cover bg-slate-600"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className={`px-4 py-3 rounded-3xl max-w-xs text-pretty ${
-                          msg.sender === "self"
-                            ? "bg-blue-600 text-white ml-auto"
-                            : "bg-gray-200 dark:bg-[#212121] text-[#212121] dark:text-white"
-                        }`}
-                      >
-                        <p className="text-sm">{msg.content}</p>
-                      </div>
-                    )}
-                    {isLast && (
-                      <p
-                        className={`text-xs text-gray-100 mt-1 px-2 ${
-                          msg.sender === "self" ? "text-right" : ""
-                        }`}
-                      >
-                        {msg.timestamp}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <InputMessage />
+    <div className="flex-1 flex flex-col relative h-full">
+      {/* Header chứa thông tin người chat và các nút action */}
+      <MessageHeader setShowDetails={setShowDetails} />
+      
+      {/* Khu vực hiển thị tin nhắn - có scroll khi overflow */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+        {messages.map((message, index) => {
+          // Lấy tin nhắn trước và sau để xác định vị trí trong nhóm
+          const prevMessage = messages[index - 1];
+          const nextMessage = messages[index + 1];
+          
+          // Xác định vị trí tin nhắn trong nhóm (để style border radius)
+          const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
+          const isLastInGroup = !nextMessage || nextMessage.sender !== message.sender;
+          const isGrouped = !isFirstInGroup && !isLastInGroup; // Tin nhắn ở giữa nhóm
+          
+          return (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isFirst={isFirstInGroup}  // Tin nhắn đầu nhóm
+              isLast={isLastInGroup}    // Tin nhắn cuối nhóm (hiển thị avatar và timestamp)
+              isGrouped={isGrouped}     // Tin nhắn ở giữa nhóm
+            />
+          );
+        })}
       </div>
-    </>
+
+      {/* Input để nhập tin nhắn mới */}
+      <InputMessage />
+    </div>
   );
 }
 

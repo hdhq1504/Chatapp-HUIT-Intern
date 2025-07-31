@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  User,
-  Mail,
-  Edit3,
-  Check,
-  X,
-  Camera,
-  Settings,
-  Shield,
-  Bell,
-  ChevronLeft,
-} from "lucide-react";
+import { User, Mail, Edit3, Check, X, Camera, Settings, Shield, Bell, ChevronLeft } from "lucide-react";
 
 function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -95,7 +84,7 @@ function MyProfilePage() {
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-2 text-white hover:text-blue-500 hover:bg-blue-100 hover:bg-opacity-20 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                  className="p-2 text-blue-500 bg-blue-100 hover:bg-opacity-20 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
                   <Edit3 size={18} />
                 </button>
@@ -103,13 +92,13 @@ function MyProfilePage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleSave}
-                    className="p-2 text-white hover:text-green-500 hover:bg-green-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                    className="p-2 text-green-500 bg-green-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
                   >
                     <Check size={18} />
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="p-2 text-white hover:text-red-500 hover:bg-red-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                    className="p-2 text-red-500 bg-red-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
                   >
                     <X size={18} />
                   </button>
@@ -136,7 +125,7 @@ function MyProfilePage() {
               </div>
               <button
                 onClick={handleAvatarUpload}
-                className="absolute bottom-2 right-2 p-2 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 cursor-pointer"
+                className="absolute bottom-2 right-2 p-2 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 hover:scale-110 cursor-pointer"
               >
                 <Camera size={16} />
               </button>
