@@ -1,10 +1,128 @@
 import React, { useState } from "react";
 import leftGradient from "../assets/images/left-gradient.png";
 import { Eye, EyeOff } from "lucide-react";
+import useValidator from "../utils/validator";
 
 function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const {
+    errors,
+    touched,
+    validators,
+    validateField,
+    validateAll,
+    clearErrors,
+  } = useValidator();
+
+  // Định nghĩa validation rules
+  const getValidationRules = () => {
+    const rules = {
+      email: [
+        (value) => validators.isRequired(value, "Vui lòng nhập email"),
+        (value) => validators.isEmail(value, "Email không hợp lệ"),
+      ],
+      password: [
+        (value) => validators.isRequired(value, "Vui lòng nhập mật khẩu"),
+        (value) =>
+          validators.minLength(value, 6, "Mật khẩu phải có ít nhất 6 ký tự"),
+      ],
+    };
+
+    if (isSignUp) {
+      rules.username = [
+        (value) => validators.isRequired(value, "Vui lòng nhập tên người dùng"),
+        (value) =>
+          validators.minLength(
+            value,
+            3,
+            "Tên người dùng phải có ít nhất 3 ký tự"
+          ),
+      ];
+      rules.confirmPassword = [
+        (value) => validators.isRequired(value, "Vui lòng xác nhận mật khẩu"),
+        (value) =>
+          validators.isConfirmed(
+            value,
+            formData.password,
+            "Mật khẩu xác nhận không khớp"
+          ),
+      ];
+    }
+
+    return rules;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error khi user bắt đầu nhập
+    if (touched[name] && errors[name]) {
+      validateField(name, value, getValidationRules()[name] || []);
+    }
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    const rules = getValidationRules()[name];
+    if (rules) {
+      validateField(name, value, rules);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const validationRules = getValidationRules();
+    const isValid = validateAll(formData, validationRules);
+
+    if (isValid) {
+      // Xử lý submit thành công
+      console.log("Form submitted successfully:", formData);
+      alert(isSignUp ? "Đăng ký thành công!" : "Đăng nhập thành công!");
+
+      // Reset form
+      setFormData({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      clearErrors();
+    }
+  };
+
+  const toggleMode = () => {
+    setIsSignUp((prev) => !prev);
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+    clearErrors();
+  };
+
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : null;
+  };
+
+  const getInputClassName = (fieldName) => {
+    const baseClass =
+      "w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition";
+    const hasError = touched[fieldName] && errors[fieldName];
+    return hasError
+      ? `${baseClass} border-red-500 focus:ring-red-500`
+      : `${baseClass} border-gray-300`;
+  };
 
   return (
     <div className="min-h-screen flex bg-gray-100">
@@ -28,7 +146,8 @@ function LoginPage() {
               ? "Please sign up to create an account"
               : "Please log in to your account to continue"}
           </p>
-          <form className="space-y-5">
+          
+          <div className="space-y-5">
             {isSignUp && (
               <div>
                 <label className="block font-medium text-gray-700 mb-2">
@@ -36,26 +155,40 @@ function LoginPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  className={getInputClassName('username')}
                   placeholder="Enter your username"
-                  required
                 />
+                {getFieldError('username') && (
+                  <p className="mt-1 text-sm text-red-500">{getFieldError('username')}</p>
+                )}
               </div>
             )}
+            
             <div>
               <label className="block font-medium text-gray-700 mb-2">
                 Email
               </label>
               <input
                 type="email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                className={getInputClassName('email')}
                 placeholder="Enter your email"
-                required
               />
+              {getFieldError('email') && (
+                <p className="mt-1 text-sm text-red-500">{getFieldError('email')}</p>
+              )}
             </div>
+            
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block font-medium text-gray-700 mb-2">
+                <label className="block font-medium text-gray-700">
                   Password
                 </label>
                 {!isSignUp && (
@@ -70,9 +203,12 @@ function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  className={getInputClassName('password')}
                   placeholder="Enter your password"
-                  required
                 />
                 <button
                   type="button"
@@ -82,7 +218,11 @@ function LoginPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {getFieldError('password') && (
+                <p className="mt-1 text-sm text-red-500">{getFieldError('password')}</p>
+              )}
             </div>
+            
             {isSignUp && (
               <div>
                 <label className="block font-medium text-gray-700 mb-2">
@@ -90,26 +230,35 @@ function LoginPage() {
                 </label>
                 <input
                   type="password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  className={getInputClassName('confirmPassword')}
                   placeholder="Confirm your password"
-                  required
                 />
+                {getFieldError('confirmPassword') && (
+                  <p className="mt-1 text-sm text-red-500">{getFieldError('confirmPassword')}</p>
+                )}
               </div>
             )}
-            <a
-              href="/"
-              className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-center font-semibold rounded-lg shadow-md transition-colors"
+            
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 transform hover:scale-[1.02]"
             >
               {isSignUp ? "Sign Up" : "Log In"}
-            </a>
-          </form>
+            </button>
+          </div>
+          
           <div className="mt-6 text-center">
-            <span>
+            <span className="text-gray-600">
               {isSignUp ? "Already have an account?" : "Don't have an account?"}
             </span>
             <button
               className="ml-2 text-blue-600 hover:underline font-medium"
-              onClick={() => setIsSignUp((prev) => !prev)}
+              onClick={toggleMode}
             >
               {isSignUp ? "Log In" : "Sign Up"}
             </button>

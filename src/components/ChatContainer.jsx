@@ -1,15 +1,15 @@
 import React from "react";
-import Photo1 from "../assets/images/photo_2025_1.png";
+import Photo5 from "../assets/images/photo_2025_5.png";
 import MessageHeader from "./MessageHeader.jsx";
 import MessageBubble from "./MessageBubble.jsx";
 import InputMessage from "./InputMessage.jsx";
 
-// Dữ liệu mẫu tin nhắn - có thể chuyển ra file riêng hoặc từ API
+// Dữ liệu mẫu
 const messages = [
   {
     id: 1,
-    type: "image", // Loại tin nhắn: "text" hoặc "image"
-    content: Photo1, // Nội dung: text hoặc đường dẫn ảnh
+    type: "image", // Loại tin nhắn: "text, image, voice, sticker"
+    content: Photo5, // Nội dung tin nhắn
     timestamp: "48 minutes ago",
     sender: "other", // Người gửi: "self" (tôi) hoặc "other" (người khác)
   },
@@ -58,34 +58,32 @@ const messages = [
 function ChatContainer({ setShowDetails }) {
   return (
     <div className="flex-1 flex flex-col relative h-full">
-      {/* Header chứa thông tin người chat và các nút action */}
+      {/* Header */}
       <MessageHeader setShowDetails={setShowDetails} />
       
-      {/* Khu vực hiển thị tin nhắn - có scroll khi overflow */}
+      {/* Khu vực hiển thị tin nhắn */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.map((message, index) => {
-          // Lấy tin nhắn trước và sau để xác định vị trí trong nhóm
           const prevMessage = messages[index - 1];
           const nextMessage = messages[index + 1];
           
-          // Xác định vị trí tin nhắn trong nhóm (để style border radius)
           const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
           const isLastInGroup = !nextMessage || nextMessage.sender !== message.sender;
-          const isGrouped = !isFirstInGroup && !isLastInGroup; // Tin nhắn ở giữa nhóm
+          const isGrouped = !isFirstInGroup && !isLastInGroup;
           
           return (
             <MessageBubble
               key={message.id}
               message={message}
-              isFirst={isFirstInGroup}  // Tin nhắn đầu nhóm
-              isLast={isLastInGroup}    // Tin nhắn cuối nhóm (hiển thị avatar và timestamp)
-              isGrouped={isGrouped}     // Tin nhắn ở giữa nhóm
+              isFirst={isFirstInGroup}
+              isLast={isLastInGroup}
+              isGrouped={isGrouped}
             />
           );
         })}
       </div>
 
-      {/* Input để nhập tin nhắn mới */}
+      {/* Input để nhập tin nhắn */}
       <InputMessage />
     </div>
   );
