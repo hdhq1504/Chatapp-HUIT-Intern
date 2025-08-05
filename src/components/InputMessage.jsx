@@ -1,25 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 import { customScrollbarStyles } from "../utils/styles.jsx";
-import { Image, Mic, Smile, Send } from "lucide-react";
+import { Mic, Smile, Send, Paperclip, MoreHorizontal } from "lucide-react";
 import { EmojiPicker } from "frimousse";
 import { useClickOutsideWithException } from "../hooks/useClickOutside.jsx";
 
 /**
  * Component input để nhập và gửi tin nhắn
  * Bao gồm: textarea tự động resize, các nút attachment, emoji, voice, send
+ * @param {boolean} isMobile - Kiểm tra có phải mobile không
+ * @param {boolean} isTablet - Kiểm tra có phải tablet không
  */
-function InputMessage() {
+function InputMessage({ isMobile, isTablet }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
   const textareaRef = useRef(null);
 
   // Sử dụng useClickOutsideWithException để đóng emoji picker
-  // nhưng loại trừ việc click vào nút emoji
   const emojiPickerRef = useClickOutsideWithException(
     () => setShowEmojiPicker(false),
     showEmojiPicker,
-    '[data-emoji-trigger]' // Loại trừ click vào trigger button
+    '[data-emoji-trigger]'
   );
 
   /**
@@ -28,9 +29,11 @@ function InputMessage() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      const maxHeight = isMobile ? 120 : 128; // max-h-30 cho mobile, max-h-32 cho desktop
+      const scrollHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
+      textareaRef.current.style.height = scrollHeight + 'px';
     }
-  }, [message]);
+  }, [message, isMobile]);
 
   /**
    * Xử lý sự kiện nhấn phím
@@ -77,13 +80,13 @@ function InputMessage() {
             accept="*"
             className="hidden"
             id="image-upload"
-            onChange={(e) => console.log(e.target.files[0])}
+            onChange={(e) => console.log('Image:', e.target.files[0])}
           />
           <label
             htmlFor="image-upload"
             className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer mb-2 inline-flex"
           >
-            <Image size={20} />
+            <Paperclip size={20} />
           </label>
         </div>
 

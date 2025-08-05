@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronUp, ChevronDown, Image, Download, Share2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Image, Download, Share2, X, ArrowLeft } from "lucide-react";
 import { customScrollbarStyles } from "../utils/styles.jsx";
 import Photo1 from "../assets/images/photo_2025_1.png";
 import Photo2 from "../assets/images/photo_2025_2.png";
@@ -9,11 +9,13 @@ import Photo4 from "../assets/images/photo_2025_4.png";
 /**
  * Component panel chi tiết bên phải hiển thị thông tin chat
  * Bao gồm: thông tin user, cài đặt, ảnh/file đã chia sẻ
+ * @param {Function} onClose - Hàm đóng panel details
+ * @param {boolean} isMobile
+ * @param {boolean} isTablet
  */
-function Details() {
-  // State quản lý trạng thái mở/đóng của các section
-  const [chatSettingsOpen, setChatSettingsOpen] = useState(true);
-  const [privacyHelpOpen, setPrivacyHelpOpen] = useState(true);
+function Details({ onClose, isMobile, isTablet }) {
+  const [chatSettingsOpen, setChatSettingsOpen] = useState(!isMobile);
+  const [privacyHelpOpen, setPrivacyHelpOpen] = useState(!isMobile);
   const [sharedPhotosOpen, setSharedPhotosOpen] = useState(false);
   const [sharedFilesOpen, setSharedFilesOpen] = useState(false);
 
@@ -23,6 +25,8 @@ function Details() {
     { name: "", thumbnail: Photo2 },
     { name: "", thumbnail: Photo3 },
     { name: "", thumbnail: Photo4 },
+    { name: "", thumbnail: Photo1 },
+    { name: "", thumbnail: Photo2 },
   ];
 
   // Dữ liệu mẫu file đã chia sẻ
@@ -40,43 +44,93 @@ function Details() {
   ];
 
   return (
-    // Panel cố định bên phải màn hình
-    <div className="fixed right-0 top-0 h-screen w-80 flex flex-col bg-[#F9F9F9] dark:bg-[#181818] z-30">
-      <div>
-        {/* Header hiển thị thông tin profile người chat */}
-        <div className="p-4 text-center">
-          {/* Avatar người chat */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center mx-auto mb-3">
-            <span className="text-xl font-semibold">M</span>
+    <div className={`
+      h-screen flex flex-col bg-[#F9F9F9] dark:bg-[#181818] 
+      ${isMobile ? 'w-full' : 'w-80'}
+      ${isMobile || isTablet ? 'border-l border-gray-200 dark:border-[#3F3F3F]' : ''}
+    `}>
+      
+      {/* Header Section */}
+      <div className={`
+        border-b border-gray-200 dark:border-[#3F3F3F]
+        ${isMobile ? 'px-4 py-3' : 'px-4 py-4'}
+      `}>
+        
+        {/* Header Section (mobile, tablet screen) */}
+        {(isMobile || isTablet) && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="text-lg font-semibold">Chat Info</h2>
+            </div>
           </div>
-          <h3 className="font-semibold text-lg">Maria Nelson</h3>
-        </div>
+        )}
 
-        {/* Các section cài đặt có thể mở/đóng */}
-        <div className="p-4 space-y-4">
+        {/* Profile section */}
+        <div className="text-center">
+          <div className={`
+            rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center mx-auto mb-3
+            ${isMobile ? 'w-20 h-20' : 'w-16 h-16'}
+          `}>
+            <span className={`font-semibold text-white ${isMobile ? 'text-2xl' : 'text-xl'}`}>M</span>
+          </div>
+          <h3 className={`font-semibold ${isMobile ? 'text-xl' : 'text-lg'}`}>Maria Nelson</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Active 2 hours ago
+          </p>
+        </div>
+      </div>
+
+      {/* Chat Section */}
+      <div className={`flex-1 overflow-y-auto ${customScrollbarStyles}`}>
+        <div className={`space-y-4 ${isMobile ? 'p-4' : 'p-4'}`}>
           
           {/* Section Chat Settings */}
           <div>
             <button
               onClick={() => setChatSettingsOpen(!chatSettingsOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold"
+              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
             >
               <span>Chat settings</span>
-              {/* Icon mũi tên thay đổi theo trạng thái */}
               {chatSettingsOpen ? (
                 <ChevronUp size={16} />
               ) : (
                 <ChevronDown size={16} />
               )}
             </button>
-            {/* Nội dung section sẽ được thêm ở đây */}
+            
+            {/* Content for Chat Settings */}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                chatSettingsOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              {chatSettingsOpen && (
+                <div className="mt-2 space-y-2 px-2">
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Notifications: On
+                  </div>
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Media auto-download: Wi-Fi only
+                  </div>
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Disappearing messages: Off
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Section Privacy & Help */}
+          {/* Privacy & Help Section */}
           <div>
             <button
               onClick={() => setPrivacyHelpOpen(!privacyHelpOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold"
+              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
             >
               <span>Privacy & help</span>
               {privacyHelpOpen ? (
@@ -85,14 +139,33 @@ function Details() {
                 <ChevronDown size={16} />
               )}
             </button>
-            {/* Nội dung section sẽ được thêm ở đây */}
+
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                privacyHelpOpen ? "max-h-32 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              {privacyHelpOpen && (
+                <div className="mt-2 space-y-2 px-2">
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Block contact
+                  </div>
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Report contact
+                  </div>
+                  <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
+                    • Clear chat history
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Section Shared Photos */}
+          {/* Shared Photos Section */}
           <div>
             <button
               onClick={() => setSharedPhotosOpen(!sharedPhotosOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold"
+              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
             >
               <span>Shared photos</span>
               {sharedPhotosOpen ? (
@@ -101,40 +174,40 @@ function Details() {
                 <ChevronDown size={16} />
               )}
             </button>
-            
-            {/* Nội dung ảnh đã chia sẻ với animation mở/đóng */}
+
             <div
               className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                sharedPhotosOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
+                sharedPhotosOpen 
+                  ? (isMobile ? "max-h-96 opacity-100" : "max-h-64 opacity-100") 
+                  : "max-h-0 opacity-0"
               }`}
             >
               {sharedPhotosOpen && (
-                <div className="mt-2 space-y-2">
-                  {/* Grid 3 cột hiển thị ảnh */}
-                  <div className="grid grid-cols-3 gap-4 md:gap-3 py-2">
+                <div className="mt-2 px-2">
+                  <div className={`grid gap-2 py-2 ${isMobile ? 'grid-cols-4' : 'grid-cols-3'}`}>
                     {sharedPhotos.map((photo, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-center"
-                      >
-                        <img
-                          src={photo.thumbnail}
-                          className="w-22 h-22 rounded object-cover"
-                          alt={`Shared photo ${index + 1}`}
-                        />
+                      <div key={index} className="relative aspect-square cursor-pointer group">
+                        <img src={photo.thumbnail} className="w-full h-full rounded-lg object-cover transition-transform duration-200" alt={`Shared photo ${index + 1}`} />
+                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200" />
                       </div>
                     ))}
                   </div>
+                  
+                  {sharedPhotos.length > 6 && (
+                    <button className="w-full py-2 text-sm text-blue-500 hover:text-blue-600 font-medium">
+                      View all photos
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Section Shared Files */}
+          {/* Shared Files Section */}
           <div>
             <button
               onClick={() => setSharedFilesOpen(!sharedFilesOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold"
+              className="flex items-center justify-between w-full p-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg transition-colors duration-200 cursor-pointer"
             >
               <span>Shared files</span>
               {sharedFilesOpen ? (
@@ -143,53 +216,59 @@ function Details() {
                 <ChevronDown size={16} />
               )}
             </button>
-            
-            {/* Nội dung file đã chia sẻ với animation và scrollbar tùy chỉnh */}
+
             <div
-              className={`mt-2 space-y-2 transition-all duration-300 ease-in-out overflow-hidden ${
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
                 sharedFilesOpen
-                  ? "max-h-100 md:max-h-64 opacity-100"
+                  ? (isMobile ? "max-h-80 opacity-100" : "max-h-64 opacity-100")
                   : "max-h-0 opacity-0"
-              } ${customScrollbarStyles}`}
+              }`}
             >
-              {/* Danh sách file với thông tin chi tiết */}
-              {sharedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between py-2"
-                >
-                  {/* Icon file */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#EFEFEF] dark:bg-slate-700 rounded flex items-center justify-center">
-                      <Image size={20} />
-                    </div>
-                  </div>
-                  
-                  {/* Thông tin file: tên và dung lượng */}
-                  <div className="flex flex-col flex-1 ml-3">
-                    <span
-                      className={`font-medium ${
-                        file.name.length > 20 ? "line-clamp-1" : "" // Cắt tên file dài
-                      }`}
+              {sharedFilesOpen && (
+                <div className={`mt-2 px-2 space-y-2 overflow-y-auto ${customScrollbarStyles} ${isMobile ? 'max-h-72' : 'max-h-56'}`}>
+                  {sharedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg transition-colors duration-200 cursor-pointer"
                     >
-                      {file.name}
-                    </span>
-                    <span className="text-[12px] font-light">{file.size}</span>
-                  </div>
+                      {/* Icon và thông tin file */}
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="bg-[#EFEFEF] dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0 w-10 h-10">
+                          <Image size={18} />
+                        </div>
+                        
+                        {/* Thông tin file: tên và dung lượng */}
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="font-medium truncate text-base">
+                            {file.name}
+                          </span>
+                          <span className="font-light text-gray-500 dark:text-gray-400 text-xs">
+                            {file.size}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Các nút action cho file */}
+                      <div className="flex items-center space-x-1 flex-shrink-0">
+                        {/* Nút download */}
+                        <button className="p-1.5 hover:bg-[#303030] rounded transition-colors duration-200 cursor-pointer">
+                          <Download size={16} />
+                        </button>
+                        {/* Nút share */}
+                        <button className="p-1.5 hover:bg-[#303030] rounded transition-colors duration-200 cursor-pointer">
+                          <Share2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                   
-                  {/* Các nút action cho file */}
-                  <div className="flex items-center space-x-2">
-                    {/* Nút download */}
-                    <button className="p-2 hover:bg-[#303030] rounded">
-                      <Download size={18} />
+                  {sharedFiles.length > 5 && (
+                    <button className="w-full py-2 text-sm font-medium text-gray-100 hover:bg-[#303030] rounded-lg cursor-pointer">
+                      View all files
                     </button>
-                    {/* Nút share */}
-                    <button className="p-2 hover:bg-[#303030] rounded">
-                      <Share2 size={18} />
-                    </button>
-                  </div>
+                  )}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
