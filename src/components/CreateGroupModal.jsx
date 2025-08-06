@@ -4,12 +4,6 @@ import { getInitial } from "../utils/string.jsx";
 import { customScrollbarStyles } from "../utils/styles.jsx";
 import { useClickOutside } from "../hooks/useClickOutside.jsx";
 
-/**
- * Modal tạo nhóm chat mới với animation mượt mà
- * @param {boolean} isOpen - Trạng thái hiển thị modal
- * @param {Function} onClose - Hàm đóng modal
- * @param {Array} contacts - Danh sách liên hệ để chọn thành viên
- */
 function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   const [groupName, setGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -17,13 +11,11 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
-  // Sử dụng useClickOutside để đóng modal khi click outside
   const modalRef = useClickOutside(
     () => handleClose(),
-    isOpen && isAnimating // Chỉ enable click outside khi modal đã mở hoàn toàn
+    isOpen && isAnimating
   );
 
-  // Effect xử lý animation
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
@@ -34,14 +26,10 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
     }
   }, [isOpen, shouldRender]);
 
-  // Lọc danh sách liên hệ
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  /**
-   * Xử lý chọn/bỏ chọn user
-   */
   const handleUserToggle = (userId) => {
     setSelectedUsers(prev => 
       prev.includes(userId) 
@@ -50,9 +38,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
     );
   };
 
-  /**
-   * Xử lý tạo nhóm mới
-   */
   const handleCreateGroup = () => {
     if (groupName.trim() && selectedUsers.length >= 2) {
       const selectedContactsData = contacts.filter(contact => 
@@ -68,9 +53,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
     }
   };
 
-  /**
-   * Xử lý đóng modal và reset form
-   */
   const handleClose = () => {
     setGroupName("");
     setSelectedUsers([]);
@@ -78,17 +60,14 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
     onClose();
   };
 
-  // Không render nếu modal không được hiển thị
   if (!shouldRender) return null;
 
   return (
-    // Overlay với fade animation
     <div 
       className={`fixed inset-0 bg-[#111111]/75 backdrop-blur-[2px] flex items-center justify-center z-50 transition-opacity duration-300 ease-out ${
         isAnimating ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Modal container với click outside handling */}
       <div 
         ref={modalRef}
         className={`bg-white dark:bg-[#212121] rounded-lg w-full max-w-md mx-4 max-h-[80vh] flex flex-col transform transition-all duration-300 ease-out ${
@@ -97,8 +76,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
             : 'scale-95 translate-y-4 opacity-0'
         }`}
       >
-        
-        {/* Header */}
+
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
           <div className="flex items-center gap-2">
             <Users size={20} className="text-blue-500" />
@@ -112,7 +90,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           </button>
         </div>
 
-        {/* Input nhập tên nhóm */}
         <div className="p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
           <label className="block text-sm font-medium mb-2">
             Group name
@@ -126,7 +103,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           />
         </div>
 
-        {/* Input tìm kiếm thành viên */}
         <div className="p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
           <label className="block text-sm font-medium mb-2">
             Add member ({selectedUsers.length} selected)
@@ -140,7 +116,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           />
         </div>
 
-        {/* Danh sách liên hệ */}
         <div className={`flex-1 overflow-y-auto max-h-60 ${customScrollbarStyles}`}>
           {filteredContacts.map((contact) => (
             <div
@@ -148,7 +123,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
               className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#303030] cursor-pointer transition-colors duration-200"
               onClick={() => handleUserToggle(contact.id)}
             >
-              {/* Avatar */}
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
                   <span className="text-sm font-semibold text-white">
@@ -157,12 +131,10 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
                 </div>
               </div>
               
-              {/* Thông tin liên hệ */}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{contact.name}</p>
               </div>
               
-              {/* Checkbox */}
               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 transform ${
                 selectedUsers.includes(contact.id)
                   ? 'bg-blue-500 border-blue-500 scale-110'
@@ -178,7 +150,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
             </div>
           ))}
           
-          {/* Không tìm thấy kết quả */}
           {filteredContacts.length === 0 && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               Không tìm thấy người dùng nào
@@ -186,7 +157,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-gray-200 dark:border-[#3F3F3F] flex gap-3">
           <button
             onClick={handleClose}

@@ -1,138 +1,166 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Sidebar from "../components/Sidebar.jsx";
 import ChatContainer from "../components/ChatContainer.jsx";
-import Details from "../components/Details.jsx";
+import ChatInfo from "../components/ChatInfo.jsx";
+import CreateGroupModal from "../components/CreateGroupModal.jsx";
+import WelcomeScreen from "../components/WelcomeScreen.jsx";
+
+const contacts = [
+  {
+    id: 1,
+    name: "Maria Nelson",
+    status: "looks good",
+    avatar: "/api/placeholder/32/32",
+    active: true,
+  },
+  {
+    id: 2,
+    name: "Ashley Harris",
+    status: "lucky you",
+    avatar: "/api/placeholder/32/32",
+    active: true,
+  },
+  {
+    id: 3,
+    name: "Andrew Wilson",
+    status: "same here.",
+    avatar: "/api/placeholder/32/32",
+  },
+  {
+    id: 4,
+    name: "Jennifer Brown",
+    status: "wait a second",
+    avatar: "/api/placeholder/32/32",
+  },
+  {
+    id: 5,
+    name: "Edward Davis",
+    status: "how's it going?",
+    avatar: "/api/placeholder/32/32",
+  },
+  {
+    id: 6,
+    name: "Karen Wilson",
+    status: "i hear you",
+    avatar: "/api/placeholder/32/32",
+  },
+  {
+    id: 7,
+    name: "Joseph Garcia",
+    status: "at least it's friday",
+    avatar: "/api/placeholder/32/32",
+  },
+  {
+    id: 8,
+    name: "Patricia Jones",
+    status: "what about you?",
+    avatar: "/api/placeholder/32/32",
+    active: true,
+  },
+];
 
 function ChatPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const mobile = width < 768;
-      const tablet = width >= 768 && width < 1024;
-
-      setIsMobile(mobile);
-      setIsTablet(tablet);
-
-      if (mobile) {
-        setShowSidebar(false);
-        setShowDetails(false);
-      } else if (tablet) {
-        setShowDetails(false);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
   
-  const handleChatSelect = () => {
-    if (isMobile) {
+  const handleChatSelect = (contact) => {
+    setSelectedContact(contact);
+    if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
   };
 
   const handleBackToSidebar = () => {
-    if (isMobile) {
-      setShowSidebar(true);
-      setShowDetails(false);
-    }
+    setShowSidebar(true);
+    setShowDetails(false);
+    setSelectedContact(null);
   };
 
   const handleToggleDetails = (show) => {
-    if (isMobile) {
-      setShowDetails(show);
+    setShowDetails(show);
+    if (window.innerWidth < 768) {
       setShowSidebar(false);
-    } else {
-      setShowDetails(show);
     }
+  };
+
+  const handleOpenCreateGroupModal = () => {
+    setIsCreateGroupModalOpen(true);
+  };
+
+  const handleCloseCreateGroupModal = () => {
+    setIsCreateGroupModalOpen(false);
   };
 
   return (
     <div className="flex h-screen bg-gray-100 text-black dark:bg-[#303030] dark:text-white overflow-hidden">
-      {/* Sidebar */}
       <div className={`
-        ${isMobile 
-          ? `fixed inset-0 z-40 ${
-              showSidebar ? 'translate-x-0' : '-translate-x-full'
-            }`
-          : isTablet
-            ? `fixed left-0 top-0 h-full z-30 ${
-                showSidebar ? 'translate-x-0' : '-translate-x-full'
-              }`
-            : 'relative'
-        }
-        ${!isMobile && !isTablet ? 'w-80' : 'w-full md:w-80'}
-        h-full
+        fixed md:relative inset-0 z-40 md:z-auto
+        ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        w-full md:w-80 h-full transform transition-transform duration-300
       `}>
         <Sidebar 
           onChatSelect={handleChatSelect}
           onBackToSidebar={handleBackToSidebar}
-          isMobile={isMobile}
-          isTablet={isTablet}
           showSidebar={showSidebar}
           setShowSidebar={setShowSidebar}
+          onCreateGroup={handleOpenCreateGroupModal}
+          contacts={contacts}
         />
       </div>
 
-      {/* Overlay for mobile sidebar */}
-      {(isMobile || isTablet) && showSidebar && (
+      {showSidebar && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setShowSidebar(false)}
         />
       )}
 
-      {/* Main Content Area */}
       <div className="flex-1 flex h-full">
-        {/* Chat Container */}
         <div className={`
           flex-1 h-full
-          ${isMobile && showSidebar ? 'hidden' : 'flex'} 
-          ${isMobile && showDetails ? 'hidden' : 'flex'}
+          ${showSidebar ? 'hidden md:flex' : 'flex'}
+          ${showDetails ? 'md:flex' : 'flex'}
         `}>
-          <ChatContainer 
-            setShowDetails={handleToggleDetails}
-            onBackToSidebar={handleBackToSidebar}
-            isMobile={isMobile}
-            isTablet={isTablet}
-            showSidebar={showSidebar}
-            setShowSidebar={setShowSidebar}
-          />
+          {selectedContact ? (
+            <ChatContainer 
+              selectedContact={selectedContact}
+              setShowDetails={handleToggleDetails}
+              onBackToSidebar={handleBackToSidebar}
+              showSidebar={showSidebar}
+              setShowSidebar={setShowSidebar}
+            />
+          ) : (
+            <WelcomeScreen />
+          )}
         </div>
 
-        {/* Details Panel */}
         {showDetails && (
-          <div className={`
-            ${isMobile 
-              ? 'fixed inset-0 z-40' 
-              : isTablet 
-                ? 'fixed right-0 top-0 h-full w-80 z-30' 
-                : 'relative w-80'
-            }
-            h-full
-          `}>
-            <Details 
+          <div className="
+            fixed md:relative inset-0 z-40 md:z-auto
+            w-full md:w-80 h-full md:block
+          ">
+            <ChatInfo
+              selectedContact={selectedContact} 
               onClose={() => handleToggleDetails(false)}
-              isMobile={isMobile}
-              isTablet={isTablet}
             />
           </div>
         )}
       </div>
 
-      {/* Overlay for mobile/tablet details */}
-      {(isMobile || isTablet) && showDetails && (
+      {showDetails && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
           onClick={() => handleToggleDetails(false)}
         />
       )}
+      
+      <CreateGroupModal
+        isOpen={isCreateGroupModalOpen}
+        onClose={handleCloseCreateGroupModal}
+        contacts={contacts}
+      />
     </div>
   );
 }

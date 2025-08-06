@@ -22,32 +22,31 @@ function LoginPage() {
     clearErrors,
   } = useValidator();
 
-  // Định nghĩa validation rules
   const getValidationRules = () => {
     const rules = {
       email: [
-        (value) => validators.isRequired(value, "Vui lòng nhập email"),
-        (value) => validators.isEmail(value, "Email không hợp lệ"),
+        (value) => validators.isRequired(value, "Please enter the email"),
+        (value) => validators.isEmail(value, "Email is invalid"),
       ],
       password: [
-        (value) => validators.isRequired(value, "Vui lòng nhập mật khẩu"),
+        (value) => validators.isRequired(value, "Please enter the password"),
         (value) =>
-          validators.minLength(value, 6, "Mật khẩu phải có ít nhất 6 ký tự"),
+          validators.minLength(value, 6, "The password is at least 6 characters"),
       ],
     };
 
     if (isSignUp) {
       rules.username = [
-        (value) => validators.isRequired(value, "Vui lòng nhập tên người dùng"),
+        (value) => validators.isRequired(value, "Please enter the username"),
         (value) =>
           validators.minLength(
             value,
             3,
-            "Tên người dùng phải có ít nhất 3 ký tự"
+            "The username must have at least 3 characters"
           ),
       ];
       rules.confirmPassword = [
-        (value) => validators.isRequired(value, "Vui lòng xác nhận mật khẩu"),
+        (value) => validators.isRequired(value, "Please confirm the password"),
         (value) =>
           validators.isConfirmed(
             value,
@@ -64,7 +63,6 @@ function LoginPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error khi user bắt đầu nhập
     if (touched[name] && errors[name]) {
       validateField(name, value, getValidationRules()[name] || []);
     }
@@ -85,11 +83,9 @@ function LoginPage() {
     const isValid = validateAll(formData, validationRules);
 
     if (isValid) {
-      // Xử lý submit thành công
       console.log("Form submitted successfully:", formData);
-      alert(isSignUp ? "Đăng ký thành công!" : "Đăng nhập thành công!");
+      alert(isSignUp ? "Sign up successfully!" : "Log in successfully!");
 
-      // Reset form
       setFormData({
         username: "",
         email: "",
@@ -126,7 +122,6 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-gray-100">
-      {/* Left background image */}
       <div className="hidden md:flex w-1/2 relative items-center justify-center">
         <img
           src={leftGradient}
@@ -135,7 +130,6 @@ function LoginPage() {
         />
       </div>
 
-      {/* Right form section */}
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 px-8 py-12">
         <div className="w-full max-w-md">
           <h1 className="text-4xl font-semibold mb-3">

@@ -67,7 +67,6 @@ function MyProfilePage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#212121] py-8 px-4">
       <div className="max-w-md mx-auto space-y-6">
-        {/* Back button */}
         <button
           onClick={() => (window.location.href = "/")}
           className="flex items-center gap-2 mb-2 px-4 py-2 bg-white dark:bg-[#3F3F3F] rounded-xl shadow hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 font-semibold transition-all duration-200 cursor-pointer"
@@ -75,9 +74,7 @@ function MyProfilePage() {
           <ChevronLeft size={18} />
         </button>
 
-        {/* Main Profile Card */}
         <div className="bg-white dark:bg-[#3F3F3F] rounded-2xl shadow-lg overflow-hidden">
-          {/* Header with gradient background */}
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-20">
             <div className="flex justify-between items-center">
               <h1 className="text-xl font-bold text-white">My Profile</h1>
@@ -107,7 +104,6 @@ function MyProfilePage() {
             </div>
           </div>
 
-          {/* Avatar Section */}
           <div className="relative -mt-16 flex flex-col items-center px-6 pb-6">
             <div className="relative group">
               <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
@@ -156,7 +152,6 @@ function MyProfilePage() {
             </div>
           </div>
 
-          {/* User Information */}
           <div className="px-6 pb-6 space-y-4">
             <div className="space-y-4">
               <div>
@@ -211,7 +206,6 @@ function MyProfilePage() {
           </div>
         </div>
 
-        {/* Status Settings Card */}
         <div className="bg-white dark:bg-[#3F3F3F] rounded-2xl shadow-lg p-6">
           <div className="flex items-center mb-4">
             <div className="p-2 rounded-lg mr-1">
@@ -249,7 +243,6 @@ function MyProfilePage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
           <button className="bg-white dark:bg-[#3F3F3F] p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group cursor-pointer">
             <div className="flex flex-col items-center space-y-2">

@@ -1,108 +1,246 @@
 import React, { useState, useRef, useEffect } from "react";
 import { customScrollbarStyles } from "../utils/styles.jsx";
-import { Mic, Smile, Send, Paperclip, MoreHorizontal } from "lucide-react";
+import { Mic, Smile, Send, Paperclip, X, File, Image, Video, FileText } from "lucide-react";
 import { EmojiPicker } from "frimousse";
 import { useClickOutsideWithException } from "../hooks/useClickOutside.jsx";
 
-/**
- * Component input để nhập và gửi tin nhắn
- * Bao gồm: textarea tự động resize, các nút attachment, emoji, voice, send
- * @param {boolean} isMobile - Kiểm tra có phải mobile không
- * @param {boolean} isTablet - Kiểm tra có phải tablet không
- */
-function InputMessage({ isMobile, isTablet }) {
+function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [previewFiles, setPreviewFiles] = useState([]);
   
   const textareaRef = useRef(null);
 
-  // Sử dụng useClickOutsideWithException để đóng emoji picker
+  const getFileType = (file) => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    if (file.type.startsWith('audio/')) return 'audio';
+    if (file.type === 'application/pdf') return 'pdf';
+    if (file.type.includes('document') || file.type.includes('word')) return 'document';
+    if (file.type.includes('sheet') || file.type.includes('excel')) return 'spreadsheet';
+    return 'file';
+  };
+
+  const getFileIcon = (type) => {
+    switch (type) {
+      case 'image': return <Image size={18} className="text-blue-500" />;
+      case 'video': return <Video size={18} className="text-purple-500" />;
+      case 'audio': return <File size={18} className="text-green-500" />;
+      case 'pdf': return <FileText size={18} className="text-red-500" />;
+      case 'document': return <FileText size={18} className="text-blue-600" />;
+      case 'spreadsheet': return <FileText size={18} className="text-green-600" />;
+      default: return <File size={18} className="text-gray-500" />;
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const emojiPickerRef = useClickOutsideWithException(
     () => setShowEmojiPicker(false),
     showEmojiPicker,
     '[data-emoji-trigger]'
   );
 
-  /**
-   * Effect tự động điều chỉnh chiều cao textarea theo nội dung
-   */
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      const maxHeight = isMobile ? 120 : 128; // max-h-30 cho mobile, max-h-32 cho desktop
+      const isMobile = window.innerWidth < 768;
+      const maxHeight = isMobile ? 120 : 128;
       const scrollHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
       textareaRef.current.style.height = scrollHeight + 'px';
     }
-  }, [message, isMobile]);
+  }, [message]);
 
-  /**
-   * Xử lý sự kiện nhấn phím
-   */
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !disabled) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  /**
-   * Xử lý gửi tin nhắn
-   */
   const handleSendMessage = () => {
-    if (message.trim()) {
-      console.log("Sending message:", message);
+    if (previewFiles.length > 0 && !disabled) {
+      if (onSendFile) {
+        onSendFile(previewFiles, message.trim());
+      }
+      clearPreview();
+      setMessage("");
+      return;
+    }
+
+    if (message.trim() && !disabled) {
+      if (onSendMessage) {
+        onSendMessage(message.trim());
+      }
       setMessage("");
     }
   };
 
-  /**
-   * Xử lý toggle emoji picker
-   */
-  const handleEmojiToggle = () => {
-    setShowEmojiPicker(prev => !prev);
+  const clearPreview = () => {
+    previewFiles.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
+    setPreviewFiles([]);
   };
 
-  /**
-   * Xử lý chọn emoji
-   */
+  const removePreviewFile = (indexToRemove) => {
+    const fileToRemove = previewFiles[indexToRemove];
+    if (fileToRemove.preview) {
+      URL.revokeObjectURL(fileToRemove.preview);
+    }
+    setPreviewFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleEmojiToggle = () => {
+    if (!disabled) {
+      setShowEmojiPicker(prev => !prev);
+    }
+  };
+
   const handleEmojiSelect = (emoji) => {
-    setMessage(prev => prev + emoji.emoji);
-    setShowEmojiPicker(false);
+    if (!disabled) {
+      setMessage(prev => prev + emoji.emoji);
+      setShowEmojiPicker(false);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    if (!disabled) {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+        const processedFiles = files.map(file => {
+          const fileType = getFileType(file);
+          const processedFile = {
+            ...file,
+            id: Date.now() + Math.random(),
+            fileType,
+          };
+
+          if (fileType === 'image' || fileType === 'video') {
+            processedFile.preview = URL.createObjectURL(file);
+          }
+          
+          return processedFile;
+        });
+        
+        setPreviewFiles(prev => [...prev, ...processedFiles]);
+        
+        e.target.value = '';
+      }
+    }
   };
 
   return (
-    <div className="p-4 pb-2.5 bg-[#F9F9F9] dark:bg-[#212121] shadow-sm sticky bottom-0 z-10">
-      <div className="flex items-end space-x-3">
-        {/* Input đính kèm ảnh */}
+    <div className="p-3 md:p-4 pb-2 md:pb-2.5 bg-[#F9F9F9] dark:bg-[#212121] shadow-sm sticky bottom-0 z-10">
+      {previewFiles.length > 0 && (
+        <div className="mb-3 p-3 bg-white dark:bg-[#303030] rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Files ({previewFiles.length})
+            </span>
+            <button
+              onClick={clearPreview}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-[#3F3F3F] rounded-lg"
+              title="Remove all files"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          
+          <div className={`space-y-2 max-h-40 overflow-y-auto ${customScrollbarStyles}`}>
+            {previewFiles.map((file, index) => (
+              <div key={file.id} className="flex items-center space-x-3 p-2 mr-1 bg-gray-50 dark:bg-[#404040] rounded">
+                <div className="flex-shrink-0">
+                  {file.fileType === 'image' && file.preview ? (
+                    <img
+                      src={file.preview}
+                      alt="Preview"
+                      className="w-10 h-10 rounded object-cover"
+                    />
+                  ) : file.fileType === 'video' && file.preview ? (
+                    <video
+                      src={file.preview}
+                      className="w-10 h-10 rounded object-cover"
+                      muted
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-100 dark:bg-gray-600 rounded flex items-center justify-center">
+                      {getFileIcon(file.fileType)}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {formatFileSize(file.size)} • {file.fileType}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={() => removePreviewFile(index)}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-500 rounded"
+                  title="Remove file"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-end space-x-2 md:space-x-3">
         <div className="relative">
           <input
             type="file"
             accept="*"
             className="hidden"
-            id="image-upload"
-            onChange={(e) => console.log('Image:', e.target.files[0])}
+            id="file-upload"
+            onChange={handleFileUpload}
+            disabled={disabled}
+            multiple
           />
           <label
-            htmlFor="image-upload"
-            className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer mb-2 inline-flex"
+            htmlFor="file-upload"
+            className={`p-1.5 md:p-2 rounded-lg mb-2 inline-flex ${
+              disabled 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-[#EFEFEF] dark:hover:bg-[#303030] cursor-pointer'
+            }`}
+            title="Attach files"
           >
-            <Paperclip size={20} />
+            <Paperclip size={18} className="md:w-5 md:h-5" />
           </label>
         </div>
 
-        {/* Nút emoji với click outside handling */}
         <div className="relative">
           <button 
-            className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer mb-2"
+            className={`p-1.5 md:p-2 rounded-lg mb-2 ${
+              disabled 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-[#EFEFEF] dark:hover:bg-[#303030] cursor-pointer'
+            }`}
             onClick={handleEmojiToggle}
-            data-emoji-trigger // Attribute để loại trừ trong click outside
+            data-emoji-trigger
+            disabled={disabled}
           >
-            <Smile size={20} />
+            <Smile size={18} className="md:w-5 md:h-5" />
           </button>
           
-          {showEmojiPicker && (
+          {showEmojiPicker && !disabled && (
             <div ref={emojiPickerRef} className="absolute bottom-full left-0 mb-2">
-              <EmojiPicker.Root className="isolate flex h-[368px] w-fit flex-col bg-white dark:bg-[#181818] rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700">
+              <EmojiPicker.Root className="isolate flex h-[300px] md:h-[368px] w-fit flex-col bg-white dark:bg-[#181818] rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700">
                 <EmojiPicker.Search 
                   className="z-10 mx-2 mt-2 appearance-none rounded-md focus:outline-none bg-neutral-100 px-2.5 py-2 text-sm dark:bg-neutral-800" 
                   placeholder="Search emoji..."
@@ -147,30 +285,43 @@ function InputMessage({ isMobile, isTablet }) {
           )}
         </div>
 
-        {/* Nút ghi âm */}
-        <button className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer mb-2">
-          <Mic size={20} />
+        <button 
+          className={`p-1.5 md:p-2 rounded-lg mb-2 ${
+            disabled 
+              ? 'opacity-50 cursor-not-allowed' 
+              : 'hover:bg-[#EFEFEF] dark:hover:bg-[#303030] cursor-pointer'
+          }`}
+          disabled={disabled}
+        >
+          <Mic size={18} className="md:w-5 md:h-5" />
         </button>
 
-        {/* Container textarea */}
         <div className="flex-1">
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type a message"
-            className={`w-full bg-gray-200 dark:bg-[#303030] rounded-xl px-4 py-2 pr-10 focus:outline-none resize-none overflow-y-auto ${customScrollbarStyles} max-h-32`}
+            placeholder={"Type a message..."}
+            disabled={disabled}
+            className={`w-full bg-gray-200 dark:bg-[#303030] rounded-xl px-3 md:px-4 py-1.5 md:py-2 pr-8 md:pr-10 focus:outline-none resize-none overflow-y-auto ${customScrollbarStyles} text-sm md:text-base max-h-[120px] md:max-h-32 ${
+              disabled ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             rows={1}
           />
         </div>
 
-        {/* Nút gửi tin nhắn */}
         <button
           onClick={handleSendMessage}
-          className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg font-semibold text-white cursor-pointer mb-2"
+          disabled={disabled || (!message.trim() && previewFiles.length === 0)}
+          className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg font-semibold text-white mb-2 ${
+            disabled || (!message.trim() && previewFiles.length === 0)
+              ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+              : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+          }`}
+          title={previewFiles.length > 0 ? 'Send files' : 'Send message'}
         >
-          <Send size={20} />
+          <Send size={18} className="md:w-5 md:h-5" />
         </button>
       </div>
     </div>
