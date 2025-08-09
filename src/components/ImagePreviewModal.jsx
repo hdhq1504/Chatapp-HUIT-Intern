@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { X, ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X, ZoomIn, ZoomOut, RotateCw, Download } from "lucide-react";
 
-function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image" }) {
+function ImagePreviewModal({
+  imageUrl,
+  isOpen,
+  onClose,
+  altText = "Preview image",
+}) {
   const [scale, setScale] = useState(0.75);
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -18,32 +23,32 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'auto';
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "auto";
     };
   }, [isOpen, onClose]);
 
   const handleZoomIn = () => {
-    setScale(prev => Math.min(Math.round((prev + 0.25) * 100) / 100, 3));
+    setScale((prev) => Math.min(Math.round((prev + 0.25) * 100) / 100, 3));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(Math.round((prev - 0.25) * 100) / 100, 0.75));
+    setScale((prev) => Math.max(Math.round((prev - 0.25) * 100) / 100, 0.75));
   };
 
   const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   const handleDownload = async () => {
@@ -51,7 +56,7 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `image_${Date.now()}.jpg`;
       document.body.appendChild(a);
@@ -59,7 +64,7 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading image:', error);
+      console.error("Error downloading image:", error);
     }
   };
 
@@ -68,7 +73,7 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
       setIsDragging(true);
       setDragStart({
         x: e.clientX - position.x,
-        y: e.clientY - position.y
+        y: e.clientY - position.y,
       });
     }
   };
@@ -77,7 +82,7 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
     if (isDragging && scale > 1) {
       setPosition({
         x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
+        y: e.clientY - dragStart.y,
       });
     }
   };
@@ -98,78 +103,97 @@ function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = "Preview image
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-opacity-90 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative w-full h-full flex flex-col">
-        <div className="absolute top-0 left-0 right-0 z-10 bg-opacity-50">
-          <div className="flex justify-between items-center p-2">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-opacity-30 rounded-lg p-2">
-                <button
-                  onClick={handleZoomOut}
-                  className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-md transition-colors"
-                  disabled={scale <= 0.25}
-                >
-                  <ZoomOut size={18} />
-                </button>
-                <span className="text-white text-sm font-medium min-w-[60px] text-center">
-                  {Math.round(scale * 100)}%
-                </span>
-                <button
-                  onClick={handleZoomIn}
-                  className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-md transition-colors"
-                  disabled={scale >= 3}
-                >
-                  <ZoomIn size={18} />
-                </button>
-              </div>
+    <div className="justify-center fixed inset-0 z-50 flex items-center">
+      {/* Background overlay */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs"
+        onClick={onClose}
+      />
 
-              <button
-                onClick={handleRotate}
-                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-md transition-colors bg-opacity-30"
-              >
-                <RotateCw size={18} />
-              </button>
+      {/* Close button - Top left */}
+      <button
+        onClick={onClose}
+        className="cursor-pointer absolute top-4 left-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-[#EFEFEF]/75 text-[#181818] transition-all md:h-12 md:w-12"
+        title="Close"
+      >
+        <X size={20} className="md:h-6 md:w-6" />
+      </button>
 
-              <button
-                onClick={handleDownload}
-                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-md transition-colors bg-opacity-30"
-              >
-                <Download size={18} />
-              </button>
-            </div>
+      {/* Main image container */}
+      <div
+        className="relative flex h-full w-full items-center justify-center p-4 pb-20 md:pb-24"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        style={{
+          cursor: scale > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+        }}
+      >
+        <img
+          src={imageUrl}
+          alt={altText}
+          className="max-h-full max-w-full object-contain transition-transform duration-200 select-none"
+          style={{
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+            transformOrigin: "center center",
+          }}
+          draggable={false}
+          onLoad={() => {
+            setPosition({ x: 0, y: 0 });
+          }}
+        />
+      </div>
 
-            <button
-              onClick={onClose}
-              className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-md transition-colors"
-            >
-              <X size={24} />
-            </button>
+      {/* Bottom toolbar */}
+      <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 transform">
+        <div className="flex items-center space-x-1 rounded-full bg-black/75 px-3 py-2 backdrop-blur-sm md:space-x-2">
+          {/* Zoom Out */}
+          <button
+            onClick={handleZoomOut}
+            disabled={scale <= 0.25}
+            className="cursor-pointer hover:bg-opacity-20 flex h-8 w-8 items-center justify-center rounded-full text-white hover:text-[#181818] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:w-10"
+            title="Zoom out"
+          >
+            <ZoomOut size={16} className="md:h-5 md:w-5" />
+          </button>
+
+          {/* Zoom percentage */}
+          <div className="flex h-8 min-w-[60px] items-center justify-center rounded-full px-2 text-sm font-medium text-white md:h-10 md:min-w-[70px] md:text-base">
+            {Math.round(scale * 100)}%
           </div>
-        </div>
 
-        <div 
-          className="flex-1 flex items-center justify-center p-4 cursor-move"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-          style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
-        >
-          <img
-            src={imageUrl}
-            alt={altText}
-            className="max-w-full max-h-full object-contain select-none transition-transform duration-200"
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-              transformOrigin: 'center center'
-            }}
-            draggable={false}
-            onLoad={() => {
-              setPosition({ x: 0, y: 0 });
-            }}
-          />
+          {/* Zoom In */}
+          <button
+            onClick={handleZoomIn}
+            disabled={scale >= 3}
+            className="cursor-pointer hover:bg-opacity-20 flex h-8 w-8 items-center justify-center rounded-full text-white hover:text-[#181818] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:w-10"
+            title="Zoom in"
+          >
+            <ZoomIn size={16} className="md:h-5 md:w-5" />
+          </button>
+
+          {/* Divider */}
+          <div className="bg-opacity-30 mx-1 h-6 w-px bg-white md:mx-2 md:h-8" />
+
+          {/* Rotate */}
+          <button
+            onClick={handleRotate}
+            className="cursor-pointer hover:bg-opacity-20 flex h-8 w-8 items-center justify-center rounded-full text-white hover:text-[#181818] transition-all hover:bg-white md:h-10 md:w-10"
+            title="Rotate"
+          >
+            <RotateCw size={16} className="md:h-5 md:w-5" />
+          </button>
+
+          {/* Download */}
+          <button
+            onClick={handleDownload}
+            className="cursor-pointer hover:bg-opacity-20 flex h-8 w-8 items-center justify-center rounded-full text-white hover:text-[#181818] transition-all hover:bg-white md:h-10 md:w-10"
+            title="Download"
+          >
+            <Download size={16} className="md:h-5 md:w-5" />
+          </button>
         </div>
       </div>
     </div>

@@ -3,11 +3,13 @@ import leftGradient from "../assets/images/left-gradient.png";
 import { Eye, EyeOff } from "lucide-react";
 import useValidator from "../utils/validator";
 
-function LoginPage() {
+function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const {
@@ -20,6 +22,15 @@ function LoginPage() {
   } = useValidator();
 
   const getValidationRules = () => ({
+    username: [
+      (value) => validators.isRequired(value, "Please enter the username"),
+      (value) =>
+        validators.minLength(
+          value,
+          3,
+          "The username must have at least 3 characters",
+        ),
+    ],
     email: [
       (value) => validators.isRequired(value, "Please enter the email"),
       (value) => validators.isEmail(value, "Email is invalid"),
@@ -28,6 +39,15 @@ function LoginPage() {
       (value) => validators.isRequired(value, "Please enter the password"),
       (value) =>
         validators.minLength(value, 6, "The password is at least 6 characters"),
+    ],
+    confirmPassword: [
+      (value) => validators.isRequired(value, "Please confirm the password"),
+      (value) =>
+        validators.isConfirmed(
+          value,
+          formData.password,
+          "Mật khẩu xác nhận không khớp",
+        ),
     ],
   });
 
@@ -52,11 +72,13 @@ function LoginPage() {
     const validationRules = getValidationRules();
     const isValid = validateAll(formData, validationRules);
     if (isValid) {
-      console.log("Login form submitted successfully:", formData);
-      alert("Log in successfully!");
+      console.log("Sign up form submitted successfully:", formData);
+      alert("Sign up successfully!");
       setFormData({
+        username: "",
         email: "",
         password: "",
+        confirmPassword: "",
       });
       clearErrors();
     }
@@ -86,11 +108,30 @@ function LoginPage() {
       </div>
       <div className="flex w-full flex-col items-center justify-center px-8 py-12 md:w-1/2">
         <div className="w-full max-w-md">
-          <h1 className="mb-3 text-4xl font-semibold">Welcome back</h1>
+          <h1 className="mb-3 text-4xl font-semibold">Create an account</h1>
           <p className="mb-6 font-medium text-gray-500">
-            Please log in to your account to continue
+            Please sign up to create an account
           </p>
           <div className="space-y-5">
+            <div>
+              <label className="mb-2 block font-medium text-gray-700">
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                className={getInputClassName("username")}
+                placeholder="Enter your username"
+              />
+              {getFieldError("username") && (
+                <p className="mt-1 text-sm text-red-500">
+                  {getFieldError("username")}
+                </p>
+              )}
+            </div>
             <div>
               <label className="mb-2 block font-medium text-gray-700">
                 Email
@@ -111,17 +152,9 @@ function LoginPage() {
               )}
             </div>
             <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="block font-medium text-gray-700">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-blue-600 transition hover:text-blue-800"
-                >
-                  Forgot Password?
-                </button>
-              </div>
+              <label className="mb-2 block font-medium text-gray-700">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -135,7 +168,7 @@ function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 right-4 -translate-y-1/2 transform cursor-pointer text-gray-500 hover:text-gray-700"
+                  className="absolute top-1/2 right-4 -translate-y-1/2 transform text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -146,23 +179,42 @@ function LoginPage() {
                 </p>
               )}
             </div>
+            <div>
+              <label className="mb-2 block font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                className={getInputClassName("confirmPassword")}
+                placeholder="Confirm your password"
+              />
+              {getFieldError("confirmPassword") && (
+                <p className="mt-1 text-sm text-red-500">
+                  {getFieldError("confirmPassword")}
+                </p>
+              )}
+            </div>
             <div className="mt-3 text-center">
               <span className="font-medium text-gray-700">
-                Don't have an account?
+                Already have an account?
               </span>
               <a
-                href="/signup"
+                href="/login"
                 className="ml-2 font-medium text-blue-600 hover:text-blue-700"
               >
-                Sign Up
+                Log In
               </a>
             </div>
             <button
               type="button"
               onClick={handleSubmit}
-              className="w-full transform rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:scale-[1.02] hover:bg-blue-700"
+              className="w-full cursor-pointer rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700"
             >
-              Log In
+              Sign Up
             </button>
           </div>
         </div>
@@ -171,4 +223,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default SignupPage;

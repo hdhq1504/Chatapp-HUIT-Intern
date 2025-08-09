@@ -23,7 +23,7 @@ export default function useValidator() {
     isConfirmed: (
       value,
       confirmValue,
-      message = "Mật khẩu xác nhận không khớp"
+      message = "Mật khẩu xác nhận không khớp",
     ) => {
       return value === confirmValue ? undefined : message;
     },

@@ -12,6 +12,8 @@ const contacts = [
     status: "looks good",
     avatar: "/api/placeholder/32/32",
     active: true,
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 2,
@@ -19,36 +21,48 @@ const contacts = [
     status: "lucky you",
     avatar: "/api/placeholder/32/32",
     active: true,
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 3,
     name: "Andrew Wilson",
     status: "same here.",
     avatar: "/api/placeholder/32/32",
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 4,
     name: "Jennifer Brown",
     status: "wait a second",
     avatar: "/api/placeholder/32/32",
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 5,
     name: "Edward Davis",
     status: "how's it going?",
     avatar: "/api/placeholder/32/32",
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 6,
     name: "Karen Wilson",
     status: "i hear you",
     avatar: "/api/placeholder/32/32",
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 7,
     name: "Joseph Garcia",
     status: "at least it's friday",
     avatar: "/api/placeholder/32/32",
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
   {
     id: 8,
@@ -56,6 +70,8 @@ const contacts = [
     status: "what about you?",
     avatar: "/api/placeholder/32/32",
     active: true,
+    unreadCount: 3,
+    lastMessageTime: "2:30 PM",
   },
 ];
 
@@ -64,7 +80,7 @@ function ChatPage() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
-  
+
   const handleChatSelect = (contact) => {
     setSelectedContact(contact);
     if (window.innerWidth < 768) {
@@ -94,37 +110,34 @@ function ChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 text-black dark:bg-[#303030] dark:text-white overflow-hidden">
-      <div className={`
-        fixed md:relative inset-0 z-40 md:z-auto
-        ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        w-full md:w-80 h-full transform transition-transform duration-300
-      `}>
-        <Sidebar 
-          onChatSelect={handleChatSelect}
-          onBackToSidebar={handleBackToSidebar}
-          showSidebar={showSidebar}
-          setShowSidebar={setShowSidebar}
-          onCreateGroup={handleOpenCreateGroupModal}
-          contacts={contacts}
-        />
-      </div>
+    <div className="flex h-screen overflow-hidden bg-gray-100 text-black dark:bg-[#303030] dark:text-white">
+      {showSidebar && (
+        <div className="fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80">
+          <Sidebar
+            onChatSelect={handleChatSelect}
+            onBackToSidebar={handleBackToSidebar}
+            showSidebar={showSidebar}
+            setShowSidebar={setShowSidebar}
+            onCreateGroup={handleOpenCreateGroupModal}
+            contacts={contacts}
+            selectedContact={selectedContact}
+          />
+        </div>
+      )}
 
       {showSidebar && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
           onClick={() => setShowSidebar(false)}
         />
       )}
 
-      <div className="flex-1 flex h-full">
-        <div className={`
-          flex-1 h-full
-          ${showSidebar ? 'hidden md:flex' : 'flex'}
-          ${showDetails ? 'md:flex' : 'flex'}
-        `}>
+      <div className="flex h-full flex-1">
+        <div
+          className={`h-full flex-1 ${showSidebar ? "hidden md:flex" : "flex"} ${showDetails ? "md:flex" : "flex"} `}
+        >
           {selectedContact ? (
-            <ChatContainer 
+            <ChatContainer
               selectedContact={selectedContact}
               setShowDetails={handleToggleDetails}
               onBackToSidebar={handleBackToSidebar}
@@ -137,12 +150,9 @@ function ChatPage() {
         </div>
 
         {showDetails && (
-          <div className="
-            fixed md:relative inset-0 z-40 md:z-auto
-            w-full md:w-80 h-full md:block
-          ">
+          <div className="fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80">
             <ChatInfo
-              selectedContact={selectedContact} 
+              selectedContact={selectedContact}
               onClose={() => handleToggleDetails(false)}
             />
           </div>
@@ -150,12 +160,12 @@ function ChatPage() {
       </div>
 
       {showDetails && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
           onClick={() => handleToggleDetails(false)}
         />
       )}
-      
+
       <CreateGroupModal
         isOpen={isCreateGroupModalOpen}
         onClose={handleCloseCreateGroupModal}

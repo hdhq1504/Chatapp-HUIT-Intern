@@ -5,41 +5,47 @@ import MessageHeader from "./MessageHeader.jsx";
 import MessageBubble from "./MessageBubble.jsx";
 import InputMessage from "./InputMessage.jsx";
 
-function ChatContainer({ 
-  setShowDetails, 
+function ChatContainer({
+  setShowDetails,
   onBackToSidebar,
-  showSidebar, 
-  setShowSidebar, 
-  selectedContact
+  showSidebar,
+  setShowSidebar,
+  selectedContact,
 }) {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [messages, setMessages] = useState([]);
 
   const detectMessageType = (message) => {
-    if (typeof message === 'string' && (message.includes('.png') || message.includes('.jpg') || message.includes('.jpeg') || message.includes('.gif'))) {
-      return 'image';
+    if (
+      typeof message === "string" &&
+      (message.includes(".png") ||
+        message.includes(".jpg") ||
+        message.includes(".jpeg") ||
+        message.includes(".gif"))
+    ) {
+      return "image";
     }
 
-    if (typeof message === 'object' && message !== null) {
-      return 'image';
+    if (typeof message === "object" && message !== null) {
+      return "image";
     }
 
-    if (message.includes('.mp4') || message.includes('.mov')) {
-      return 'video';
-    }
-    
-    if (message.includes('.pdf') || message.includes('.doc')) {
-      return 'document';
+    if (message.includes(".mp4") || message.includes(".mov")) {
+      return "video";
     }
 
-    return 'text';
+    if (message.includes(".pdf") || message.includes(".doc")) {
+      return "document";
+    }
+
+    return "text";
   };
 
   useEffect(() => {
     if (selectedContact?.id) {
       const contactMessages = getMessagesByUserId(selectedContact.id);
-      const formattedMessages = contactMessages.map(msg => {
+      const formattedMessages = contactMessages.map((msg) => {
         const messageType = detectMessageType(msg.message);
         return {
           id: msg.id,
@@ -47,7 +53,7 @@ function ChatContainer({
           content: msg.message,
           timestamp: formatTime(msg.timestamp),
           sender: msg.isMe ? "self" : "other",
-          senderName: msg.senderName
+          senderName: msg.senderName,
         };
       });
       setMessages(formattedMessages);
@@ -62,6 +68,29 @@ function ChatContainer({
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Cleanup URLs when component unmounts or messages change
+  useEffect(() => {
+    return () => {
+      // Cleanup any blob URLs when component unmounts
+      messages.forEach((message) => {
+        if (message.type === "files" && message.files) {
+          message.files.forEach((file) => {
+            if (file.url && file.url.startsWith("blob:")) {
+              URL.revokeObjectURL(file.url);
+            }
+            if (
+              file.preview &&
+              file.preview.startsWith("blob:") &&
+              file.preview !== file.url
+            ) {
+              URL.revokeObjectURL(file.preview);
+            }
+          });
+        }
+      });
+    };
   }, []);
 
   const addMessage = (messageContent) => {
@@ -73,22 +102,78 @@ function ChatContainer({
       content: messageContent.trim(),
       timestamp: formatTime(new Date().toISOString()),
       sender: "self",
-      senderName: "Quân Hồ"
+      senderName: "Quân Hồ",
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
+
+    // Auto scroll to bottom after adding message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  };
+
+  const addFileMessage = (files, messageText = "") => {
+    if (!selectedContact || !files || files.length === 0) return;
+
+    const processedFiles = files.map((fileObj) => {
+      // Create new object URL for each file to ensure it works properly
+      const fileUrl = URL.createObjectURL(fileObj.file);
+
+      return {
+        name: fileObj.name,
+        size: fileObj.size,
+        type: fileObj.type,
+        fileType: fileObj.fileType,
+        file: fileObj.file, // The actual File object
+        url: fileUrl, // Create fresh URL for display
+        preview: fileUrl, // Use same URL for preview
+      };
+    });
+
+    const newMessage = {
+      id: Date.now(),
+      type: "files",
+      files: processedFiles,
+      text: messageText,
+      timestamp: formatTime(new Date().toISOString()),
+      sender: "self",
+      senderName: "Quân Hồ",
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    // Auto scroll to bottom after adding message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   };
 
   const addImageMessage = (imageFile) => {
     if (!imageFile || !selectedContact) return;
     const imageUrl = URL.createObjectURL(imageFile);
-    addMessage(imageUrl, "image");
+
+    const newMessage = {
+      id: Date.now(),
+      type: "image",
+      content: imageUrl,
+      timestamp: formatTime(new Date().toISOString()),
+      sender: "self",
+      senderName: "Quân Hồ",
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    // Auto scroll to bottom after adding message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex h-full w-full flex-col">
       <div className="flex-shrink-0">
-        <MessageHeader 
+        <MessageHeader
           setShowDetails={setShowDetails}
           onBackToSidebar={onBackToSidebar}
           showSidebar={showSidebar}
@@ -96,25 +181,22 @@ function ChatContainer({
           selectedContact={selectedContact}
         />
       </div>
-      
-      <div 
+
+      <div
         ref={messagesContainerRef}
-        className={`
-          flex-1 overflow-y-auto overflow-x-hidden
-          px-3 md:px-4 py-4
-          scroll-smooth
-          ${customScrollbarStyles}
-        `}
+        className={`flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-3 py-4 md:px-4 ${customScrollbarStyles} `}
       >
         <div className="space-y-1">
           {messages.map((message, index) => {
             const prevMessage = messages[index - 1];
             const nextMessage = messages[index + 1];
-            
-            const isFirstInGroup = !prevMessage || prevMessage.sender !== message.sender;
-            const isLastInGroup = !nextMessage || nextMessage.sender !== message.sender;
+
+            const isFirstInGroup =
+              !prevMessage || prevMessage.sender !== message.sender;
+            const isLastInGroup =
+              !nextMessage || nextMessage.sender !== message.sender;
             const isGrouped = !isFirstInGroup && !isLastInGroup;
-            
+
             return (
               <MessageBubble
                 key={message.id}
@@ -125,7 +207,7 @@ function ChatContainer({
               />
             );
           })}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -133,8 +215,9 @@ function ChatContainer({
       </div>
 
       <div className="flex-shrink-0">
-        <InputMessage 
+        <InputMessage
           onSendMessage={addMessage}
+          onSendFile={addFileMessage}
           onSendImage={addImageMessage}
           disabled={!selectedContact}
         />

@@ -11,10 +11,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
-  const modalRef = useClickOutside(
-    () => handleClose(),
-    isOpen && isAnimating
-  );
+  const modalRef = useClickOutside(() => handleClose(), isOpen && isAnimating);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,29 +23,29 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
     }
   }, [isOpen, shouldRender]);
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleUserToggle = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId],
     );
   };
 
   const handleCreateGroup = () => {
     if (groupName.trim() && selectedUsers.length >= 2) {
-      const selectedContactsData = contacts.filter(contact => 
-        selectedUsers.includes(contact.id)
+      const selectedContactsData = contacts.filter((contact) =>
+        selectedUsers.includes(contact.id),
       );
-      
+
       console.log("Creating group:", {
         name: groupName,
-        members: selectedContactsData
+        members: selectedContactsData,
       });
-      
+
       handleClose();
     }
   };
@@ -63,48 +60,45 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   if (!shouldRender) return null;
 
   return (
-    <div 
-      className={`fixed inset-0 bg-[#111111]/75 backdrop-blur-[2px] flex items-center justify-center z-50 transition-opacity duration-300 ease-out ${
-        isAnimating ? 'opacity-100' : 'opacity-0'
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/75 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
+        isAnimating ? "opacity-100" : "opacity-0"
       }`}
     >
-      <div 
+      <div
         ref={modalRef}
-        className={`bg-white dark:bg-[#212121] rounded-lg w-full max-w-md mx-4 max-h-[80vh] flex flex-col transform transition-all duration-300 ease-out ${
-          isAnimating 
-            ? 'scale-100 translate-y-0 opacity-100' 
-            : 'scale-95 translate-y-4 opacity-0'
+        className={`mx-4 flex max-h-[80vh] w-full max-w-md transform flex-col rounded-lg bg-white transition-all duration-300 ease-out dark:bg-[#212121] ${
+          isAnimating
+            ? "translate-y-0 scale-100 opacity-100"
+            : "translate-y-4 scale-95 opacity-0"
         }`}
       >
-
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
+        <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-[#3F3F3F]">
           <div className="flex items-center gap-2">
             <Users size={20} className="text-blue-500" />
             <h2 className="text-lg font-semibold">New group chat</h2>
           </div>
           <button
             onClick={handleClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-[#303030] rounded-lg transition-colors duration-200 cursor-pointer"
+            className="cursor-pointer rounded-lg p-1 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-[#303030]"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
-          <label className="block text-sm font-medium mb-2">
-            Group name
-          </label>
+        <div className="border-b border-gray-200 p-4 dark:border-[#3F3F3F]">
+          <label className="mb-2 block text-sm font-medium">Group name</label>
           <input
             type="text"
             placeholder="Enter your group name..."
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-none bg-white dark:bg-[#303030] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-none dark:bg-[#303030]"
           />
         </div>
 
-        <div className="p-4 border-b border-gray-200 dark:border-[#3F3F3F]">
-          <label className="block text-sm font-medium mb-2">
+        <div className="border-b border-gray-200 p-4 dark:border-[#3F3F3F]">
+          <label className="mb-2 block text-sm font-medium">
             Add member ({selectedUsers.length} selected)
           </label>
           <input
@@ -112,63 +106,67 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-none bg-white dark:bg-[#303030] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-none dark:bg-[#303030]"
           />
         </div>
 
-        <div className={`flex-1 overflow-y-auto max-h-60 ${customScrollbarStyles}`}>
+        <div
+          className={`max-h-60 flex-1 overflow-y-auto ${customScrollbarStyles}`}
+        >
           {filteredContacts.map((contact) => (
             <div
               key={contact.id}
-              className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#303030] cursor-pointer transition-colors duration-200"
+              className="flex cursor-pointer items-center space-x-3 px-4 py-3 transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-[#303030]"
               onClick={() => handleUserToggle(contact.id)}
             >
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-blue-500">
                   <span className="text-sm font-semibold text-white">
                     {getInitial(contact.name)}
                   </span>
                 </div>
               </div>
-              
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{contact.name}</p>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{contact.name}</p>
               </div>
-              
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 transform ${
-                selectedUsers.includes(contact.id)
-                  ? 'bg-blue-500 border-blue-500 scale-110'
-                  : 'border-gray-300 dark:border-[#3F3F3F] scale-100'
-              }`}>
+
+              <div
+                className={`flex h-5 w-5 transform items-center justify-center rounded border-2 transition-all duration-300 ${
+                  selectedUsers.includes(contact.id)
+                    ? "scale-110 border-blue-500 bg-blue-500"
+                    : "scale-100 border-gray-300 dark:border-[#3F3F3F]"
+                }`}
+              >
                 {selectedUsers.includes(contact.id) && (
-                  <Check 
-                    size={12} 
-                    className="text-white animate-in slide-in-from-top-1 duration-200" 
+                  <Check
+                    size={12}
+                    className="animate-in slide-in-from-top-1 text-white duration-200"
                   />
                 )}
               </div>
             </div>
           ))}
-          
+
           {filteredContacts.length === 0 && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="py-8 text-center text-gray-500 dark:text-gray-400">
               Không tìm thấy người dùng nào
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-[#3F3F3F] flex gap-3">
+        <div className="flex gap-3 border-t border-gray-200 p-4 dark:border-[#3F3F3F]">
           <button
             onClick={handleClose}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#3F3F3F] text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-[#303030] transition-all duration-200 cursor-pointer"
+            className="flex-1 cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-all duration-200 hover:bg-gray-50 dark:border-[#3F3F3F] dark:text-gray-300 dark:hover:bg-[#303030]"
           >
             Cancel
           </button>
-          
+
           <button
             onClick={handleCreateGroup}
             disabled={!groupName.trim() || selectedUsers.length < 2}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+            className="flex-1 cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-white transition-all duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Create
           </button>

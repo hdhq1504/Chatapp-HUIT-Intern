@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ChevronUp, ChevronDown, Image, Download, Share2, X } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  Image,
+  Download,
+  Share2,
+  X,
+} from "lucide-react";
 import { customScrollbarStyles } from "../utils/styles.jsx";
 import Photo1 from "../assets/images/photo_2025_1.png";
 import Photo2 from "../assets/images/photo_2025_2.png";
@@ -7,7 +14,7 @@ import Photo3 from "../assets/images/photo_2025_3.png";
 import Photo4 from "../assets/images/photo_2025_4.png";
 import { getInitial } from "../utils/string.jsx";
 
-function Details({ onClose, selectedContact }) {
+function ChatInfo({ onClose, selectedContact }) {
   const [chatSettingsOpen, setChatSettingsOpen] = useState(true);
   const [privacyHelpOpen, setPrivacyHelpOpen] = useState(true);
   const [sharedPhotosOpen, setSharedPhotosOpen] = useState(false);
@@ -34,35 +41,30 @@ function Details({ onClose, selectedContact }) {
   ];
 
   return (
-    <div className="
-      h-screen flex flex-col bg-[#F9F9F9] dark:bg-[#181818] 
-      w-full md:w-80
-      border-l border-gray-200 dark:border-[#3F3F3F]
-    ">
-      <div className="border-b border-gray-200 dark:border-[#3F3F3F] px-4 py-3 md:py-4">
-
-        <div className="flex items-center justify-between mb-4 md:hidden">
+    <div className="flex h-screen w-full flex-col bg-[#F9F9F9] md:w-80 dark:border-[#3F3F3F] dark:bg-[#181818]">
+      <div className="border-b border-gray-200 px-4 py-3 md:py-4 dark:border-[#3F3F3F]">
+        <div className="mb-4 flex items-center justify-between md:hidden">
           <div className="flex items-center space-x-3">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg cursor-pointer"
+              className="cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
             <h2 className="text-lg font-semibold">Chat Info</h2>
           </div>
         </div>
 
         <div className="text-center">
-          <div className="
-            rounded-full bg-gradient-to-r from-pink-500 to-orange-500 
-            flex items-center justify-center mx-auto mb-3
-            w-20 h-20 md:w-16 md:h-16
-          ">
-            <span className="font-semibold text-white text-2xl md:text-xl">{getInitial(selectedContact.name)}</span>
+          <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-orange-500 md:h-16 md:w-16">
+            <span className="text-2xl font-semibold text-white md:text-xl">
+              {getInitial(selectedContact.name)}
+            </span>
           </div>
-          <h3 className="font-semibold text-xl md:text-lg">{selectedContact.name}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h3 className="text-xl font-semibold md:text-lg">
+            {selectedContact.name}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Active 2 hours ago
           </p>
         </div>
@@ -73,7 +75,7 @@ function Details({ onClose, selectedContact }) {
           <div>
             <button
               onClick={() => setChatSettingsOpen(!chatSettingsOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
             >
               <span>Chat settings</span>
               {chatSettingsOpen ? (
@@ -84,7 +86,7 @@ function Details({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 chatSettingsOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
               }`}
             >
@@ -107,7 +109,7 @@ function Details({ onClose, selectedContact }) {
           <div>
             <button
               onClick={() => setPrivacyHelpOpen(!privacyHelpOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
             >
               <span>Privacy & help</span>
               {privacyHelpOpen ? (
@@ -118,7 +120,7 @@ function Details({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 privacyHelpOpen ? "max-h-32 opacity-100" : "max-h-0 opacity-0"
               }`}
             >
@@ -141,7 +143,7 @@ function Details({ onClose, selectedContact }) {
           <div>
             <button
               onClick={() => setSharedPhotosOpen(!sharedPhotosOpen)}
-              className="flex items-center justify-between w-full py-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg px-2 transition-colors duration-200 cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
             >
               <span>Shared photos</span>
               {sharedPhotosOpen ? (
@@ -152,25 +154,32 @@ function Details({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                sharedPhotosOpen 
-                  ? "max-h-96 md:max-h-64 opacity-100"
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                sharedPhotosOpen
+                  ? "max-h-96 opacity-100 md:max-h-64"
                   : "max-h-0 opacity-0"
               }`}
             >
               {sharedPhotosOpen && (
                 <div className="mt-2 px-2">
-                  <div className="grid gap-2 py-2 grid-cols-4 md:grid-cols-3">
+                  <div className="grid grid-cols-4 gap-2 py-2 md:grid-cols-3">
                     {sharedPhotos.map((photo, index) => (
-                      <div key={index} className="relative aspect-square cursor-pointer group">
-                        <img src={photo.thumbnail} className="w-full h-full rounded-lg object-cover transition-transform duration-200" alt={`Shared photo ${index + 1}`} />
-                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200" />
+                      <div
+                        key={index}
+                        className="group relative aspect-square cursor-pointer"
+                      >
+                        <img
+                          src={photo.thumbnail}
+                          className="h-full w-full rounded-lg object-cover transition-transform duration-200"
+                          alt={`Shared photo ${index + 1}`}
+                        />
+                        <div className="bg-opacity-0 group-hover:bg-opacity-20 absolute inset-0 rounded-lg transition-all duration-200" />
                       </div>
                     ))}
                   </div>
-                  
+
                   {sharedPhotos.length > 6 && (
-                    <button className="w-full py-2 text-sm text-blue-500 hover:text-blue-600 font-medium">
+                    <button className="w-full py-2 text-sm font-medium text-blue-500 hover:text-blue-600">
                       View all photos
                     </button>
                   )}
@@ -182,7 +191,7 @@ function Details({ onClose, selectedContact }) {
           <div>
             <button
               onClick={() => setSharedFilesOpen(!sharedFilesOpen)}
-              className="flex items-center justify-between w-full p-2 text-left font-semibold hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg transition-colors duration-200 cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-between rounded-lg p-2 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
             >
               <span>Shared files</span>
               {sharedFilesOpen ? (
@@ -193,48 +202,50 @@ function Details({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
                 sharedFilesOpen
-                  ? "max-h-80 md:max-h-64 opacity-100"
+                  ? "max-h-80 opacity-100 md:max-h-64"
                   : "max-h-0 opacity-0"
               }`}
             >
               {sharedFilesOpen && (
-                <div className={`mt-2 px-2 space-y-2 overflow-y-auto max-h-72 md:max-h-56 ${customScrollbarStyles}`}>
+                <div
+                  className={`mt-2 max-h-72 space-y-2 overflow-y-auto px-2 md:max-h-56 ${customScrollbarStyles}`}
+                >
                   {sharedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030] rounded-lg transition-colors duration-200 cursor-pointer"
+                      className="flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]"
                     >
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="bg-[#EFEFEF] dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0 w-10 h-10">
+                      <div className="flex min-w-0 flex-1 items-center space-x-3">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-[#EFEFEF] dark:bg-slate-700">
                           <Image size={18} />
                         </div>
-                        
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-medium truncate text-base">
+
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-base font-medium">
                             {file.name}
                           </span>
-                          <span className="font-light text-gray-500 dark:text-gray-400 text-xs">
+                          <span className="text-xs font-light text-gray-500 dark:text-gray-400">
                             {file.size}
                           </span>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-1 flex-shrink-0">
-                        <button className="p-1.5 hover:bg-[#303030] rounded transition-colors duration-200 cursor-pointer">
+
+                      <div className="flex flex-shrink-0 items-center space-x-1">
+                        <button className="cursor-pointer rounded p-1.5 transition-colors duration-200 hover:bg-[#303030]">
                           <Download size={16} />
                         </button>
-                        
-                        <button className="p-1.5 hover:bg-[#303030] rounded transition-colors duration-200 cursor-pointer">
+
+                        <button className="cursor-pointer rounded p-1.5 transition-colors duration-200 hover:bg-[#303030]">
                           <Share2 size={16} />
                         </button>
                       </div>
                     </div>
                   ))}
-                  
+
                   {sharedFiles.length > 5 && (
-                    <button className="w-full py-2 text-sm font-medium text-gray-100 hover:bg-[#303030] rounded-lg cursor-pointer">
+                    <button className="w-full cursor-pointer rounded-lg py-2 text-sm font-medium text-gray-100 hover:bg-[#303030]">
                       View all files
                     </button>
                   )}
@@ -248,4 +259,4 @@ function Details({ onClose, selectedContact }) {
   );
 }
 
-export default Details;
+export default ChatInfo;

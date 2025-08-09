@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export const useClickOutside = (callback, isOpen = true) => {
   const ref = useRef(null);
@@ -11,11 +11,11 @@ export const useClickOutside = (callback, isOpen = true) => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [callback, isOpen]);
 
@@ -32,7 +32,7 @@ export const useMultipleClickOutside = () => {
     }
 
     callbacks.current[id] = { callback, isOpen };
-    
+
     return refs.current[id];
   };
 
@@ -43,33 +43,41 @@ export const useMultipleClickOutside = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      Object.entries(callbacks.current).forEach(([id, { callback, isOpen }]) => {
-        const ref = refs.current[id];
-        
-        if (isOpen && ref?.current && !ref.current.contains(event.target)) {
-          callback();
-        }
-      });
+      Object.entries(callbacks.current).forEach(
+        ([id, { callback, isOpen }]) => {
+          const ref = refs.current[id];
+
+          if (isOpen && ref?.current && !ref.current.contains(event.target)) {
+            callback();
+          }
+        },
+      );
     };
 
-    const hasOpenElements = Object.values(callbacks.current).some(({ isOpen }) => isOpen);
-    
+    const hasOpenElements = Object.values(callbacks.current).some(
+      ({ isOpen }) => isOpen,
+    );
+
     if (hasOpenElements) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   return {
     registerClickOutside,
-    unregisterClickOutside
+    unregisterClickOutside,
   };
 };
 
-export const useClickOutsideWithException = (callback, isOpen = true, triggerSelector = null) => {
+export const useClickOutsideWithException = (
+  callback,
+  isOpen = true,
+  triggerSelector = null,
+) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -87,11 +95,11 @@ export const useClickOutsideWithException = (callback, isOpen = true, triggerSel
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [callback, isOpen, triggerSelector]);
 

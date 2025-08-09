@@ -1,5 +1,16 @@
 import React, { useState } from "react";
-import { User, Mail, Edit3, Check, X, Camera, Settings, Shield, Bell, ChevronLeft } from "lucide-react";
+import {
+  User,
+  Mail,
+  Edit3,
+  Check,
+  X,
+  Camera,
+  Settings,
+  Shield,
+  Bell,
+  ChevronLeft,
+} from "lucide-react";
 
 function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -65,23 +76,23 @@ function MyProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-[#212121] py-8 px-4">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-100 px-4 py-8 dark:bg-[#212121]">
+      <div className="mx-auto max-w-md space-y-6">
         <button
           onClick={() => (window.location.href = "/")}
-          className="flex items-center gap-2 mb-2 px-4 py-2 bg-white dark:bg-[#3F3F3F] rounded-xl shadow hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 font-semibold transition-all duration-200 cursor-pointer"
+          className="mb-2 flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-2 font-semibold text-blue-600 shadow transition-all duration-200 hover:bg-blue-100 dark:bg-[#3F3F3F] dark:text-blue-400 dark:hover:bg-blue-900"
         >
           <ChevronLeft size={18} />
         </button>
 
-        <div className="bg-white dark:bg-[#3F3F3F] rounded-2xl shadow-lg overflow-hidden">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-[#3F3F3F]">
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-20">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold text-white">My Profile</h1>
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-2 text-blue-500 bg-blue-100 hover:bg-opacity-20 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                  className="hover:bg-opacity-20 cursor-pointer rounded-full bg-blue-100 p-2 text-blue-500 transition-all duration-200 hover:scale-105"
                 >
                   <Edit3 size={18} />
                 </button>
@@ -89,13 +100,13 @@ function MyProfilePage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleSave}
-                    className="p-2 text-green-500 bg-green-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                    className="cursor-pointer rounded-full bg-green-100 p-2 text-green-500 transition-all duration-200 hover:scale-105"
                   >
                     <Check size={18} />
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="p-2 text-red-500 bg-red-100 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+                    className="cursor-pointer rounded-full bg-red-100 p-2 text-red-500 transition-all duration-200 hover:scale-105"
                   >
                     <X size={18} />
                   </button>
@@ -105,45 +116,45 @@ function MyProfilePage() {
           </div>
 
           <div className="relative -mt-16 flex flex-col items-center px-6 pb-6">
-            <div className="relative group">
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+            <div className="group relative">
+              <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-gray-200 shadow-lg">
                 {userInfo.avatar ? (
                   <img
                     src={userInfo.avatar}
                     alt="Avatar"
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">
                     <User size={48} className="text-white" />
                   </div>
                 )}
               </div>
               <button
                 onClick={handleAvatarUpload}
-                className="absolute bottom-2 right-2 p-2 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 hover:scale-110 cursor-pointer"
+                className="absolute right-2 bottom-2 cursor-pointer rounded-full bg-blue-500 p-2 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-blue-600"
               >
                 <Camera size={16} />
               </button>
             </div>
 
             <div className="mt-4 text-center">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+              <h2 className="mb-2 text-xl font-bold text-gray-800 dark:text-gray-100">
                 {userInfo.name}
               </h2>
               <div
                 className={`flex items-center justify-center space-x-2 rounded-3xl px-2 py-1 ${getStatusBgColor(
-                  userInfo.status
+                  userInfo.status,
                 )}`}
               >
                 <div
-                  className={`w-3 h-3 ${getStatusColor(
-                    userInfo.status
-                  )} rounded-full animate-pulse`}
+                  className={`h-3 w-3 ${getStatusColor(
+                    userInfo.status,
+                  )} animate-pulse rounded-full`}
                 ></div>
                 <span
                   className={`text-sm font-medium ${getStatusTextColor(
-                    userInfo.status
+                    userInfo.status,
                   )}`}
                 >
                   {userInfo.status}
@@ -152,10 +163,10 @@ function MyProfilePage() {
             </div>
           </div>
 
-          <div className="px-6 pb-6 space-y-4">
+          <div className="space-y-4 px-6 pb-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Username
                 </label>
                 {isEditing ? (
@@ -165,12 +176,12 @@ function MyProfilePage() {
                     onChange={(e) =>
                       setUserInfo((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 dark:text-gray-100"
+                    className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                 ) : (
-                  <div className="flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-                    <User size={18} className="text-gray-400 mr-3" />
-                    <span className="text-gray-800 dark:text-gray-100 font-medium">
+                  <div className="flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700">
+                    <User size={18} className="mr-3 text-gray-400" />
+                    <span className="font-medium text-gray-800 dark:text-gray-100">
                       {userInfo.name}
                     </span>
                   </div>
@@ -178,7 +189,7 @@ function MyProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Email Address
                 </label>
                 {isEditing ? (
@@ -191,12 +202,12 @@ function MyProfilePage() {
                         email: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 dark:text-gray-100"
+                    className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                 ) : (
-                  <div className="flex items-center px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-                    <Mail size={18} className="text-gray-400 mr-3" />
-                    <span className="text-gray-800 dark:text-gray-100 font-medium">
+                  <div className="flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700">
+                    <Mail size={18} className="mr-3 text-gray-400" />
+                    <span className="font-medium text-gray-800 dark:text-gray-100">
                       {userInfo.email}
                     </span>
                   </div>
@@ -206,9 +217,9 @@ function MyProfilePage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#3F3F3F] rounded-2xl shadow-lg p-6">
-          <div className="flex items-center mb-4">
-            <div className="p-2 rounded-lg mr-1">
+        <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#3F3F3F]">
+          <div className="mb-4 flex items-center">
+            <div className="mr-1 rounded-lg p-2">
               <Settings
                 size={20}
                 className="text-blue-600 dark:text-[#F3F3F3]"
@@ -223,7 +234,7 @@ function MyProfilePage() {
             {["Active Now", "Busy", "Offline"].map((status) => (
               <label
                 key={status}
-                className="flex items-center p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 group"
+                className="group flex cursor-pointer items-center rounded-xl p-3 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <input
                   type="radio"
@@ -233,9 +244,9 @@ function MyProfilePage() {
                   onChange={(e) =>
                     setUserInfo((prev) => ({ ...prev, status: e.target.value }))
                   }
-                  className="mr-4 w-4 h-4 text-blue-500 focus:ring-blue-500"
+                  className="mr-4 h-4 w-4 text-blue-500 focus:ring-blue-500"
                 />
-                <span className="text-gray-800 dark:text-gray-100 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                <span className="font-medium text-gray-800 transition-colors duration-200 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400">
                   {status}
                 </span>
               </label>
@@ -244,9 +255,9 @@ function MyProfilePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button className="bg-white dark:bg-[#3F3F3F] p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group cursor-pointer">
+          <button className="group cursor-pointer rounded-2xl bg-white p-4 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl dark:bg-[#3F3F3F]">
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors duration-200">
+              <div className="rounded-full bg-purple-100 p-3 transition-colors duration-200 group-hover:bg-purple-200 dark:bg-purple-900 dark:group-hover:bg-purple-800">
                 <Shield
                   size={24}
                   className="text-purple-600 dark:text-purple-400"
@@ -258,9 +269,9 @@ function MyProfilePage() {
             </div>
           </button>
 
-          <button className="bg-white dark:bg-[#3F3F3F] p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group cursor-pointer">
+          <button className="group cursor-pointer rounded-2xl bg-white p-4 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl dark:bg-[#3F3F3F]">
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full group-hover:bg-green-200 dark:group-hover:bg-green-800 transition-colors duration-200">
+              <div className="rounded-full bg-green-100 p-3 transition-colors duration-200 group-hover:bg-green-200 dark:bg-green-900 dark:group-hover:bg-green-800">
                 <Bell
                   size={24}
                   className="text-green-600 dark:text-green-400"
