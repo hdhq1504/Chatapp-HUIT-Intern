@@ -8,18 +8,15 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   const [groupName, setGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
-  const modalRef = useClickOutside(() => handleClose(), isOpen && isAnimating);
+  const modalRef = useClickOutside(() => handleClose(), isOpen);
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
-      setTimeout(() => setIsAnimating(true), 10);
     } else if (shouldRender) {
-      setIsAnimating(false);
-      setTimeout(() => setShouldRender(false), 300);
+      setTimeout(() => setShouldRender(false), 1);
     }
   }, [isOpen, shouldRender]);
 
@@ -61,17 +58,11 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/75 backdrop-blur-[2px] transition-opacity duration-300 ease-out ${
-        isAnimating ? "opacity-100" : "opacity-0"
-      }`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/75 backdrop-blur-[2px]"
     >
       <div
         ref={modalRef}
-        className={`mx-4 flex max-h-[80vh] w-full max-w-md transform flex-col rounded-lg bg-white transition-all duration-300 ease-out dark:bg-[#212121] ${
-          isAnimating
-            ? "translate-y-0 scale-100 opacity-100"
-            : "translate-y-4 scale-95 opacity-0"
-        }`}
+        className="mx-4 flex max-h-[80vh] w-full max-w-md transform flex-col rounded-lg bg-white dark:bg-[#212121]"
       >
         <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-[#3F3F3F]">
           <div className="flex items-center gap-2">
@@ -80,7 +71,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           </div>
           <button
             onClick={handleClose}
-            className="cursor-pointer rounded-lg p-1 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-[#303030]"
+            className="cursor-pointer rounded-full p-2 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-[#303030]"
           >
             <X size={20} />
           </button>
@@ -158,7 +149,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
         <div className="flex gap-3 border-t border-gray-200 p-4 dark:border-[#3F3F3F]">
           <button
             onClick={handleClose}
-            className="flex-1 cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-all duration-200 hover:bg-gray-50 dark:border-[#3F3F3F] dark:text-gray-300 dark:hover:bg-[#303030]"
+            className="flex-1 cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-gray-700 transition-all duration-200 hover:bg-gray-50 dark:border-[#3F3F3F] dark:text-gray-300 dark:hover:bg-[#303030]"
           >
             Cancel
           </button>
@@ -166,7 +157,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
           <button
             onClick={handleCreateGroup}
             disabled={!groupName.trim() || selectedUsers.length < 2}
-            className="flex-1 cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-white transition-all duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+            className="flex-1 cursor-pointer rounded-full bg-blue-500 px-4 py-2 text-white transition-all duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             Create
           </button>

@@ -93,13 +93,13 @@ function ChatInfo({ onClose, selectedContact }) {
               {chatSettingsOpen && (
                 <div className="mt-2 space-y-2 px-2">
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Notifications: On
+                    Notifications: On
                   </div>
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Media auto-download: Wi-Fi only
+                    Media auto-download: Wi-Fi only
                   </div>
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Disappearing messages: Off
+                    Disappearing messages: Off
                   </div>
                 </div>
               )}
@@ -127,13 +127,13 @@ function ChatInfo({ onClose, selectedContact }) {
               {privacyHelpOpen && (
                 <div className="mt-2 space-y-2 px-2">
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Block contact
+                    Block contact
                   </div>
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Report contact
+                    Report contact
                   </div>
                   <div className="py-2 text-sm text-gray-600 dark:text-gray-400">
-                    • Clear chat history
+                    Clear chat history
                   </div>
                 </div>
               )}
