@@ -7,6 +7,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const [previewFiles, setPreviewFiles] = useState([]);
 
   const textareaRef = useRef(null);
+  const filePreviewRef = useRef(null);
 
   const getFileType = (file) => {
     const fileName = file.name.toLowerCase();
@@ -91,22 +92,28 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const getFileIcon = (type) => {
     switch (type) {
       case 'image':
-        return <Image size={24} className='text-blue-500' />;
+        return <Image size={20} className='text-blue-500' />;
       case 'video':
-        return <Video size={24} className='text-purple-500' />;
+        return <Video size={20} className='text-purple-500' />;
       case 'audio':
-        return <File size={24} className='text-green-500' />;
+        return <File size={20} className='text-green-500' />;
       case 'pdf':
-        return <FileText size={24} className='text-red-500' />;
+        return <FileText size={20} className='text-red-500' />;
       case 'document':
-        return <FileText size={24} className='text-blue-600' />;
+        return <FileText size={20} className='text-blue-600' />;
       case 'spreadsheet':
-        return <FileText size={24} className='text-green-600' />;
+        return <FileText size={20} className='text-green-600' />;
       case 'presentation':
-        return <FileText size={24} className='text-orange-500' />;
+        return <FileText size={20} className='text-orange-500' />;
       default:
-        return <File size={24} className='text-gray-500' />;
+        return <File size={20} className='text-gray-500' />;
     }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   useEffect(() => {
@@ -226,43 +233,66 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
           <div className='rounded-xl bg-gray-200 dark:bg-[#303030]'>
             {/* Files Preview */}
             {previewFiles.length > 0 && (
-              <div className='p-3 pb-0'>
-                <div className='scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent flex space-x-2 overflow-x-auto pb-2'>
+              <div className='p-3 pb-2'>
+                <div
+                  ref={filePreviewRef}
+                  className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${customScrollbarStyles}`}
+                  style={{ scrollBehavior: 'smooth' }}
+                >
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
-                      <div className='relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 dark:bg-[#404040]'>
-                        {file.fileType === 'image' && file.preview ? (
-                          <img
-                            src={file.preview}
-                            alt='Preview'
-                            className='h-full w-full object-cover'
-                          />
-                        ) : file.fileType === 'video' && file.preview ? (
-                          <video
-                            src={file.preview}
-                            className='h-full w-full object-cover'
-                            muted
-                          />
-                        ) : (
-                          <div className='flex h-full flex-col items-center justify-center p-1'>
-                            {getFileIcon(file.fileType)}
-                            <span className='mt-1 w-full truncate text-center text-[12px] text-gray-500 dark:text-gray-400'>
-                              {file.name.length > 8
-                                ? file.name.substring(0, 6) + '...'
-                                : file.name}
-                            </span>
-                          </div>
-                        )}
+                      {file.fileType === 'image' ||
+                      file.fileType === 'video' ? (
+                        <div className='relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 shadow-sm dark:bg-[#404040]'>
+                          {file.fileType === 'image' && file.preview ? (
+                            <img
+                              src={file.preview}
+                              alt='Preview'
+                              className='h-full w-full object-cover'
+                            />
+                          ) : file.fileType === 'video' && file.preview ? (
+                            <video
+                              src={file.preview}
+                              className='h-full w-full object-cover'
+                              muted
+                            />
+                          ) : null}
 
-                        {/* Remove button */}
-                        <button
-                          onClick={() => removePreviewFile(index)}
-                          className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#EFEFEF] text-[#212121] opacity-0 transition-opacity group-hover:opacity-100'
-                          title='Remove file'
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
+                          {/* Remove button */}
+                          <button
+                            onClick={() => removePreviewFile(index)}
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition-all'
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className='relative flex h-20 w-64 max-w-full items-center rounded-lg bg-white px-3 py-2 shadow-sm dark:bg-[#404040]'>
+                          <div className='mr-3 flex-shrink-0'>
+                            {getFileIcon(file.fileType)}
+                          </div>
+                          <div className='flex flex-1 flex-col justify-center overflow-hidden'>
+                            <span className='mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
+                              {file.name}
+                            </span>
+                            <div className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                              <span className='font-medium uppercase'>
+                                {formatFileSize(file.size)} •{' '}
+                                {file.name.split('.').pop()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Remove button */}
+                          <button
+                            onClick={() => removePreviewFile(index)}
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition-all'
+                            title='Remove file'
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -275,11 +305,11 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder='Type a message...'
+              placeholder={'Type a message...'}
               disabled={disabled}
               className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} text-md md:text-md max-h-[120px] md:max-h-32 ${
                 disabled ? 'cursor-not-allowed opacity-50' : ''
-              } ${previewFiles.length > 0 ? 'pt-0' : ''}`}
+              } text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400`}
               rows={1}
             />
           </div>

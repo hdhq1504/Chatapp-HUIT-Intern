@@ -92,6 +92,62 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
     }
   };
 
+  const renderImageGrid = (images) => {
+    const imageCount = images.length;
+
+    // Single image - larger display
+    if (imageCount === 1) {
+      const image = images[0];
+      return (
+        <div
+          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-sm'
+          onClick={() => handleImageClick(image.url || image.preview)}
+        >
+          <img
+            src={image.url || image.preview}
+            alt={image.name}
+            className='h-full w-full object-cover'
+            onError={(e) => {
+              console.error('Image load error:', e);
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      );
+    }
+
+    // Multiple images - grid layout with multiple rows
+    const getGridClasses = (count) => {
+      if (count === 2) return 'grid-cols-2';
+      if (count === 3) return 'grid-cols-3';
+      return 'grid-cols-4';
+    };
+
+    return (
+      <div
+        className={`grid max-w-xs gap-1 md:max-w-md ${getGridClasses(imageCount)}`}
+      >
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className='relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800'
+            onClick={() => handleImageClick(image.url || image.preview)}
+          >
+            <img
+              src={image.url || image.preview}
+              alt={image.name}
+              className='h-full w-full object-cover'
+              onError={(e) => {
+                console.error('Image load error:', e);
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderMessageContent = () => {
     if (message.type === 'text') {
       return (
@@ -127,8 +183,15 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
     }
 
     if (message.type === 'files' && message.files && message.files.length > 0) {
+      // Separate images from other files
+      const images = message.files.filter((file) => file.fileType === 'image');
+      const videos = message.files.filter((file) => file.fileType === 'video');
+      const otherFiles = message.files.filter(
+        (file) => file.fileType !== 'image' && file.fileType !== 'video',
+      );
+
       return (
-        <div className='max-w-xs md:max-w-sm'>
+        <div className='max-w-xs md:max-w-md'>
           {message.text && message.text.trim() && (
             <div
               className={`mb-2 px-3 py-2 break-words ${
@@ -144,70 +207,57 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
           )}
 
           <div className='space-y-2'>
-            {message.files.map((file, index) => {
-              if (file.fileType === 'image') {
-                return (
-                  <div
-                    key={index}
-                    className='cursor-pointer overflow-hidden rounded-lg'
-                    onClick={() => handleImageClick(file.url || file.preview)}
-                  >
-                    <img
-                      src={file.url || file.preview}
-                      alt={file.name}
-                      className='h-full w-full object-cover'
-                      onError={(e) => {
-                        console.error('Image load error:', e);
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                );
-              }
+            {/* Render image grid */}
+            {images.length > 0 && renderImageGrid(images)}
 
-              if (file.fileType === 'video') {
-                return (
-                  <div key={index} className='overflow-hidden rounded-lg'>
-                    <video
-                      src={file.url || file.preview}
-                      className='h-full w-full object-cover'
-                      controls
-                      preload='metadata'
-                      onError={(e) => {
-                        console.error('Video load error:', e);
-                      }}
-                    >
-                      <p className='p-2 text-sm text-gray-500'>
-                        Video cannot be displayed
-                      </p>
-                    </video>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={index}
-                  className={`flex cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 transition-colors dark:bg-[#212121] hover:dark:bg-[#181818]`}
-                  onClick={() => handleFileDownload(file)}
-                  title={`${file.name}`}
+            {/* Render videos */}
+            {videos.map((file, index) => (
+              <div
+                key={`video-${index}`}
+                className='overflow-hidden rounded-lg'
+              >
+                <video
+                  src={file.url || file.preview}
+                  className='h-full w-full object-cover'
+                  controls
+                  preload='metadata'
+                  onError={(e) => {
+                    console.error('Video load error:', e);
+                  }}
                 >
-                  <div className='flex-shrink-0'>
-                    {getFileIcon(file.fileType, 24)}
-                  </div>
-                  <div className='min-w-0 flex-1'>
-                    <p className='truncate text-sm font-medium text-gray-900 dark:text-white'>
-                      {file.name}
-                    </p>
-                    <p className='text-xs text-gray-500 dark:text-gray-400'>
-                      {formatFileSize(file.size)} •{' '}
-                      {getFileTypeLabel(file.fileType)}
-                    </p>
-                  </div>
-                  <Download size={16} className='flex-shrink-0 text-gray-500 dark:text-white' />
+                  <p className='p-2 text-sm text-gray-500'>
+                    Video cannot be displayed
+                  </p>
+                </video>
+              </div>
+            ))}
+
+            {/* Render other files */}
+            {otherFiles.map((file, index) => (
+              <div
+                key={`file-${index}`}
+                className={`flex cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 transition-colors dark:bg-[#404040] hover:dark:bg-[#212121]`}
+                onClick={() => handleFileDownload(file)}
+                title={`${file.name}`}
+              >
+                <div className='flex-shrink-0'>
+                  {getFileIcon(file.fileType, 24)}
                 </div>
-              );
-            })}
+                <div className='min-w-0 flex-1'>
+                  <p className='truncate text-sm font-medium text-gray-900 dark:text-white'>
+                    {file.name}
+                  </p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
+                    {formatFileSize(file.size)} •{' '}
+                    {getFileTypeLabel(file.fileType)}
+                  </p>
+                </div>
+                <Download
+                  size={16}
+                  className='flex-shrink-0 text-gray-500 dark:text-white'
+                />
+              </div>
+            ))}
           </div>
         </div>
       );

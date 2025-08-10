@@ -152,7 +152,7 @@ function ImagePreviewModal({
           {/* Zoom Out */}
           <button
             onClick={handleZoomOut}
-            disabled={scale <= 0.25}
+            disabled={scale <= 0.75}
             className="cursor-pointer hover:bg-opacity-20 flex h-8 w-8 items-center justify-center rounded-full text-white hover:text-[#181818] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:w-10"
             title="Zoom out"
           >
