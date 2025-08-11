@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { customScrollbarStyles } from '../utils/styles.jsx';
+import { customScrollbarStyles } from '../../utils/styles.jsx';
 import { Send, Paperclip, X, File, Image, Video, FileText } from 'lucide-react';
 
 function InputMessage({ onSendMessage, onSendFile, disabled = false }) {

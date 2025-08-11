@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, Check } from 'lucide-react';
-import { getInitial } from '../utils/string.jsx';
-import { customScrollbarStyles } from '../utils/styles.jsx';
-import { useClickOutside } from '../hooks/useClickOutside.jsx';
+import { getInitial } from '../../utils/string.jsx';
+import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { useClickOutside } from '../../hooks/useClickOutside.jsx';
 
 function CreateGroupModal({ isOpen, onClose, contacts = [] }) {
   const [groupName, setGroupName] = useState('');

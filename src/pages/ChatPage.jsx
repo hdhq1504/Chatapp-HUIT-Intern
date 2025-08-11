@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar.jsx';
-import ChatContainer from '../components/ChatContainer.jsx';
-import ChatInfo from '../components/ChatInfo.jsx';
-import CreateGroupModal from '../components/CreateGroupModal.jsx';
-import WelcomeScreen from '../components/WelcomeScreen.jsx';
+import Sidebar from '../components/layout/Sidebar.jsx';
+import ChatContainer from '../components/chat/ChatContainer.jsx';
+import ChatInfo from '../components/chat/ChatInfo.jsx';
+import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
+import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
 
 const initialContacts = [
   {
@@ -150,9 +150,6 @@ function ChatPage() {
         <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80'>
           <Sidebar
             onChatSelect={handleChatSelect}
-            onBackToSidebar={handleBackToSidebar}
-            showSidebar={showSidebar}
-            setShowSidebar={setShowSidebar}
             onCreateGroup={handleOpenCreateGroupModal}
             onDeleteChat={handleDeleteChat}
             contacts={contacts}

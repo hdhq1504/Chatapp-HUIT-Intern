@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import ImagePreviewModal from './ImagePreviewModal.jsx';
+import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
 import { File, Image, Video, FileText, Download, Play } from 'lucide-react';
-import { formatMessageTimestamp } from '../utils/messageUtils.jsx';
+import { formatMessageTimestamp } from '../../utils/messageUtils.jsx';
 
 function MessageBubble({
   message,
@@ -143,7 +143,7 @@ function MessageBubble({
       const image = images[0];
       return (
         <div
-          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-lg'
+          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-md'
           onClick={() => handleImageClick(image.url || image.preview)}
         >
           <img
@@ -244,7 +244,7 @@ function MessageBubble({
     if (message.type === 'image') {
       return (
         <div
-          className='max-w-sm cursor-pointer overflow-hidden rounded-lg md:max-w-lg'
+          className='max-w-sm cursor-pointer overflow-hidden rounded-lg md:max-w-md'
           onClick={() => handleImageClick(message.content)}
         >
           <img
@@ -265,7 +265,7 @@ function MessageBubble({
       );
 
       return (
-        <div className='max-w-sm md:max-w-lg'>
+        <div className='max-w-sm md:max-w-md'>
           {message.text && message.text.trim() && (
             <div
               className={`mb-2 rounded-full px-3 py-2 break-words ${

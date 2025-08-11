@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { customScrollbarStyles } from '../utils/styles.jsx';
-import { getMessagesByUserId } from '../utils/string.jsx';
+import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { getMessagesByUserId } from '../../utils/string.jsx';
 import {
   processMessagesForRendering,
   findUnreadStartIndex,
-} from '../utils/messageUtils.jsx';
+} from '../../utils/messageUtils.jsx';
 import MessageHeader from './MessageHeader.jsx';
 import MessageBubble from './MessageBubble.jsx';
 import InputMessage from './InputMessage.jsx';
@@ -20,6 +20,141 @@ function ChatContainer({
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [messages, setMessages] = useState([]);
+  const messagesRef = useRef([]);
+
+  const SHARED_MEDIA_KEY_PREFIX = 'shared_media_';
+
+  const getSharedMediaKey = (contactId) => `${SHARED_MEDIA_KEY_PREFIX}${contactId}`;
+
+  const loadImageElement = (src) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  const imageFileToCompressedDataUrl = async (
+    file,
+    { maxWidth = 1280, maxHeight = 1280, quality = 0.8 } = {},
+  ) => {
+    try {
+      const objectUrl = URL.createObjectURL(file);
+      const img = await loadImageElement(objectUrl);
+
+      let { width, height } = img;
+      const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+      const targetWidth = Math.round(width * ratio);
+      const targetHeight = Math.round(height * ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      // Export as JPEG to reduce size
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+      URL.revokeObjectURL(objectUrl);
+      return dataUrl;
+    } catch (err) {
+      // Fallback to plain FileReader data URL
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const persistSharedMedia = async (contactId, files) => {
+    if (!contactId || !files || files.length === 0) return;
+
+    const key = getSharedMediaKey(contactId);
+    let current = { photos: [], files: [] };
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) current = JSON.parse(raw);
+    } catch {}
+
+    const newPhotos = [];
+    const newFiles = [];
+
+    for (const f of files) {
+      const baseItem = {
+        name: f.name,
+        size: f.size,
+        fileType: f.fileType,
+        timestamp: Date.now(),
+      };
+
+      if (f.fileType === 'image' && f.file instanceof File) {
+        try {
+          const dataUrl = await imageFileToCompressedDataUrl(f.file, {
+            maxWidth: 1280,
+            maxHeight: 1280,
+            quality: 0.8,
+          });
+          newPhotos.push({ ...baseItem, dataUrl });
+        } catch {
+          // skip on failure
+        }
+      } else {
+        // For small files, store a dataUrl to enable download later from ChatInfo
+        if (f.file instanceof File && f.size <= 300 * 1024) {
+          try {
+            const dataUrl = await fileToDataUrl(f.file);
+            newFiles.push({ ...baseItem, dataUrl });
+          } catch {
+            newFiles.push(baseItem);
+          }
+        } else {
+          newFiles.push(baseItem);
+        }
+      }
+    }
+
+    // Keep only the most recent 60 items to avoid exceeding localStorage limits
+    const next = {
+      photos: [...current.photos, ...newPhotos].slice(-60),
+      files: [...current.files, ...newFiles].slice(-60),
+    };
+
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+      window.dispatchEvent(
+        new CustomEvent('shared-media-updated', {
+          detail: { contactId },
+        }),
+      );
+    } catch (e) {
+      // If quota exceeded, progressively trim and retry once
+      try {
+        const trimmed = {
+          photos: next.photos.slice(-30),
+          files: next.files.slice(-30),
+        };
+        localStorage.setItem(key, JSON.stringify(trimmed));
+        window.dispatchEvent(
+          new CustomEvent('shared-media-updated', {
+            detail: { contactId },
+          }),
+        );
+      } catch {
+        // give up silently
+      }
+    }
+  };
 
   const detectMessageType = (message) => {
     if (
@@ -76,15 +211,22 @@ function ChatContainer({
   }, [messages]);
 
   useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    // Revoke any blob URLs only when component unmounts
     return () => {
-      messages.forEach((message) => {
+      const current = messagesRef.current || [];
+      current.forEach((message) => {
         if (message.type === 'files' && message.files) {
           message.files.forEach((file) => {
-            if (file.url && file.url.startsWith('blob:')) {
+            if (file.url && typeof file.url === 'string' && file.url.startsWith('blob:')) {
               URL.revokeObjectURL(file.url);
             }
             if (
               file.preview &&
+              typeof file.preview === 'string' &&
               file.preview.startsWith('blob:') &&
               file.preview !== file.url
             ) {
@@ -92,9 +234,13 @@ function ChatContainer({
             }
           });
         }
+        if (message.type === 'image' && message.content && typeof message.content === 'string' && message.content.startsWith('blob:')) {
+          // If single-image messages used blob URLs, revoke on unmount
+          try { URL.revokeObjectURL(message.content); } catch {}
+        }
       });
     };
-  }, [messages]);
+  }, []);
 
   const addMessage = (messageContent) => {
     if (!messageContent.trim() || !selectedContact) return;
@@ -155,6 +301,9 @@ function ChatContainer({
     setTimeout(() => {
       scrollToBottom();
     }, 100);
+
+    // Persist shared media (images as dataURL, others as metadata)
+    persistSharedMedia(selectedContact.id, files);
   };
 
   const addImageMessage = (imageFile) => {
@@ -175,6 +324,16 @@ function ChatContainer({
     setTimeout(() => {
       scrollToBottom();
     }, 100);
+
+    // Persist single image
+    persistSharedMedia(selectedContact.id, [
+      {
+        name: imageFile.name || `image_${Date.now()}`,
+        size: imageFile.size || 0,
+        fileType: 'image',
+        file: imageFile,
+      },
+    ]);
   };
 
   const unreadStartIndex = findUnreadStartIndex(messages, lastReadMessageId);

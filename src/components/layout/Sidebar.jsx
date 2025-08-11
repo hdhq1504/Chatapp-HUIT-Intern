@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   MoreHorizontal,
   UserRound,
@@ -10,31 +10,61 @@ import {
   Archive,
   Trash2,
 } from 'lucide-react';
-import { customScrollbarStyles } from '../utils/styles.jsx';
-import { getInitial } from '../utils/string.jsx';
+import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { getInitial } from '../../utils/string.jsx';
 import {
   useClickOutside,
   useMultipleClickOutside,
-} from '../hooks/useClickOutside.jsx';
-import DeleteChatDialog from './DeleteChatDialog.jsx';
+} from '../../hooks/useClickOutside.jsx';
+import DeleteDialog from '../common/DeleteDialog.jsx';
+import SettingModal from '../modals/SettingModal.jsx';
 
 function Sidebar({
   onChatSelect,
-  onBackToSidebar,
-  showSidebar,
-  setShowSidebar,
   onCreateGroup,
   contacts = [],
   selectedContact,
   onDeleteChat,
 }) {
   const [openSettings, setOpenSettings] = useState(false);
+  const [showSettingModal, setShowSettingModal] = useState(false);
   const [openUserSettingsId, setOpenUserSettingsId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({
     isOpen: false,
     contact: null,
   });
+  const [profile, setProfile] = useState({ name: 'Quân Hồ', avatar: '' });
+
+  useEffect(() => {
+    const loadProfile = () => {
+      try {
+        const stored = localStorage.getItem('profile_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setProfile({
+            name: parsed.name || 'Quân Hồ',
+            avatar: parsed.avatar || '',
+          });
+          return;
+        }
+      } catch {}
+
+      // Fallback: legacy avatar key
+      const legacyAvatar = localStorage.getItem('profile_avatar_dataurl') || '';
+      setProfile((prev) => ({ ...prev, avatar: legacyAvatar }));
+    };
+
+    loadProfile();
+
+    const handleStorage = (e) => {
+      if (e.key === 'profile_user' || e.key === 'profile_avatar_dataurl') {
+        loadProfile();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const filteredContacts = contacts.filter((contact) =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -85,12 +115,24 @@ function Sidebar({
       <div className='flex h-screen w-full flex-col bg-[#f9f9f9] lg:w-80 dark:bg-[#181818]'>
         <div className='p-4'>
           <div className='mb-4 flex items-center space-x-3'>
-            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600'>
-              <span className='text-sm font-semibold text-white'>H</span>
+            <div className='h-10 w-10 overflow-hidden rounded-full bg-gradient-to-r from-blue-500 to-purple-600'>
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt='Avatar'
+                  className='h-full w-full object-cover'
+                />
+              ) : (
+                <div className='flex h-full w-full items-center justify-center'>
+                  <span className='text-sm font-semibold text-white'>
+                    {getInitial(profile.name)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className='min-w-0 flex-1'>
-              <h2 className='truncate text-lg font-semibold'>Quân Hồ</h2>
+              <h2 className='truncate text-lg font-semibold'>{profile.name}</h2>
               <p className='text-xs text-gray-500 dark:text-gray-400'>
                 Active Now
               </p>
@@ -127,13 +169,16 @@ function Sidebar({
                         </a>
                       </div>
                       <div>
-                        <a
-                          href='#'
-                          className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
+                        <button
+                          onClick={() => {
+                            setOpenSettings(false);
+                            setShowSettingModal(true);
+                          }}
+                          className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
                         >
                           <Settings size={18} />
                           <span>Settings</span>
-                        </a>
+                        </button>
                       </div>
                     </div>
 
@@ -172,7 +217,7 @@ function Sidebar({
               className='flex-shrink-0 cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030]'
               onClick={onCreateGroup}
             >
-              <Plus size={18} className='w-[20px] h-[20px]'/>
+              <Plus size={18} className='h-[20px] w-[20px]' />
             </button>
           </div>
         </div>
@@ -305,11 +350,17 @@ function Sidebar({
       </div>
 
       {/* Delete Chat Dialog */}
-      <DeleteChatDialog
+      <DeleteDialog
         isOpen={deleteDialog.isOpen}
         onClose={handleCloseDeleteDialog}
         onConfirm={handleConfirmDelete}
         contactName={deleteDialog.contact?.name}
+      />
+
+      {/* Settings Modal */}
+      <SettingModal
+        isOpen={showSettingModal}
+        onClose={() => setShowSettingModal(false)}
       />
     </>
   );

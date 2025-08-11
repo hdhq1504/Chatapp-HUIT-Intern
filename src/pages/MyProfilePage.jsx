@@ -1,78 +1,103 @@
-import React, { useState } from 'react';
-import {
-  User,
-  Mail,
-  Edit3,
-  Check,
-  X,
-  Camera,
-  Settings,
-  Shield,
-  Bell,
-  ChevronLeft,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { User, Mail, Camera, ChevronLeft, Edit3, Check, X } from 'lucide-react';
+import useValidator from '../utils/validator.jsx';
 
 function MyProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
   const [userInfo, setUserInfo] = useState({
     name: 'Quân Hồ',
     email: 'hoquan15042004@gmail.com',
-    status: 'Active Now',
     avatar: '',
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [initialUserInfo, setInitialUserInfo] = useState(null);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Ở đây sẽ gọi API để lưu thông tin
+  const fileInputRef = useRef(null);
+  const { errors, touched, validators, validateField, validateAll } = useValidator();
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('profile_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUserInfo({
+          name: parsed.name || 'Quân Hồ',
+          email: parsed.email || 'hoquan15042004@gmail.com',
+          avatar: parsed.avatar || '',
+        });
+        setInitialUserInfo({
+          name: parsed.name || 'Quân Hồ',
+          email: parsed.email || 'hoquan15042004@gmail.com',
+          avatar: parsed.avatar || '',
+        });
+        return;
+      }
+    } catch {
+      // ignore parse error
+    }
+
+    const savedAvatar = localStorage.getItem('profile_avatar_dataurl');
+    const next = savedAvatar
+      ? { name: 'Quân Hồ', email: 'hoquan15042004@gmail.com', avatar: savedAvatar }
+      : { name: 'Quân Hồ', email: 'hoquan15042004@gmail.com', avatar: '' };
+    setUserInfo(next);
+    setInitialUserInfo(next);
+  }, []);
+
+  const handleAvatarUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl === 'string') {
+        setUserInfo((prev) => ({ ...prev, avatar: dataUrl }));
+        try {
+          localStorage.setItem('profile_avatar_dataurl', dataUrl);
+        } catch (error) {
+          console.warn('Unable to persist avatar to localStorage', error);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const validationRules = {
+    name: [
+      (v) => validators.isRequired(v, 'Vui lòng nhập tên'),
+      (v) => validators.minLength(v, 2, 'Tên phải có tối thiểu 2 ký tự'),
+    ],
+    email: [
+      (v) => validators.isRequired(v, 'Vui lòng nhập email'),
+      (v) => validators.isEmail(v, 'Email không hợp lệ'),
+    ],
+  };
+
+  const handleStartEdit = () => {
+    setInitialUserInfo(userInfo);
+    setIsEditing(true);
   };
 
   const handleCancel = () => {
+    if (initialUserInfo) setUserInfo(initialUserInfo);
     setIsEditing(false);
-    // Reset lại thông tin nếu cần
   };
 
-  const handleAvatarUpload = () => {
-    // Logic upload avatar
-    console.log('Upload avatar');
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active Now':
-        return 'bg-green-400';
-      case 'Busy':
-        return 'bg-yellow-400';
-      case 'Offline':
-        return 'bg-gray-400';
-      default:
-        return 'bg-gray-400';
+  const handleSave = () => {
+    const ok = validateAll(userInfo, validationRules);
+    if (!ok) return;
+    try {
+      localStorage.setItem('profile_user', JSON.stringify(userInfo));
+      if (userInfo.avatar) {
+        localStorage.setItem('profile_avatar_dataurl', userInfo.avatar);
+      }
+    } catch (error) {
+      console.warn('Unable to persist profile to localStorage', error);
     }
-  };
-
-  const getStatusTextColor = (status) => {
-    switch (status) {
-      case 'Active Now':
-        return 'text-green-600';
-      case 'Busy':
-        return 'text-yellow-600';
-      case 'Offline':
-        return 'text-gray-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
-
-  const getStatusBgColor = (status) => {
-    switch (status) {
-      case 'Active Now':
-        return 'bg-green-100';
-      case 'Busy':
-        return 'bg-yellow-100';
-      case 'Offline':
-        return 'bg-gray-100';
-      default:
-        return 'bg-gray-100';
-    }
+    setIsEditing(false);
   };
 
   return (
@@ -91,22 +116,25 @@ function MyProfilePage() {
               <h1 className='text-xl font-bold text-white'>My Profile</h1>
               {!isEditing ? (
                 <button
-                  onClick={() => setIsEditing(true)}
-                  className='hover:bg-opacity-20 cursor-pointer rounded-full bg-blue-100 p-2 text-blue-500 transition-all duration-200 hover:scale-105'
+                  onClick={handleStartEdit}
+                  className='hover:bg-opacity-20 cursor-pointer rounded-full bg-blue-100 p-2 text-blue-600 transition-all duration-200 hover:scale-105'
+                  title='Chỉnh sửa'
                 >
                   <Edit3 size={18} />
                 </button>
               ) : (
-                <div className='flex space-x-2'>
+                <div className='flex items-center gap-2'>
                   <button
                     onClick={handleSave}
-                    className='cursor-pointer rounded-full bg-green-100 p-2 text-green-500 transition-all duration-200 hover:scale-105'
+                    className='cursor-pointer rounded-full bg-green-100 p-2 text-green-600 transition-all duration-200 hover:scale-105'
+                    title='Lưu'
                   >
                     <Check size={18} />
                   </button>
                   <button
                     onClick={handleCancel}
-                    className='cursor-pointer rounded-full bg-red-100 p-2 text-red-500 transition-all duration-200 hover:scale-105'
+                    className='cursor-pointer rounded-full bg-red-100 p-2 text-red-600 transition-all duration-200 hover:scale-105'
+                    title='Hủy'
                   >
                     <X size={18} />
                   </button>
@@ -131,40 +159,21 @@ function MyProfilePage() {
                 )}
               </div>
               <button
-                onClick={handleAvatarUpload}
+                onClick={handleAvatarUploadClick}
                 className='absolute right-2 bottom-2 cursor-pointer rounded-full bg-blue-500 p-2 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-blue-600'
               >
                 <Camera size={16} />
               </button>
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                className='hidden'
+                onChange={handleAvatarFileChange}
+              />
             </div>
 
-            <div className='mt-4 text-center'>
-              <h2 className='mb-2 text-xl font-bold text-gray-800 dark:text-gray-100'>
-                {userInfo.name}
-              </h2>
-              <div
-                className={`flex items-center justify-center space-x-2 rounded-3xl px-2 py-1 ${getStatusBgColor(
-                  userInfo.status,
-                )}`}
-              >
-                <div
-                  className={`h-3 w-3 ${getStatusColor(
-                    userInfo.status,
-                  )} animate-pulse rounded-full`}
-                ></div>
-                <span
-                  className={`text-sm font-medium ${getStatusTextColor(
-                    userInfo.status,
-                  )}`}
-                >
-                  {userInfo.status}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className='space-y-4 px-6 pb-6'>
-            <div className='space-y-4'>
+            <div className='mt-4 w-full space-y-4'>
               <div>
                 <label className='mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300'>
                   Username
@@ -173,10 +182,10 @@ function MyProfilePage() {
                   <input
                     type='text'
                     value={userInfo.name}
-                    onChange={(e) =>
-                      setUserInfo((prev) => ({ ...prev, name: e.target.value }))
-                    }
+                    onChange={(e) => setUserInfo((p) => ({ ...p, name: e.target.value }))}
+                    onBlur={(e) => validateField('name', e.target.value, validationRules.name)}
                     className='w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                    placeholder='Nhập tên của bạn'
                   />
                 ) : (
                   <div className='flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700'>
@@ -185,6 +194,9 @@ function MyProfilePage() {
                       {userInfo.name}
                     </span>
                   </div>
+                )}
+                {touched.name && errors.name && (
+                  <p className='mt-1 text-xs text-red-500'>{errors.name}</p>
                 )}
               </div>
 
@@ -196,13 +208,10 @@ function MyProfilePage() {
                   <input
                     type='email'
                     value={userInfo.email}
-                    onChange={(e) =>
-                      setUserInfo((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setUserInfo((p) => ({ ...p, email: e.target.value }))}
+                    onBlur={(e) => validateField('email', e.target.value, validationRules.email)}
                     className='w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                    placeholder='you@example.com'
                   />
                 ) : (
                   <div className='flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700'>
@@ -212,76 +221,12 @@ function MyProfilePage() {
                     </span>
                   </div>
                 )}
+                {touched.email && errors.email && (
+                  <p className='mt-1 text-xs text-red-500'>{errors.email}</p>
+                )}
               </div>
             </div>
           </div>
-        </div>
-
-        <div className='rounded-2xl bg-white p-6 shadow-lg dark:bg-[#3F3F3F]'>
-          <div className='mb-4 flex items-center'>
-            <div className='mr-1 rounded-lg p-2'>
-              <Settings
-                size={20}
-                className='text-blue-600 dark:text-[#F3F3F3]'
-              />
-            </div>
-            <h3 className='text-lg font-bold text-gray-800 dark:text-gray-100'>
-              Status Settings
-            </h3>
-          </div>
-
-          <div className='space-y-3'>
-            {['Active Now', 'Busy', 'Offline'].map((status) => (
-              <label
-                key={status}
-                className='group flex cursor-pointer items-center rounded-xl p-3 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700'
-              >
-                <input
-                  type='radio'
-                  name='status'
-                  value={status}
-                  checked={userInfo.status === status}
-                  onChange={(e) =>
-                    setUserInfo((prev) => ({ ...prev, status: e.target.value }))
-                  }
-                  className='mr-4 h-4 w-4 text-blue-500 focus:ring-blue-500'
-                />
-                <span className='font-medium text-gray-800 transition-colors duration-200 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400'>
-                  {status}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className='grid grid-cols-2 gap-4'>
-          <button className='group cursor-pointer rounded-2xl bg-white p-4 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl dark:bg-[#3F3F3F]'>
-            <div className='flex flex-col items-center space-y-2'>
-              <div className='rounded-full bg-purple-100 p-3 transition-colors duration-200 group-hover:bg-purple-200 dark:bg-purple-900 dark:group-hover:bg-purple-800'>
-                <Shield
-                  size={24}
-                  className='text-purple-600 dark:text-purple-400'
-                />
-              </div>
-              <span className='text-sm font-semibold text-gray-800 dark:text-gray-100'>
-                Privacy
-              </span>
-            </div>
-          </button>
-
-          <button className='group cursor-pointer rounded-2xl bg-white p-4 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl dark:bg-[#3F3F3F]'>
-            <div className='flex flex-col items-center space-y-2'>
-              <div className='rounded-full bg-green-100 p-3 transition-colors duration-200 group-hover:bg-green-200 dark:bg-green-900 dark:group-hover:bg-green-800'>
-                <Bell
-                  size={24}
-                  className='text-green-600 dark:text-green-400'
-                />
-              </div>
-              <span className='text-sm font-semibold text-gray-800 dark:text-gray-100'>
-                Notifications
-              </span>
-            </div>
-          </button>
         </div>
       </div>
     </div>
