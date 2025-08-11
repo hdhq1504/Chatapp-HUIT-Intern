@@ -25,7 +25,7 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm }) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] transition-opacity duration-300 ease-out"
+        className='fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] transition-opacity duration-300 ease-out'
         onClick={handleClose}
       />
 
@@ -33,7 +33,7 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm }) {
       <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
         <div
           ref={modalRef}
-          className="w-full max-w-md transform rounded-xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:max-w-xl dark:bg-[#303030]"
+          className='w-full max-w-md transform rounded-xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:max-w-xl dark:bg-[#303030]'
         >
           {/* Header */}
           <div className='mb-3 flex items-start justify-between'>

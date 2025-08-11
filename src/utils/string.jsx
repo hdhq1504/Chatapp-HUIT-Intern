@@ -12,7 +12,7 @@ export const messages = {
       senderId: 1,
       senderName: "Maria Nelson",
       message: Photo4,
-      timestamp: "2024-03-20T10:30:00Z",
+      timestamp: "2025-03-20T10:30:00Z",
       isMe: false,
     },
     {
@@ -20,7 +20,7 @@ export const messages = {
       senderId: "me",
       senderName: "Quân Hồ",
       message: "Hi Maria! I'm doing great, thanks for asking 😊",
-      timestamp: "2024-03-20T10:32:00Z",
+      timestamp: "2025-03-20T10:32:00Z",
       isMe: true,
     },
     {
@@ -28,7 +28,7 @@ export const messages = {
       senderId: 1,
       senderName: "Maria Nelson",
       message: "That's wonderful to hear!",
-      timestamp: "2024-03-20T10:33:00Z",
+      timestamp: "2025-03-20T10:33:00Z",
       isMe: false,
     },
     {
@@ -36,7 +36,7 @@ export const messages = {
       senderId: 1,
       senderName: "Maria Nelson",
       message: "Are you free for lunch tomorrow?",
-      timestamp: "2024-03-20T10:35:00Z",
+      timestamp: "2025-03-20T10:35:00Z",
       isMe: false,
     },
     {
@@ -44,7 +44,7 @@ export const messages = {
       senderId: "me",
       senderName: "Quân Hồ",
       message: "Sure! What time works for you?",
-      timestamp: "2024-03-20T10:37:00Z",
+      timestamp: "2025-03-20T10:37:00Z",
       isMe: true,
     },
     {
@@ -52,7 +52,7 @@ export const messages = {
       senderId: 1,
       senderName: "Maria Nelson",
       message: "looks good",
-      timestamp: "2024-03-20T14:30:00Z",
+      timestamp: "2025-03-20T14:30:00Z",
       isMe: false,
     },
     {
@@ -60,7 +60,7 @@ export const messages = {
       senderId: "me",
       senderName: "Maria Nelson",
       message: Photo5,
-      timestamp: "2024-03-20T14:30:00Z",
+      timestamp: "2025-03-20T14:30:00Z",
       isMe: true,
     },
   ],
@@ -382,28 +382,4 @@ export function getInitial(name = "") {
 
 export const getMessagesByUserId = (userId) => {
   return messages[userId] || [];
-};
-
-export const formatTime = (timestamp) => {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
-
-export const formatDate = (timestamp) => {
-  const date = new Date(timestamp);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) {
-    return "Today";
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return "Yesterday";
-  } else {
-    return date.toLocaleDateString("vi-VN");
-  }
 };

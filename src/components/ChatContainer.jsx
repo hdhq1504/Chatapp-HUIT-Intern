@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { customScrollbarStyles } from '../utils/styles.jsx';
-import { getMessagesByUserId, formatTime } from '../utils/string.jsx';
+import { getMessagesByUserId } from '../utils/string.jsx';
+import {
+  processMessagesForRendering,
+  findUnreadStartIndex,
+} from '../utils/messageUtils.jsx';
 import MessageHeader from './MessageHeader.jsx';
 import MessageBubble from './MessageBubble.jsx';
 import InputMessage from './InputMessage.jsx';
@@ -11,6 +15,7 @@ function ChatContainer({
   showSidebar,
   setShowSidebar,
   selectedContact,
+  lastReadMessageId,
 }) {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -51,7 +56,7 @@ function ChatContainer({
           id: msg.id,
           type: messageType,
           content: msg.message,
-          timestamp: formatTime(msg.timestamp),
+          timestamp: msg.timestamp,
           sender: msg.isMe ? 'self' : 'other',
           senderName: msg.senderName,
         };
@@ -89,7 +94,7 @@ function ChatContainer({
         }
       });
     };
-  }, []);
+  }, [messages]);
 
   const addMessage = (messageContent) => {
     if (!messageContent.trim() || !selectedContact) return;
@@ -98,7 +103,7 @@ function ChatContainer({
       id: Date.now(),
       type: 'text',
       content: messageContent.trim(),
-      timestamp: formatTime(new Date().toISOString()),
+      timestamp: new Date().toISOString(),
       sender: 'self',
       senderName: 'Quân Hồ',
     };
@@ -127,7 +132,7 @@ function ChatContainer({
       };
     });
 
-    const timestamp = formatTime(new Date().toISOString());
+    const timestamp = new Date().toISOString();
     const newMessages = [];
 
     const fileMessage = {
@@ -138,19 +143,12 @@ function ChatContainer({
       sender: 'self',
       senderName: 'Quân Hồ',
     };
-    newMessages.push(fileMessage);
 
     if (messageText && messageText.trim()) {
-      const textMessage = {
-        id: Date.now() + 1,
-        type: 'text',
-        content: messageText.trim(),
-        timestamp: timestamp,
-        sender: 'self',
-        senderName: 'Quân Hồ',
-      };
-      newMessages.push(textMessage);
+      fileMessage.text = messageText.trim();
     }
+
+    newMessages.push(fileMessage);
 
     setMessages((prev) => [...prev, ...newMessages]);
 
@@ -167,7 +165,7 @@ function ChatContainer({
       id: Date.now(),
       type: 'image',
       content: imageUrl,
-      timestamp: formatTime(new Date().toISOString()),
+      timestamp: new Date().toISOString(),
       sender: 'self',
       senderName: 'Quân Hồ',
     };
@@ -178,6 +176,12 @@ function ChatContainer({
       scrollToBottom();
     }, 100);
   };
+
+  const unreadStartIndex = findUnreadStartIndex(messages, lastReadMessageId);
+  const processedMessages = processMessagesForRendering(
+    messages,
+    unreadStartIndex,
+  );
 
   return (
     <div className='flex h-full w-full flex-col'>
@@ -193,29 +197,21 @@ function ChatContainer({
 
       <div
         ref={messagesContainerRef}
-        className={`flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-3 py-4 md:px-4 ${customScrollbarStyles} `}
+        className={`flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-3 py-4 md:px-4 ${customScrollbarStyles}`}
       >
         <div className='space-y-1'>
-          {messages.map((message, index) => {
-            const prevMessage = messages[index - 1];
-            const nextMessage = messages[index + 1];
-
-            const isFirstInGroup =
-              !prevMessage || prevMessage.sender !== message.sender;
-            const isLastInGroup =
-              !nextMessage || nextMessage.sender !== message.sender;
-            const isGrouped = !isFirstInGroup && !isLastInGroup;
-
-            return (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isFirst={isFirstInGroup}
-                isLast={isLastInGroup}
-                isGrouped={isGrouped}
-              />
-            );
-          })}
+          {processedMessages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isFirst={message.isFirst}
+              isLast={message.isLast}
+              isGrouped={message.isGrouped}
+              isNewSession={message.isNewSession}
+              timeSeparator={message.timeSeparator}
+              showUnreadDivider={message.showUnreadDivider}
+            />
+          ))}
 
           <div ref={messagesEndRef} />
         </div>

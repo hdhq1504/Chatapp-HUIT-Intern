@@ -171,9 +171,8 @@ function Sidebar({
             <button
               className='flex-shrink-0 cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030]'
               onClick={onCreateGroup}
-              title='Create new group'
             >
-              <Plus size={18} />
+              <Plus size={18} className='w-[20px] h-[20px]'/>
             </button>
           </div>
         </div>

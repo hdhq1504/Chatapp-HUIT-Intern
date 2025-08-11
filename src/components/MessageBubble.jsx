@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import ImagePreviewModal from './ImagePreviewModal.jsx';
 import { File, Image, Video, FileText, Download, Play } from 'lucide-react';
+import { formatMessageTimestamp } from '../utils/messageUtils.jsx';
 
-function MessageBubble({ message, isFirst, isLast, isGrouped }) {
+function MessageBubble({
+  message,
+  isFirst,
+  isLast,
+  isGrouped,
+  showUnreadDivider = false,
+  isNewSession = false,
+  timeSeparator = null,
+}) {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const isSelf = message.sender === 'self';
@@ -65,30 +74,64 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
     setShowImageModal(true);
   };
 
-  const handleFileDownload = (file) => {
+  const handleFileDownload = async (file) => {
     try {
+      let blob;
+      let filename = file.name || 'download';
+
       if (file.file && file.file instanceof File) {
-        const url = URL.createObjectURL(file.file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = file.name;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        // Trường hợp file được upload từ máy tính
+        blob = file.file;
+        filename = file.file.name;
       } else if (file.url) {
-        const a = document.createElement('a');
-        a.href = file.url;
-        a.download = file.name;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Trường hợp file có URL (cần fetch để download)
+        const response = await fetch(file.url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        blob = await response.blob();
+      } else if (file.data) {
+        // Trường hợp file có data dạng base64 hoặc ArrayBuffer
+        if (typeof file.data === 'string' && file.data.startsWith('data:')) {
+          // Base64 data URL
+          const response = await fetch(file.data);
+          blob = await response.blob();
+        } else if (file.data instanceof ArrayBuffer) {
+          blob = new Blob([file.data]);
+        } else {
+          throw new Error('Unsupported file data format');
+        }
+      } else {
+        throw new Error('No valid file source found');
       }
+
+      // Tạo URL và download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Cleanup URL sau một khoảng thời gian ngắn
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (error) {
       console.error('Error downloading file:', error);
-      alert('Unable to download file. Please try again.');
+
+      // Hiển thị thông báo lỗi chi tiết hơn
+      let errorMessage = 'Không thể tải xuống file. ';
+      if (error.name === 'TypeError') {
+        errorMessage += 'Vui lòng kiểm tra kết nối mạng.';
+      } else if (error.message.includes('HTTP error')) {
+        errorMessage += 'File không tồn tại hoặc không thể truy cập.';
+      } else {
+        errorMessage += 'Vui lòng thử lại.';
+      }
+
+      alert(errorMessage);
     }
   };
 
@@ -100,7 +143,7 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
       const image = images[0];
       return (
         <div
-          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-sm'
+          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-lg'
           onClick={() => handleImageClick(image.url || image.preview)}
         >
           <img
@@ -148,18 +191,49 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
     );
   };
 
+  const renderUnreadDivider = () => {
+    return (
+      <div className='relative my-2 flex items-center justify-center py-4'>
+        <div className='flex-grow border-t border-red-300 dark:border-red-600'></div>
+        <div className='mx-4 flex items-center space-x-2 rounded-full bg-red-50 px-3 py-1 dark:bg-red-900/20'>
+          <div className='h-2 w-2 animate-pulse rounded-full bg-red-500'></div>
+          <span className='text-xs font-medium tracking-wide text-red-600 uppercase dark:text-red-400'>
+            Unread Messages
+          </span>
+        </div>
+        <div className='flex-grow border-t border-red-300 dark:border-red-600'></div>
+      </div>
+    );
+  };
+
+  const renderTimeSeparator = () => {
+    if (!timeSeparator) return null;
+
+    return (
+      <div className='relative my-2 flex items-center justify-center'>
+        <div className='flex-grow border-t border-neutral-400 dark:border-neutral-600'></div>
+        <div className='mx-4'>
+          <span className='text-xs font-medium text-neutral-600 dark:text-neutral-400'>
+            {timeSeparator}
+          </span>
+        </div>
+        <div className='flex-grow border-t border-neutral-400 dark:border-neutral-600'></div>
+      </div>
+    );
+  };
+
   const renderMessageContent = () => {
     if (message.type === 'text') {
       return (
         <div
-          className={`px-3 py-2 break-words ${
+          className={`rounded-full px-3 py-2 break-words ${
             isSelf
-              ? 'rounded-2xl rounded-br-md bg-blue-600 text-white'
-              : 'rounded-2xl rounded-bl-md bg-gray-200 text-black dark:bg-[#212121] dark:text-white'
-          } ${isGrouped ? (isSelf ? 'rounded-tr-md' : 'rounded-tl-md') : ''} `}
+              ? 'rounded-full bg-blue-600 text-white'
+              : 'rounded-full bg-gray-200 text-black dark:bg-[#212121] dark:text-white'
+          }`}
         >
           <p
-            className={`text-sm lg:text-[15px] ${isLongMessage ? 'leading-relaxed' : 'leading-snug'}`}
+            className={`text-[15px] ${isLongMessage ? 'leading-relaxed' : 'leading-snug'}`}
           >
             {message.content}
           </p>
@@ -170,7 +244,7 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
     if (message.type === 'image') {
       return (
         <div
-          className='max-w-xs cursor-pointer overflow-hidden rounded-lg md:max-w-sm'
+          className='max-w-sm cursor-pointer overflow-hidden rounded-lg md:max-w-lg'
           onClick={() => handleImageClick(message.content)}
         >
           <img
@@ -191,18 +265,16 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
       );
 
       return (
-        <div className='max-w-xs md:max-w-md'>
+        <div className='max-w-sm md:max-w-lg'>
           {message.text && message.text.trim() && (
             <div
-              className={`mb-2 px-3 py-2 break-words ${
+              className={`mb-2 rounded-full px-3 py-2 break-words ${
                 isSelf
-                  ? 'rounded-2xl rounded-br-md bg-blue-600 text-white'
-                  : 'rounded-2xl rounded-bl-md bg-gray-100 text-gray-900 dark:bg-[#212121] dark:text-white'
-              } ${isGrouped ? (isSelf ? 'rounded-tr-md' : 'rounded-tl-md') : ''}`}
+                  ? 'rounded-full bg-blue-600 text-white'
+                  : 'rounded-full bg-gray-100 text-gray-900 dark:bg-[#212121] dark:text-white'
+              }`}
             >
-              <p className='text-[13px] leading-snug md:text-sm'>
-                {message.text}
-              </p>
+              <p className='text-[15px] leading-snug'>{message.text}</p>
             </div>
           )}
 
@@ -236,9 +308,8 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
             {otherFiles.map((file, index) => (
               <div
                 key={`file-${index}`}
-                className={`flex cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 transition-colors dark:bg-[#404040] hover:dark:bg-[#212121]`}
+                className='flex max-w-96 cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 transition-all duration-200 hover:bg-gray-100 hover:shadow-sm dark:bg-[#404040] hover:dark:bg-[#353535]'
                 onClick={() => handleFileDownload(file)}
-                title={`${file.name}`}
               >
                 <div className='flex-shrink-0'>
                   {getFileIcon(file.fileType, 24)}
@@ -254,7 +325,7 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
                 </div>
                 <Download
                   size={16}
-                  className='flex-shrink-0 text-gray-500 dark:text-white'
+                  className='flex-shrink-0 text-gray-500 transition-colors hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400'
                 />
               </div>
             ))}
@@ -268,8 +339,16 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
 
   return (
     <>
+      {/* Hiển thị time separator nếu có */}
+      {timeSeparator && renderTimeSeparator()}
+
+      {/* Hiển thị divider tin nhắn chưa đọc */}
+      {showUnreadDivider && renderUnreadDivider()}
+
       <div
-        className={`flex ${isSelf ? 'justify-end' : 'justify-start'} ${isFirst ? 'mt-2' : 'mt-0.5'}`}
+        className={`flex ${isSelf ? 'justify-end' : 'justify-start'} ${
+          isGrouped ? 'mt-0.5' : isNewSession ? 'mt-6' : 'mt-3'
+        }`}
       >
         <div
           className={`flex max-w-[90%] flex-col md:max-w-[75%] ${isSelf ? 'items-end' : 'items-start'}`}
@@ -294,9 +373,9 @@ function MessageBubble({ message, isFirst, isLast, isGrouped }) {
 
           {isLast && (
             <span
-              className={`mt-1 block text-[11px] text-gray-500 dark:text-gray-400 ${isSelf ? 'pr-1' : 'pl-8 md:pl-10'} `}
+              className={`mt-1 block text-[11px] text-gray-600 dark:text-neutral-400 ${isSelf ? 'pr-1' : 'pl-8 md:pl-10'} `}
             >
-              {message.timestamp}
+              {formatMessageTimestamp(message.timestamp)}
             </span>
           )}
         </div>
