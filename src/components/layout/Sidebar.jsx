@@ -25,7 +25,6 @@ function Sidebar({
   contacts = [],
   selectedContact,
   onDeleteChat,
-  onMessageUpdate,
 }) {
   const [openSettings, setOpenSettings] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
@@ -36,60 +35,6 @@ function Sidebar({
     contact: null,
   });
   const [profile, setProfile] = useState({ name: 'Quân Hồ', avatar: '' });
-  const [localContacts, setLocalContacts] = useState(contacts);
-
-  useEffect(() => {
-    setLocalContacts(contacts);
-  }, [contacts]);
-
-  useEffect(() => {
-    if (onMessageUpdate) {
-      onMessageUpdate((updateData) => {
-        const {
-          contactId,
-          lastMessage,
-          lastMessageTime,
-          timestamp,
-          isCleared,
-        } = updateData;
-
-        setLocalContacts((prevContacts) => {
-          return prevContacts
-            .map((contact) => {
-              if (contact.id === contactId) {
-                if (isCleared) {
-                  return {
-                    ...contact,
-                    status: 'No messages yet',
-                    lastMessageTime: '',
-                    lastMessage: '',
-                  };
-                } else {
-                  return {
-                    ...contact,
-                    status: lastMessage,
-                    lastMessageTime: lastMessageTime,
-                    lastMessage: lastMessage,
-                    lastActivity: timestamp,
-                  };
-                }
-              }
-              return contact;
-            })
-            .sort((a, b) => {
-              const timeA = a.lastActivity || a.timestamp || '0';
-              const timeB = b.lastActivity || b.timestamp || '0';
-
-              if (!timeA && timeB) return 1;
-              if (timeA && !timeB) return -1;
-              if (!timeA && !timeB) return 0;
-
-              return new Date(timeB) - new Date(timeA);
-            });
-        });
-      });
-    }
-  }, [onMessageUpdate]);
 
   useEffect(() => {
     const loadProfile = () => {
@@ -103,8 +48,11 @@ function Sidebar({
           });
           return;
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
 
+      // Fallback to legacy avatar
       const legacyAvatar = localStorage.getItem('profile_avatar_dataurl') || '';
       setProfile((prev) => ({ ...prev, avatar: legacyAvatar }));
     };
@@ -128,7 +76,6 @@ function Sidebar({
     () => setOpenSettings(false),
     openSettings,
   );
-
   const { registerClickOutside } = useMultipleClickOutside();
 
   const handleUserMenuToggle = (contactId, event) => {
@@ -143,10 +90,7 @@ function Sidebar({
   };
 
   const handleDeleteClick = (contact) => {
-    setDeleteDialog({
-      isOpen: true,
-      contact: contact,
-    });
+    setDeleteDialog({ isOpen: true, contact: contact });
     setOpenUserSettingsId(null);
   };
 
@@ -154,17 +98,11 @@ function Sidebar({
     if (deleteDialog.contact && onDeleteChat) {
       onDeleteChat(deleteDialog.contact.id);
     }
-
-    setLocalContacts((prevContacts) =>
-      prevContacts.filter((contact) => contact.id !== deleteDialog.contact.id),
-    );
+    setDeleteDialog({ isOpen: false, contact: null });
   };
 
   const handleCloseDeleteDialog = () => {
-    setDeleteDialog({
-      isOpen: false,
-      contact: null,
-    });
+    setDeleteDialog({ isOpen: false, contact: null });
   };
 
   return (
@@ -196,64 +134,54 @@ function Sidebar({
               </p>
             </div>
 
-            <div className='flex space-x-2'>
-              <div className='relative inline-block' ref={mainMenuRef}>
-                <button
-                  className='cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
-                  onClick={() => setOpenSettings((prev) => !prev)}
-                >
-                  <MoreHorizontal size={18} />
-                </button>
+            <div className='relative inline-block' ref={mainMenuRef}>
+              <button
+                className='cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
+                onClick={() => setOpenSettings((prev) => !prev)}
+              >
+                <MoreHorizontal size={18} />
+              </button>
 
-                {openSettings && (
-                  <div className='absolute right-0 z-10 mt-1 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 focus:outline-hidden dark:divide-[#3F3F3F] dark:bg-[#303030]'>
-                    <div className='pt-0 pb-2'>
-                      <div>
-                        <a
-                          href='/profile'
-                          className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                        >
-                          <UserRound size={18} />
-                          <span>My Profile</span>
-                        </a>
-                      </div>
-                      <div>
-                        <a
-                          href='/archive'
-                          className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                        >
-                          <Archive size={18} />
-                          <span>Archived Chat</span>
-                        </a>
-                      </div>
-                      <div>
-                        <button
-                          onClick={() => {
-                            setOpenSettings(false);
-                            setShowSettingModal(true);
-                          }}
-                          className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                        >
-                          <Settings size={18} />
-                          <span>Settings</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className='pt-2 pb-0'>
-                      <div>
-                        <a
-                          href='/login'
-                          className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                        >
-                          <LogOut size={18} />
-                          <span>Sign Out</span>
-                        </a>
-                      </div>
-                    </div>
+              {openSettings && (
+                <div className='absolute right-0 z-10 mt-1 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 dark:divide-[#3F3F3F] dark:bg-[#303030]'>
+                  <div className='pt-0 pb-2'>
+                    <a
+                      href='/profile'
+                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    >
+                      <UserRound size={18} />
+                      <span>My Profile</span>
+                    </a>
+                    <a
+                      href='/archive'
+                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    >
+                      <Archive size={18} />
+                      <span>Archived Chat</span>
+                    </a>
+                    <button
+                      onClick={() => {
+                        setOpenSettings(false);
+                        setShowSettingModal(true);
+                      }}
+                      className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    >
+                      <Settings size={18} />
+                      <span>Settings</span>
+                    </button>
                   </div>
-                )}
-              </div>
+
+                  <div className='pt-2 pb-0'>
+                    <a
+                      href='/login'
+                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    >
+                      <LogOut size={18} />
+                      <span>Sign Out</span>
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -337,7 +265,7 @@ function Sidebar({
                       <div className='flex items-center justify-between'>
                         <p
                           className={`truncate text-base ${
-                            contact.unreadCount && contact.unreadCount > 0
+                            contact.unreadCount > 0
                               ? 'font-bold'
                               : 'font-semibold'
                           }`}
@@ -351,14 +279,12 @@ function Sidebar({
                       <div className='flex items-center justify-between'>
                         <p
                           className={`truncate text-sm text-gray-500 dark:text-gray-400 ${
-                            contact.unreadCount && contact.unreadCount > 0
-                              ? 'font-medium'
-                              : ''
+                            contact.unreadCount > 0 ? 'font-medium' : ''
                           }`}
                         >
                           {contact.status}
                         </p>
-                        {contact.unreadCount && contact.unreadCount > 0 && (
+                        {contact.unreadCount > 0 && (
                           <div className='ml-2 flex h-5 w-5.5 items-center justify-center rounded-full bg-blue-500 text-[11px] font-bold text-white group-hover:hidden'>
                             {contact.unreadCount > 5
                               ? '5+'
@@ -373,8 +299,6 @@ function Sidebar({
                       <button
                         className='cursor-pointer rounded-full p-1.5 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
                         onClick={(e) => handleUserMenuToggle(contact.id, e)}
-                        data-user-menu-trigger
-                        data-user-id={contact.id}
                       >
                         <MoreHorizontal size={18} />
                       </button>
@@ -382,42 +306,34 @@ function Sidebar({
                       {openUserSettingsId === contact.id && (
                         <div
                           ref={userMenuRef}
-                          className='absolute top-8 right-0 z-20 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 focus:outline-hidden dark:divide-[#3F3F3F] dark:bg-[#303030]'
+                          className='absolute top-8 right-0 z-20 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 dark:divide-[#3F3F3F] dark:bg-[#303030]'
                         >
-                          <div>
-                            <button
-                              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                              onClick={() => {
-                                console.log('Block user:', contact.name);
-                                setOpenUserSettingsId(null);
-                              }}
-                            >
-                              <Ban size={18} />
-                              <span>Block</span>
-                            </button>
+                          <button
+                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                            onClick={() => setOpenUserSettingsId(null)}
+                          >
+                            <Ban size={18} />
+                            <span>Block</span>
+                          </button>
 
-                            <button
-                              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] hover:text-gray-900 focus:outline-none dark:text-gray-200 dark:hover:bg-[#3F3F3F] dark:hover:text-white'
-                              onClick={() => {
-                                console.log('Archive chat:', contact.name);
-                                setOpenUserSettingsId(null);
-                              }}
-                            >
-                              <Archive size={18} />
-                              <span>Archive Chat</span>
-                            </button>
+                          <button
+                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                            onClick={() => setOpenUserSettingsId(null)}
+                          >
+                            <Archive size={18} />
+                            <span>Archive Chat</span>
+                          </button>
 
-                            <button
-                              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 focus:outline-none dark:text-red-400 hover:dark:bg-red-950'
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(contact);
-                              }}
-                            >
-                              <Trash2 size={18} />
-                              <span>Delete Chat</span>
-                            </button>
-                          </div>
+                          <button
+                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(contact);
+                            }}
+                          >
+                            <Trash2 size={18} />
+                            <span>Delete Chat</span>
+                          </button>
                         </div>
                       )}
                     </div>

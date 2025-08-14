@@ -7,61 +7,27 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const [previewFiles, setPreviewFiles] = useState([]);
 
   const textareaRef = useRef(null);
-  const filePreviewRef = useRef(null);
 
   const getFileType = (file) => {
-    const fileName = file.name.toLowerCase();
-    const extension = fileName.split('.').pop();
+    const extension = file.name.toLowerCase().split('.').pop();
 
     // Image files
     if (
-      [
-        'jpg',
-        'jpeg',
-        'png',
-        'gif',
-        'bmp',
-        'webp',
-        'svg',
-        'ico',
-        'tiff',
-        'tif',
-      ].includes(extension)
+      ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)
     ) {
       return 'image';
     }
 
     // Video files
     if (
-      [
-        'mp4',
-        'avi',
-        'mov',
-        'wmv',
-        'flv',
-        'webm',
-        'mkv',
-        'm4v',
-        '3gp',
-        'ogv',
-      ].includes(extension)
+      ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)
     ) {
       return 'video';
     }
 
     // Audio files
     if (
-      [
-        'mp3',
-        'wav',
-        'flac',
-        'aac',
-        'ogg',
-        'wma',
-        'm4a',
-        'opus',
-        'aiff',
-      ].includes(extension)
+      ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'].includes(extension)
     ) {
       return 'audio';
     }
@@ -72,21 +38,16 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
     }
 
     // Document files
-    if (
-      ['doc', 'docx', 'odt', 'rtf', 'tex', 'txt', 'wpd'].includes(extension)
-    ) {
+    if (['doc', 'docx', 'txt'].includes(extension)) {
       return 'document';
     }
 
     // Spreadsheet files
-    if (['xls', 'xlsx', 'ods', 'csv', 'tsv'].includes(extension)) {
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
       return 'spreadsheet';
     }
 
-    // Presentation files
-    if (['ppt', 'pptx', 'odp'].includes(extension)) {
-      return 'presentation';
-    }
+    return 'file';
   };
 
   const getFileIcon = (type) => {
@@ -95,16 +56,12 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
         return <Image size={20} className='text-blue-500' />;
       case 'video':
         return <Video size={20} className='text-purple-500' />;
-      case 'audio':
-        return <File size={20} className='text-green-500' />;
       case 'pdf':
         return <FileText size={20} className='text-red-500' />;
       case 'document':
         return <FileText size={20} className='text-blue-600' />;
       case 'spreadsheet':
         return <FileText size={20} className='text-green-600' />;
-      case 'presentation':
-        return <FileText size={20} className='text-orange-500' />;
       default:
         return <File size={20} className='text-gray-500' />;
     }
@@ -119,8 +76,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      const isMobile = window.innerWidth < 768;
-      const maxHeight = isMobile ? 120 : 128;
+      const maxHeight = window.innerWidth < 768 ? 120 : 128;
       const scrollHeight = Math.min(
         textareaRef.current.scrollHeight,
         maxHeight,
@@ -156,7 +112,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
 
   const clearPreview = () => {
     previewFiles.forEach((file) => {
-      if (file.preview && file.preview.startsWith('blob:')) {
+      if (file.preview?.startsWith('blob:')) {
         URL.revokeObjectURL(file.preview);
       }
     });
@@ -165,7 +121,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
 
   const removePreviewFile = (indexToRemove) => {
     const fileToRemove = previewFiles[indexToRemove];
-    if (fileToRemove.preview && fileToRemove.preview.startsWith('blob:')) {
+    if (fileToRemove.preview?.startsWith('blob:')) {
       URL.revokeObjectURL(fileToRemove.preview);
     }
     setPreviewFiles((prev) =>
@@ -235,9 +191,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             {previewFiles.length > 0 && (
               <div className='p-3 pb-2'>
                 <div
-                  ref={filePreviewRef}
                   className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${customScrollbarStyles}`}
-                  style={{ scrollBehavior: 'smooth' }}
                 >
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
@@ -258,10 +212,9 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                             />
                           ) : null}
 
-                          {/* Remove button */}
                           <button
                             onClick={() => removePreviewFile(index)}
-                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition-all'
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md'
                           >
                             <X size={12} />
                           </button>
@@ -275,19 +228,15 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                             <span className='mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
                               {file.name}
                             </span>
-                            <div className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
-                              <span className='font-medium uppercase'>
-                                {formatFileSize(file.size)} •{' '}
-                                {file.name.split('.').pop()}
-                              </span>
-                            </div>
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>
+                              {formatFileSize(file.size)} •{' '}
+                              {file.name.split('.').pop()}
+                            </span>
                           </div>
 
-                          {/* Remove button */}
                           <button
                             onClick={() => removePreviewFile(index)}
-                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition-all'
-                            title='Remove file'
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md'
                           >
                             <X size={12} />
                           </button>
@@ -305,7 +254,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={'Type a message...'}
+              placeholder='Type a message...'
               disabled={disabled}
               className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} text-md md:text-md max-h-[120px] md:max-h-32 ${
                 disabled ? 'cursor-not-allowed opacity-50' : ''
@@ -327,7 +276,6 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                 ? 'cursor-not-allowed bg-gray-400 opacity-50'
                 : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
             }`}
-            title={previewFiles.length > 0 ? 'Send files' : 'Send message'}
           >
             <Send size={20} className='mr-1 text-white' />
             <span className='hidden md:block'>Send</span>

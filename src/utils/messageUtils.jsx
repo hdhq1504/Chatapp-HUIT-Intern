@@ -91,7 +91,6 @@ export const getTimeSeparator = (currentMessage, previousMessage) => {
       previousMessage.timestamp,
     );
     if (timeDiff > 120) {
-      // 2 tiếng
       return currentDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit',
@@ -116,21 +115,9 @@ export const formatMessageTimestamp = (timestamp) => {
 };
 
 /**
- * Kiểm tra tin nhắn có phải hôm nay không
- */
-export const isToday = (timestamp) => {
-  const today = new Date().toDateString();
-  const messageDate = new Date(timestamp).toDateString();
-  return today === messageDate;
-};
-
-/**
  * Xử lý một mảng tin nhắn và thêm metadata để render
  */
-export const processMessagesForRendering = (
-  messages,
-  unreadStartIndex = null,
-) => {
+export const processMessagesForRendering = (messages) => {
   if (!messages || !Array.isArray(messages)) return [];
 
   return messages.map((message, index) => {
@@ -150,10 +137,6 @@ export const processMessagesForRendering = (
     // Tạo time separator
     const timeSeparator = getTimeSeparator(message, previousMessage);
 
-    // Kiểm tra unread divider
-    const showUnreadDivider =
-      unreadStartIndex !== null && index === unreadStartIndex;
-
     return {
       ...message,
       // Metadata cho rendering
@@ -162,33 +145,7 @@ export const processMessagesForRendering = (
       isGrouped: isGrouped,
       isNewSession: isNewSessionStart,
       timeSeparator: timeSeparator,
-      showUnreadDivider: showUnreadDivider,
       formattedTime: formatMessageTimestamp(message.timestamp),
     };
   });
-};
-
-/**
- * Tìm index của tin nhắn chưa đọc đầu tiên
- */
-export const findUnreadStartIndex = (messages, lastReadMessageId) => {
-  if (!lastReadMessageId || !messages) return null;
-
-  const lastReadIndex = messages.findIndex(
-    (msg) => msg.id === lastReadMessageId,
-  );
-  if (lastReadIndex === -1 || lastReadIndex === messages.length - 1)
-    return null;
-
-  return lastReadIndex + 1;
-};
-
-/**
- * Scroll to specific message
- */
-export const scrollToMessage = (messageId, behavior = 'smooth') => {
-  const element = document.getElementById(`message-${messageId}`);
-  if (element) {
-    element.scrollIntoView({ behavior, block: 'center' });
-  }
 };

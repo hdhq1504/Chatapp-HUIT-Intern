@@ -23,23 +23,6 @@ export class ChatStorage {
     }
   }
 
-  // Lưu nhiều tin nhắn cùng lúc
-  saveMessages(messages) {
-    try {
-      const processedMessages = messages.map((msg) => ({
-        ...msg,
-        id: msg.id || this.generateMessageId(),
-        timestamp: msg.timestamp || new Date().toISOString(),
-      }));
-
-      localStorage.setItem(this.storageKey, JSON.stringify(processedMessages));
-      return processedMessages;
-    } catch (error) {
-      console.error('Error saving messages:', error);
-      return messages;
-    }
-  }
-
   // Lấy tất cả tin nhắn
   getMessages() {
     try {
@@ -96,60 +79,5 @@ export class ChatStorage {
   // Tạo ID duy nhất cho tin nhắn
   generateMessageId() {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  // Lấy thống kê chat
-  getStats() {
-    try {
-      const messages = this.getMessages();
-      return {
-        totalMessages: messages.length,
-        selfMessages: messages.filter((msg) => msg.sender === 'self').length,
-        otherMessages: messages.filter((msg) => msg.sender !== 'self').length,
-        filesShared: messages.filter((msg) => msg.type === 'files').length,
-        imagesShared: messages.filter((msg) => msg.type === 'image').length,
-        lastActivity:
-          messages.length > 0 ? messages[messages.length - 1].timestamp : null,
-      };
-    } catch (error) {
-      console.error('Error getting stats:', error);
-      return null;
-    }
-  }
-
-  // Export chat data
-  exportChat() {
-    try {
-      const messages = this.getMessages();
-      return JSON.stringify(
-        {
-          chatId: this.chatId,
-          exportDate: new Date().toISOString(),
-          messageCount: messages.length,
-          messages: messages,
-        },
-        null,
-        2,
-      );
-    } catch (error) {
-      console.error('Error exporting chat:', error);
-      return null;
-    }
-  }
-
-  // Import chat data
-  importChat(exportData) {
-    try {
-      const data =
-        typeof exportData === 'string' ? JSON.parse(exportData) : exportData;
-      if (data.messages && Array.isArray(data.messages)) {
-        this.saveMessages(data.messages);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error importing chat:', error);
-      return false;
-    }
   }
 }

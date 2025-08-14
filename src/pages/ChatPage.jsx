@@ -5,7 +5,6 @@ import ChatInfo from '../components/chat/ChatInfo.jsx';
 import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
 import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
 import { useChatStorage } from '../hooks/useChatStorage.jsx';
-import { ChatStorage } from '../utils/chatStorage.jsx';
 
 const initialContacts = [
   {
@@ -47,31 +46,6 @@ const initialContacts = [
     name: 'Edward Davis',
     status: "how's it going?",
     avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-  },
-  {
-    id: 6,
-    name: 'Karen Wilson',
-    status: 'i hear you',
-    avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-  },
-  {
-    id: 7,
-    name: 'Joseph Garcia',
-    status: "at least it's friday",
-    avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-  },
-  {
-    id: 8,
-    name: 'Patricia Jones',
-    status: 'what about you?',
-    avatar: '/api/placeholder/32/32',
-    active: true,
     unreadCount: 3,
     lastMessageTime: '2:30 PM',
   },
@@ -126,7 +100,7 @@ function ChatPage() {
 
   const handleDeleteChat = (contactId) => {
     // Xóa dữ liệu chat từ storage nếu đang được chọn
-    if (selectedContact && selectedContact.id === contactId) {
+    if (selectedContact?.id === contactId) {
       clearMessages();
     }
 
@@ -136,15 +110,13 @@ function ChatPage() {
     );
 
     // If the deleted contact was selected, clear the selection
-    if (selectedContact && selectedContact.id === contactId) {
+    if (selectedContact?.id === contactId) {
       setSelectedContact(null);
       setShowDetails(false);
       if (window.innerWidth < 768) {
         setShowSidebar(true);
       }
     }
-
-    console.log(`Chat with contact ID ${contactId} has been deleted`);
   };
 
   return (
@@ -173,7 +145,9 @@ function ChatPage() {
       {/* Main Chat Area */}
       <div className='flex h-full flex-1'>
         <div
-          className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'} `}
+          className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${
+            showDetails ? 'md:flex' : 'flex'
+          }`}
         >
           {selectedContact ? (
             <ChatContainer

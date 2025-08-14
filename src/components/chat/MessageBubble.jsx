@@ -8,7 +8,6 @@ function MessageBubble({
   isFirst,
   isLast,
   isGrouped,
-  showUnreadDivider = false,
   isNewSession = false,
   timeSeparator = null,
 }) {
@@ -16,10 +15,9 @@ function MessageBubble({
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const isSelf = message.sender === 'self';
 
-  const isLongMessage =
-    message.type === 'text' && message.content && message.content.length > 50;
+  const isLongMessage = message.type === 'text' && message.content?.length > 50;
   const isLongTextWithFiles =
-    message.type === 'files' && message.text && message.text.length > 50;
+    message.type === 'files' && message.text?.length > 50;
 
   const getFileIcon = (type, size = 20) => {
     const iconProps = { size, className: 'flex-shrink-0' };
@@ -36,40 +34,15 @@ function MessageBubble({
         return <FileText {...iconProps} className='text-blue-600' />;
       case 'spreadsheet':
         return <FileText {...iconProps} className='text-green-600' />;
-      case 'presentation':
-        return <FileText {...iconProps} className='text-orange-500' />;
       default:
         return <File {...iconProps} className='text-gray-500' />;
     }
   };
 
-  const getFileTypeLabel = (type) => {
-    switch (type) {
-      case 'image':
-        return 'Image';
-      case 'video':
-        return 'Video';
-      case 'audio':
-        return 'Audio';
-      case 'pdf':
-        return 'PDF';
-      case 'document':
-        return 'Document';
-      case 'spreadsheet':
-        return 'Spreadsheet';
-      case 'presentation':
-        return 'Presentation';
-      default:
-        return 'File';
-    }
-  };
-
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   const handleImageClick = (imageUrl) => {
@@ -82,26 +55,15 @@ function MessageBubble({
       let blob;
       let filename = file.name || 'download';
 
-      if (file.file && file.file instanceof File) {
+      if (file.file instanceof File) {
         blob = file.file;
         filename = file.file.name;
       } else if (file.url) {
         const response = await fetch(file.url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Download failed');
         blob = await response.blob();
-      } else if (file.data) {
-        if (typeof file.data === 'string' && file.data.startsWith('data:')) {
-          const response = await fetch(file.data);
-          blob = await response.blob();
-        } else if (file.data instanceof ArrayBuffer) {
-          blob = new Blob([file.data]);
-        } else {
-          throw new Error('Unsupported file data format');
-        }
       } else {
-        throw new Error('No valid file source found');
+        throw new Error('No valid file source');
       }
 
       const url = URL.createObjectURL(blob);
@@ -117,24 +79,12 @@ function MessageBubble({
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (error) {
       console.error('Error downloading file:', error);
-
-      let errorMessage = 'Không thể tải xuống file. ';
-      if (error.name === 'TypeError') {
-        errorMessage += 'Vui lòng kiểm tra kết nối mạng.';
-      } else if (error.message.includes('HTTP error')) {
-        errorMessage += 'File không tồn tại hoặc không thể truy cập.';
-      } else {
-        errorMessage += 'Vui lòng thử lại.';
-      }
-
-      alert(errorMessage);
+      alert('Không thể tải xuống file. Vui lòng thử lại.');
     }
   };
 
   const renderImageGrid = (images) => {
-    const imageCount = images.length;
-
-    if (imageCount === 1) {
+    if (images.length === 1) {
       const image = images[0];
       return (
         <div
@@ -145,25 +95,15 @@ function MessageBubble({
             src={image.url || image.preview}
             alt={image.name}
             className='h-full w-full object-cover'
-            onError={(e) => {
-              console.error('Image load error:', e);
-              e.target.style.display = 'none';
-            }}
           />
         </div>
       );
     }
 
-    const getGridClasses = (count) => {
-      if (count === 2) return 'grid-cols-2';
-      if (count === 3) return 'grid-cols-3';
-      return 'grid-cols-4';
-    };
+    const gridCols = images.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
 
     return (
-      <div
-        className={`grid max-w-xs gap-1 md:max-w-md ${getGridClasses(imageCount)}`}
-      >
+      <div className={`grid max-w-xs gap-1 md:max-w-md ${gridCols}`}>
         {images.map((image, index) => (
           <div
             key={index}
@@ -174,28 +114,9 @@ function MessageBubble({
               src={image.url || image.preview}
               alt={image.name}
               className='h-full w-full object-cover'
-              onError={(e) => {
-                console.error('Image load error:', e);
-                e.target.style.display = 'none';
-              }}
             />
           </div>
         ))}
-      </div>
-    );
-  };
-
-  const renderUnreadDivider = () => {
-    return (
-      <div className='relative my-2 flex items-center justify-center py-4'>
-        <div className='flex-grow border-t border-red-300 dark:border-red-600'></div>
-        <div className='mx-4 flex items-center space-x-2 rounded-full bg-red-50 px-3 py-1 dark:bg-red-900/20'>
-          <div className='h-2 w-2 animate-pulse rounded-full bg-red-500'></div>
-          <span className='text-xs font-medium tracking-wide text-red-600 uppercase dark:text-red-400'>
-            Unread Messages
-          </span>
-        </div>
-        <div className='flex-grow border-t border-red-300 dark:border-red-600'></div>
       </div>
     );
   };
@@ -252,7 +173,7 @@ function MessageBubble({
       );
     }
 
-    if (message.type === 'files' && message.files && message.files.length > 0) {
+    if (message.type === 'files' && message.files?.length > 0) {
       const images = message.files.filter((file) => file.fileType === 'image');
       const videos = message.files.filter((file) => file.fileType === 'video');
       const otherFiles = message.files.filter(
@@ -263,7 +184,7 @@ function MessageBubble({
         <div
           className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}
         >
-          {message.text && message.text.trim() && (
+          {message.text?.trim() && (
             <div
               className={`mb-2 break-words ${
                 isSelf
@@ -286,14 +207,10 @@ function MessageBubble({
           <div
             className={`flex flex-col gap-2 ${isSelf ? 'items-end' : 'items-start'}`}
           >
-            {/* Render image grid */}
-            {images.length > 0 && (
-              <div className='max-w-xs md:max-w-md'>
-                {renderImageGrid(images)}
-              </div>
-            )}
+            {/* Images */}
+            {images.length > 0 && renderImageGrid(images)}
 
-            {/* Render videos */}
+            {/* Videos */}
             {videos.map((file, index) => (
               <div
                 key={`video-${index}`}
@@ -304,22 +221,15 @@ function MessageBubble({
                   className='h-full w-full object-cover'
                   controls
                   preload='metadata'
-                  onError={(e) => {
-                    console.error('Video load error:', e);
-                  }}
-                >
-                  <p className='p-2 text-sm text-gray-500'>
-                    Video cannot be displayed
-                  </p>
-                </video>
+                />
               </div>
             ))}
 
-            {/* Render other files */}
+            {/* Other files */}
             {otherFiles.map((file, index) => (
               <div
                 key={`file-${index}`}
-                className='flex w-full max-w-xs cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 hover:bg-gray-100 hover:shadow-sm md:max-w-sm dark:bg-[#404040] hover:dark:bg-[#353535]'
+                className='flex w-full max-w-xs cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 hover:bg-gray-100 md:max-w-sm dark:bg-[#404040] hover:dark:bg-[#353535]'
                 onClick={() => handleFileDownload(file)}
               >
                 <div className='flex-shrink-0'>
@@ -330,13 +240,12 @@ function MessageBubble({
                     {file.name}
                   </p>
                   <p className='text-xs text-gray-500 dark:text-gray-400'>
-                    {formatFileSize(file.size)} •{' '}
-                    {getFileTypeLabel(file.fileType)}
+                    {formatFileSize(file.size)} • {file.fileType}
                   </p>
                 </div>
                 <Download
                   size={16}
-                  className='flex-shrink-0 text-gray-500 transition-colors hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400'
+                  className='flex-shrink-0 text-gray-500 hover:text-blue-500'
                 />
               </div>
             ))}
@@ -350,11 +259,7 @@ function MessageBubble({
 
   return (
     <>
-      {/* Hiển thị time separator nếu có */}
       {timeSeparator && renderTimeSeparator()}
-
-      {/* Hiển thị divider tin nhắn chưa đọc */}
-      {showUnreadDivider && renderUnreadDivider()}
 
       <div
         className={`flex ${isSelf ? 'justify-end' : 'justify-start'} ${
@@ -384,7 +289,9 @@ function MessageBubble({
 
           {isLast && (
             <span
-              className={`mt-1 block text-[11px] text-gray-600 dark:text-neutral-400 ${isSelf ? 'pr-1' : 'pl-8 md:pl-10'} `}
+              className={`mt-1 block text-[11px] text-gray-600 dark:text-neutral-400 ${
+                isSelf ? 'pr-1' : 'pl-8 md:pl-10'
+              }`}
             >
               {formatMessageTimestamp(message.timestamp)}
             </span>

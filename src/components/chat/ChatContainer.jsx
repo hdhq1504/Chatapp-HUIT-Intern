@@ -1,10 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { customScrollbarStyles } from '../../utils/styles.jsx';
 import { useChatStorage } from '../../hooks/useChatStorage.jsx';
-import {
-  processMessagesForRendering,
-  findUnreadStartIndex,
-} from '../../utils/messageUtils.jsx';
+import { processMessagesForRendering } from '../../utils/messageUtils.jsx';
 import MessageHeader from './MessageHeader.jsx';
 import MessageBubble from './MessageBubble.jsx';
 import InputMessage from './InputMessage.jsx';
@@ -15,44 +12,15 @@ function ChatContainer({
   showSidebar,
   setShowSidebar,
   selectedContact,
-  lastReadMessageId,
 }) {
   const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
 
   // Sử dụng custom hook để quản lý chat storage
   const {
     messages,
     isLoading,
     addMessage: addStorageMessage,
-    clearMessages,
   } = useChatStorage(selectedContact?.id);
-
-  // Helper function để detect message type
-  const detectMessageType = (message) => {
-    if (typeof message === 'object' && message !== null) {
-      return 'image';
-    }
-
-    if (typeof message === 'string') {
-      if (
-        message.includes('.png') ||
-        message.includes('.jpg') ||
-        message.includes('.jpeg') ||
-        message.includes('.gif')
-      ) {
-        return 'image';
-      }
-      if (message.includes('.mp4') || message.includes('.mov')) {
-        return 'video';
-      }
-      if (message.includes('.pdf') || message.includes('.doc')) {
-        return 'document';
-      }
-    }
-
-    return 'text';
-  };
 
   // Auto scroll to bottom khi có messages mới
   const scrollToBottom = () => {
@@ -107,27 +75,8 @@ function ChatContainer({
     setTimeout(scrollToBottom, 100);
   };
 
-  // Add image message
-  const addImageMessage = (imageFile) => {
-    if (!imageFile || !selectedContact) return;
-
-    const newMessage = {
-      type: 'image',
-      content: URL.createObjectURL(imageFile),
-      sender: 'self',
-      senderName: 'Quân Hồ',
-    };
-
-    addStorageMessage(newMessage);
-    setTimeout(scrollToBottom, 100);
-  };
-
   // Process messages for rendering
-  const unreadStartIndex = findUnreadStartIndex(messages, lastReadMessageId);
-  const processedMessages = processMessagesForRendering(
-    messages,
-    unreadStartIndex,
-  );
+  const processedMessages = processMessagesForRendering(messages);
 
   // Hiển thị loading state
   if (isLoading) {
@@ -153,7 +102,6 @@ function ChatContainer({
 
       {/* Messages Container */}
       <div
-        ref={messagesContainerRef}
         className={`flex-1 overflow-x-hidden overflow-y-auto scroll-smooth px-3 py-4 md:px-4 ${customScrollbarStyles}`}
       >
         <div className='space-y-1'>
@@ -166,7 +114,6 @@ function ChatContainer({
               isGrouped={message.isGrouped}
               isNewSession={message.isNewSession}
               timeSeparator={message.timeSeparator}
-              showUnreadDivider={message.showUnreadDivider}
             />
           ))}
           <div ref={messagesEndRef} />
@@ -179,7 +126,6 @@ function ChatContainer({
         <InputMessage
           onSendMessage={addMessage}
           onSendFile={addFileMessage}
-          onSendImage={addImageMessage}
           disabled={!selectedContact}
         />
       </div>
