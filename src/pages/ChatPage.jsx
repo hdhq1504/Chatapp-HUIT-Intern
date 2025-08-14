@@ -4,6 +4,8 @@ import ChatContainer from '../components/chat/ChatContainer.jsx';
 import ChatInfo from '../components/chat/ChatInfo.jsx';
 import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
 import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
+import { useChatStorage } from '../hooks/useChatStorage.jsx';
+import { ChatStorage } from '../utils/chatStorage.jsx';
 
 const initialContacts = [
   {
@@ -82,6 +84,10 @@ function ChatPage() {
   const [selectedContact, setSelectedContact] = useState(null);
   const [contacts, setContacts] = useState(initialContacts);
 
+  // Sử dụng chat storage hook cho contact được chọn
+  const { clearMessages } = useChatStorage(selectedContact?.id);
+
+  // Handle window resize for responsive behavior
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -90,7 +96,6 @@ function ChatPage() {
     };
 
     window.addEventListener('resize', handleResize);
-
     handleResize();
 
     return () => {
@@ -98,6 +103,7 @@ function ChatPage() {
     };
   }, []);
 
+  // Event handlers
   const handleChatSelect = (contact) => {
     setSelectedContact(contact);
     if (window.innerWidth < 768) {
@@ -118,15 +124,12 @@ function ChatPage() {
     }
   };
 
-  const handleOpenCreateGroupModal = () => {
-    setIsCreateGroupModalOpen(true);
-  };
-
-  const handleCloseCreateGroupModal = () => {
-    setIsCreateGroupModalOpen(false);
-  };
-
   const handleDeleteChat = (contactId) => {
+    // Xóa dữ liệu chat từ storage nếu đang được chọn
+    if (selectedContact && selectedContact.id === contactId) {
+      clearMessages();
+    }
+
     // Remove contact from the list
     setContacts((prevContacts) =>
       prevContacts.filter((contact) => contact.id !== contactId),
@@ -146,11 +149,12 @@ function ChatPage() {
 
   return (
     <div className='flex h-screen overflow-hidden bg-gray-100 text-black dark:bg-[#303030] dark:text-white'>
+      {/* Sidebar */}
       {showSidebar && (
         <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80'>
           <Sidebar
             onChatSelect={handleChatSelect}
-            onCreateGroup={handleOpenCreateGroupModal}
+            onCreateGroup={() => setIsCreateGroupModalOpen(true)}
             onDeleteChat={handleDeleteChat}
             contacts={contacts}
             selectedContact={selectedContact}
@@ -158,6 +162,7 @@ function ChatPage() {
         </div>
       )}
 
+      {/* Sidebar Overlay for mobile */}
       {showSidebar && (
         <div
           className='fixed inset-0 z-30 bg-black/50 md:hidden'
@@ -165,6 +170,7 @@ function ChatPage() {
         />
       )}
 
+      {/* Main Chat Area */}
       <div className='flex h-full flex-1'>
         <div
           className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'} `}
@@ -182,6 +188,7 @@ function ChatPage() {
           )}
         </div>
 
+        {/* Chat Info Panel */}
         {showDetails && (
           <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80'>
             <ChatInfo
@@ -192,6 +199,7 @@ function ChatPage() {
         )}
       </div>
 
+      {/* Details Overlay for mobile */}
       {showDetails && (
         <div
           className='fixed inset-0 z-30 bg-black/50 md:hidden'
@@ -199,9 +207,10 @@ function ChatPage() {
         />
       )}
 
+      {/* Create Group Modal */}
       <CreateGroupModal
         isOpen={isCreateGroupModalOpen}
-        onClose={handleCloseCreateGroupModal}
+        onClose={() => setIsCreateGroupModalOpen(false)}
         contacts={contacts}
       />
     </div>

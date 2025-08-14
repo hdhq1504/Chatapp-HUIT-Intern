@@ -89,7 +89,7 @@ function SettingModal({ isOpen, onClose }) {
         className='relative z-10 mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#212121]'
       >
         {/* Header */}
-        <div className='flex items-center justify-between border-b border-gray-200 p-4 dark:border-[#3F3F3F]'>
+        <div className='flex items-center justify-between p-4'>
           <h2 className='text-lg font-semibold'>Settings</h2>
           <button
             onClick={handleClose}
@@ -120,7 +120,7 @@ function SettingModal({ isOpen, onClose }) {
                   }`}
                 >
                   <Sun size={18} />
-                  <span className='text-xs font-medium'>Ligt</span>
+                  <span className='text-xs font-medium'>Light</span>
                 </button>
                 <button
                   onClick={() => handleChangeTheme('dark')}
@@ -153,7 +153,7 @@ function SettingModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className='flex items-center justify-end gap-2 border-t border-gray-200 p-3 dark:border-[#3F3F3F]'>
+        <div className='flex items-center justify-end gap-2 p-3'>
           <button
             onClick={handleClose}
             className='cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-[#3F3F3F] dark:text-gray-300 dark:hover:bg-[#303030]'

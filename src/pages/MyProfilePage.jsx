@@ -12,7 +12,8 @@ function MyProfilePage() {
   const [initialUserInfo, setInitialUserInfo] = useState(null);
 
   const fileInputRef = useRef(null);
-  const { errors, touched, validators, validateField, validateAll } = useValidator();
+  const { errors, touched, validators, validateField, validateAll } =
+    useValidator();
 
   useEffect(() => {
     try {
@@ -37,7 +38,11 @@ function MyProfilePage() {
 
     const savedAvatar = localStorage.getItem('profile_avatar_dataurl');
     const next = savedAvatar
-      ? { name: 'Quân Hồ', email: 'hoquan15042004@gmail.com', avatar: savedAvatar }
+      ? {
+          name: 'Quân Hồ',
+          email: 'hoquan15042004@gmail.com',
+          avatar: savedAvatar,
+        }
       : { name: 'Quân Hồ', email: 'hoquan15042004@gmail.com', avatar: '' };
     setUserInfo(next);
     setInitialUserInfo(next);
@@ -101,19 +106,19 @@ function MyProfilePage() {
   };
 
   return (
-    <div className='min-h-screen bg-gray-100 px-4 py-8 dark:bg-[#212121]'>
-      <div className='mx-auto max-w-md space-y-6'>
+    <div className='dark min-h-screen bg-gray-100 px-4 py-8 dark:bg-[#212121]'>
+      <div className='mx-auto max-w-lg space-y-6'>
         <button
           onClick={() => (window.location.href = '/')}
-          className='mb-2 flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-2 font-semibold text-blue-600 shadow transition-all duration-200 hover:bg-blue-100 dark:bg-[#3F3F3F] dark:text-blue-400 dark:hover:bg-blue-900'
+          className='mb-2 flex cursor-pointer items-center gap-2 rounded-full bg-white p-3 font-semibold text-gray-100 shadow transition-all duration-200 hover:bg-blue-100 dark:bg-[#303030] dark:hover:bg-[#3F3F3F]'
         >
           <ChevronLeft size={18} />
         </button>
 
-        <div className='overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-[#3F3F3F]'>
-          <div className='bg-gradient-to-r from-blue-500 to-purple-600 p-6 pb-20'>
+        <div className='overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-[#303030]'>
+          <div className='p-6 pb-20'>
             <div className='flex items-center justify-between'>
-              <h1 className='text-xl font-bold text-white'>My Profile</h1>
+              <h1 className='text-xl font-bold text-white'>My Account</h1>
               {!isEditing ? (
                 <button
                   onClick={handleStartEdit}
@@ -182,15 +187,22 @@ function MyProfilePage() {
                   <input
                     type='text'
                     value={userInfo.name}
-                    onChange={(e) => setUserInfo((p) => ({ ...p, name: e.target.value }))}
-                    onBlur={(e) => validateField('name', e.target.value, validationRules.name)}
-                    className='w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+                    onChange={(e) =>
+                      setUserInfo((p) => ({ ...p, name: e.target.value }))
+                    }
+                    onBlur={(e) =>
+                      validateField(
+                        'name',
+                        e.target.value,
+                        validationRules.name,
+                      )
+                    }
+                    className='w-full rounded-2xl bg-gray-50 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
                     placeholder='Nhập tên của bạn'
                   />
                 ) : (
-                  <div className='flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700'>
-                    <User size={18} className='mr-3 text-gray-400' />
-                    <span className='font-medium text-gray-800 dark:text-gray-100'>
+                  <div className='flex items-center rounded-2xl bg-gray-50 px-4 py-3 dark:bg-[#3F3F3F]'>
+                    <span className='font-medium text-gray-800 dark:text-gray-200'>
                       {userInfo.name}
                     </span>
                   </div>
@@ -205,17 +217,26 @@ function MyProfilePage() {
                   Email Address
                 </label>
                 {isEditing ? (
-                  <input
-                    type='email'
-                    value={userInfo.email}
-                    onChange={(e) => setUserInfo((p) => ({ ...p, email: e.target.value }))}
-                    onBlur={(e) => validateField('email', e.target.value, validationRules.email)}
-                    className='w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-gray-800 transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
-                    placeholder='you@example.com'
-                  />
+                  <div className='flex items-center rounded-2xl bg-gray-50 dark:bg-[#3F3F3F]'>
+                    <input
+                      type='email'
+                      value={userInfo.email}
+                      onChange={(e) =>
+                        setUserInfo((p) => ({ ...p, email: e.target.value }))
+                      }
+                      onBlur={(e) =>
+                        validateField(
+                          'email',
+                          e.target.value,
+                          validationRules.email,
+                        )
+                      }
+                      className='w-full rounded-2xl bg-gray-50 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
+                      placeholder='you@example.com'
+                    />
+                  </div>
                 ) : (
-                  <div className='flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700'>
-                    <Mail size={18} className='mr-3 text-gray-400' />
+                  <div className='flex items-center rounded-2xl bg-gray-50 px-4 py-3 dark:bg-[#3F3F3F]'>
                     <span className='font-medium text-gray-800 dark:text-gray-100'>
                       {userInfo.email}
                     </span>

@@ -15,8 +15,11 @@ function MessageBubble({
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const isSelf = message.sender === 'self';
+
   const isLongMessage =
     message.type === 'text' && message.content && message.content.length > 50;
+  const isLongTextWithFiles =
+    message.type === 'files' && message.text && message.text.length > 50;
 
   const getFileIcon = (type, size = 20) => {
     const iconProps = { size, className: 'flex-shrink-0' };
@@ -80,20 +83,16 @@ function MessageBubble({
       let filename = file.name || 'download';
 
       if (file.file && file.file instanceof File) {
-        // Trường hợp file được upload từ máy tính
         blob = file.file;
         filename = file.file.name;
       } else if (file.url) {
-        // Trường hợp file có URL (cần fetch để download)
         const response = await fetch(file.url);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         blob = await response.blob();
       } else if (file.data) {
-        // Trường hợp file có data dạng base64 hoặc ArrayBuffer
         if (typeof file.data === 'string' && file.data.startsWith('data:')) {
-          // Base64 data URL
           const response = await fetch(file.data);
           blob = await response.blob();
         } else if (file.data instanceof ArrayBuffer) {
@@ -105,7 +104,6 @@ function MessageBubble({
         throw new Error('No valid file source found');
       }
 
-      // Tạo URL và download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -116,12 +114,10 @@ function MessageBubble({
       a.click();
       document.body.removeChild(a);
 
-      // Cleanup URL sau một khoảng thời gian ngắn
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (error) {
       console.error('Error downloading file:', error);
 
-      // Hiển thị thông báo lỗi chi tiết hơn
       let errorMessage = 'Không thể tải xuống file. ';
       if (error.name === 'TypeError') {
         errorMessage += 'Vui lòng kiểm tra kết nối mạng.';
@@ -138,7 +134,6 @@ function MessageBubble({
   const renderImageGrid = (images) => {
     const imageCount = images.length;
 
-    // Single image - larger display
     if (imageCount === 1) {
       const image = images[0];
       return (
@@ -159,7 +154,6 @@ function MessageBubble({
       );
     }
 
-    // Multiple images - grid layout with multiple rows
     const getGridClasses = (count) => {
       if (count === 2) return 'grid-cols-2';
       if (count === 3) return 'grid-cols-3';
@@ -226,10 +220,12 @@ function MessageBubble({
     if (message.type === 'text') {
       return (
         <div
-          className={`rounded-full px-3 py-2 break-words ${
+          className={`break-words ${
             isSelf
-              ? 'rounded-full bg-blue-600 text-white'
-              : 'rounded-full bg-gray-200 text-black dark:bg-[#212121] dark:text-white'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-black dark:bg-[#212121] dark:text-white'
+          } ${
+            isLongMessage ? 'rounded-2xl px-4 py-3' : 'rounded-full px-3 py-2'
           }`}
         >
           <p
@@ -257,7 +253,6 @@ function MessageBubble({
     }
 
     if (message.type === 'files' && message.files && message.files.length > 0) {
-      // Separate images from other files
       const images = message.files.filter((file) => file.fileType === 'image');
       const videos = message.files.filter((file) => file.fileType === 'video');
       const otherFiles = message.files.filter(
@@ -265,28 +260,44 @@ function MessageBubble({
       );
 
       return (
-        <div className='max-w-sm md:max-w-md'>
+        <div
+          className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}
+        >
           {message.text && message.text.trim() && (
             <div
-              className={`mb-2 rounded-full px-3 py-2 break-words ${
+              className={`mb-2 break-words ${
                 isSelf
-                  ? 'rounded-full bg-blue-600 text-white'
-                  : 'rounded-full bg-gray-100 text-gray-900 dark:bg-[#212121] dark:text-white'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-900 dark:bg-[#212121] dark:text-white'
+              } ${
+                isLongTextWithFiles
+                  ? 'rounded-2xl px-4 py-3'
+                  : 'rounded-full px-3 py-2'
               }`}
             >
-              <p className='text-[15px] leading-snug'>{message.text}</p>
+              <p
+                className={`text-[15px] ${isLongTextWithFiles ? 'leading-relaxed' : 'leading-snug'}`}
+              >
+                {message.text}
+              </p>
             </div>
           )}
 
-          <div className='space-y-2'>
+          <div
+            className={`flex flex-col gap-2 ${isSelf ? 'items-end' : 'items-start'}`}
+          >
             {/* Render image grid */}
-            {images.length > 0 && renderImageGrid(images)}
+            {images.length > 0 && (
+              <div className='max-w-xs md:max-w-md'>
+                {renderImageGrid(images)}
+              </div>
+            )}
 
             {/* Render videos */}
             {videos.map((file, index) => (
               <div
                 key={`video-${index}`}
-                className='overflow-hidden rounded-lg'
+                className='max-w-xs overflow-hidden rounded-lg md:max-w-md'
               >
                 <video
                   src={file.url || file.preview}
@@ -308,11 +319,11 @@ function MessageBubble({
             {otherFiles.map((file, index) => (
               <div
                 key={`file-${index}`}
-                className='flex max-w-96 cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 transition-all duration-200 hover:bg-gray-100 hover:shadow-sm dark:bg-[#404040] hover:dark:bg-[#353535]'
+                className='flex w-full max-w-xs cursor-pointer items-center space-x-3 rounded-lg bg-[#F3F3F3] p-4 hover:bg-gray-100 hover:shadow-sm md:max-w-sm dark:bg-[#404040] hover:dark:bg-[#353535]'
                 onClick={() => handleFileDownload(file)}
               >
                 <div className='flex-shrink-0'>
-                  {getFileIcon(file.fileType, 24)}
+                  {getFileIcon(file.fileType, 26)}
                 </div>
                 <div className='min-w-0 flex-1'>
                   <p className='truncate text-sm font-medium text-gray-900 dark:text-white'>
@@ -351,7 +362,7 @@ function MessageBubble({
         }`}
       >
         <div
-          className={`flex max-w-[90%] flex-col md:max-w-[75%] ${isSelf ? 'items-end' : 'items-start'}`}
+          className={`flex max-w-[85%] flex-col md:max-w-[45%] ${isSelf ? 'items-end' : 'items-start'}`}
         >
           <div className='flex items-end gap-2'>
             {!isSelf && (
@@ -368,7 +379,7 @@ function MessageBubble({
               </div>
             )}
 
-            <div className='min-w-0'>{renderMessageContent()}</div>
+            <div className='min-w-0 flex-1'>{renderMessageContent()}</div>
           </div>
 
           {isLast && (

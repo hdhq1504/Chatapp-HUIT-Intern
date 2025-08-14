@@ -4,13 +4,11 @@ import {
   ChevronDown,
   Image,
   Download,
-  Share2,
   X,
   Eye,
 } from 'lucide-react';
 import { customScrollbarStyles } from '../../utils/styles.jsx';
 import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
-// Legacy demo assets were used previously. Now we read real shared media from localStorage.
 import { getInitial } from '../../utils/string.jsx';
 
 function ChatInfo({ onClose, selectedContact }) {
@@ -215,7 +213,9 @@ function ChatInfo({ onClose, selectedContact }) {
               }`}
             >
               {sharedPhotosOpen && (
-                <div className={`mt-2 px-2 ${showAllPhotos ? 'max-h-80 overflow-y-auto' : ''} ${customScrollbarStyles}`}>
+                <div
+                  className={`mt-2 px-2 ${showAllPhotos ? 'max-h-80 overflow-y-auto' : ''} ${customScrollbarStyles}`}
+                >
                   <div
                     className={`grid grid-cols-4 gap-2 py-2 md:grid-cols-3 ${showAllPhotos ? '' : ''}`}
                   >
