@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Mail, Camera, ChevronLeft, Edit3, Check, X } from 'lucide-react';
+import { User, Camera, ChevronLeft } from 'lucide-react';
 import useValidator from '../utils/validator.jsx';
 
 function MyProfilePage() {
@@ -8,7 +8,7 @@ function MyProfilePage() {
     email: 'hoquan15042004@gmail.com',
     avatar: '',
   });
-  const [isEditing, setIsEditing] = useState(false);
+  // Giữ initial để có thể reset nếu cần (hiện chưa dùng trực tiếp)
   const [initialUserInfo, setInitialUserInfo] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -20,20 +20,17 @@ function MyProfilePage() {
       const stored = localStorage.getItem('profile_user');
       if (stored) {
         const parsed = JSON.parse(stored);
-        setUserInfo({
+        const next = {
           name: parsed.name || 'Quân Hồ',
           email: parsed.email || 'hoquan15042004@gmail.com',
           avatar: parsed.avatar || '',
-        });
-        setInitialUserInfo({
-          name: parsed.name || 'Quân Hồ',
-          email: parsed.email || 'hoquan15042004@gmail.com',
-          avatar: parsed.avatar || '',
-        });
+        };
+        setUserInfo(next);
+        setInitialUserInfo(next);
         return;
       }
     } catch {
-      // ignore parse error
+      // ignore parse errors
     }
 
     const savedAvatar = localStorage.getItem('profile_avatar_dataurl');
@@ -72,25 +69,16 @@ function MyProfilePage() {
 
   const validationRules = {
     name: [
-      (v) => validators.isRequired(v, 'Vui lòng nhập tên'),
-      (v) => validators.minLength(v, 2, 'Tên phải có tối thiểu 2 ký tự'),
+      (v) => validators.isRequired(v, 'Please enter your username'),
+      (v) => validators.minLength(v, 2, 'Username is at least 2 characters'),
     ],
     email: [
-      (v) => validators.isRequired(v, 'Vui lòng nhập email'),
-      (v) => validators.isEmail(v, 'Email không hợp lệ'),
+      (v) => validators.isRequired(v, 'Please enter your email'),
+      (v) => validators.isEmail(v, 'Email is invalid'),
     ],
   };
 
-  const handleStartEdit = () => {
-    setInitialUserInfo(userInfo);
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    if (initialUserInfo) setUserInfo(initialUserInfo);
-    setIsEditing(false);
-  };
-
+  // Lưu profile vào localStorage
   const handleSave = () => {
     const ok = validateAll(userInfo, validationRules);
     if (!ok) return;
@@ -102,15 +90,15 @@ function MyProfilePage() {
     } catch (error) {
       console.warn('Unable to persist profile to localStorage', error);
     }
-    setIsEditing(false);
+    setInitialUserInfo(userInfo);
   };
 
   return (
-    <div className='dark min-h-screen bg-gray-100 px-4 py-8 dark:bg-[#212121]'>
+    <div className='min-h-screen bg-gray-100 px-4 py-8 dark:bg-[#212121]'>
       <div className='mx-auto max-w-lg space-y-6'>
         <button
           onClick={() => (window.location.href = '/')}
-          className='mb-2 flex cursor-pointer items-center gap-2 rounded-full bg-white p-3 font-semibold text-gray-100 shadow transition-all duration-200 hover:bg-blue-100 dark:bg-[#303030] dark:hover:bg-[#3F3F3F]'
+          className='mb-2 flex cursor-pointer items-center gap-2 rounded-full bg-white p-3 font-semibold shadow transition-all duration-200 hover:bg-blue-100 dark:bg-[#303030] dark:text-gray-100 dark:hover:bg-[#3F3F3F]'
         >
           <ChevronLeft size={18} />
         </button>
@@ -119,32 +107,6 @@ function MyProfilePage() {
           <div className='p-6 pb-20'>
             <div className='flex items-center justify-between'>
               <h1 className='text-xl font-bold text-white'>My Account</h1>
-              {!isEditing ? (
-                <button
-                  onClick={handleStartEdit}
-                  className='hover:bg-opacity-20 cursor-pointer rounded-full bg-blue-100 p-2 text-blue-600 transition-all duration-200 hover:scale-105'
-                  title='Chỉnh sửa'
-                >
-                  <Edit3 size={18} />
-                </button>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <button
-                    onClick={handleSave}
-                    className='cursor-pointer rounded-full bg-green-100 p-2 text-green-600 transition-all duration-200 hover:scale-105'
-                    title='Lưu'
-                  >
-                    <Check size={18} />
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className='cursor-pointer rounded-full bg-red-100 p-2 text-red-600 transition-all duration-200 hover:scale-105'
-                    title='Hủy'
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
@@ -166,6 +128,7 @@ function MyProfilePage() {
               <button
                 onClick={handleAvatarUploadClick}
                 className='absolute right-2 bottom-2 cursor-pointer rounded-full bg-blue-500 p-2 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-blue-600'
+                title='Upload avatar'
               >
                 <Camera size={16} />
               </button>
@@ -183,30 +146,18 @@ function MyProfilePage() {
                 <label className='mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300'>
                   Username
                 </label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={userInfo.name}
-                    onChange={(e) =>
-                      setUserInfo((p) => ({ ...p, name: e.target.value }))
-                    }
-                    onBlur={(e) =>
-                      validateField(
-                        'name',
-                        e.target.value,
-                        validationRules.name,
-                      )
-                    }
-                    className='w-full rounded-2xl bg-gray-50 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
-                    placeholder='Nhập tên của bạn'
-                  />
-                ) : (
-                  <div className='flex items-center rounded-2xl bg-gray-50 px-4 py-3 dark:bg-[#3F3F3F]'>
-                    <span className='font-medium text-gray-800 dark:text-gray-200'>
-                      {userInfo.name}
-                    </span>
-                  </div>
-                )}
+                <input
+                  type='text'
+                  value={userInfo.name}
+                  onChange={(e) =>
+                    setUserInfo((p) => ({ ...p, name: e.target.value }))
+                  }
+                  onBlur={(e) =>
+                    validateField('name', e.target.value, validationRules.name)
+                  }
+                  className='w-full rounded-2xl bg-gray-100 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
+                  placeholder='Enter your username'
+                />
                 {touched.name && errors.name && (
                   <p className='mt-1 text-xs text-red-500'>{errors.name}</p>
                 )}
@@ -216,35 +167,38 @@ function MyProfilePage() {
                 <label className='mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300'>
                   Email Address
                 </label>
-                {isEditing ? (
-                  <div className='flex items-center rounded-2xl bg-gray-50 dark:bg-[#3F3F3F]'>
-                    <input
-                      type='email'
-                      value={userInfo.email}
-                      onChange={(e) =>
-                        setUserInfo((p) => ({ ...p, email: e.target.value }))
-                      }
-                      onBlur={(e) =>
-                        validateField(
-                          'email',
-                          e.target.value,
-                          validationRules.email,
-                        )
-                      }
-                      className='w-full rounded-2xl bg-gray-50 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
-                      placeholder='you@example.com'
-                    />
-                  </div>
-                ) : (
-                  <div className='flex items-center rounded-2xl bg-gray-50 px-4 py-3 dark:bg-[#3F3F3F]'>
-                    <span className='font-medium text-gray-800 dark:text-gray-100'>
-                      {userInfo.email}
-                    </span>
-                  </div>
-                )}
+
+                <div className='flex items-center rounded-2xl bg-gray-50 dark:bg-[#3F3F3F]'>
+                  <input
+                    type='email'
+                    value={userInfo.email}
+                    onChange={(e) =>
+                      setUserInfo((p) => ({ ...p, email: e.target.value }))
+                    }
+                    onBlur={(e) =>
+                      validateField(
+                        'email',
+                        e.target.value,
+                        validationRules.email,
+                      )
+                    }
+                    className='w-full rounded-2xl bg-gray-100 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
+                    placeholder='you@example.com'
+                  />
+                </div>
                 {touched.email && errors.email && (
                   <p className='mt-1 text-xs text-red-500'>{errors.email}</p>
                 )}
+              </div>
+
+              {/* Nút Save */}
+              <div className='mt-8 flex w-full items-center justify-center gap-2'>
+                <button
+                  onClick={handleSave}
+                  className='cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white shadow transition hover:bg-blue-700'
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           </div>

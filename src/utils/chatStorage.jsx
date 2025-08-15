@@ -4,7 +4,6 @@ export class ChatStorage {
     this.storageKey = `chat_messages_${chatId}`;
   }
 
-  // Lưu tin nhắn vào localStorage
   saveMessage(message) {
     try {
       const messages = this.getMessages();
@@ -12,6 +11,7 @@ export class ChatStorage {
         ...message,
         id: message.id || this.generateMessageId(),
         timestamp: message.timestamp || new Date().toISOString(),
+        timestampMs: message.timestampMs || Date.now(),
       };
 
       messages.push(newMessage);
@@ -23,7 +23,6 @@ export class ChatStorage {
     }
   }
 
-  // Lấy tất cả tin nhắn
   getMessages() {
     try {
       const stored = localStorage.getItem(this.storageKey);
@@ -34,7 +33,6 @@ export class ChatStorage {
     }
   }
 
-  // Cập nhật tin nhắn
   updateMessage(messageId, updates) {
     try {
       const messages = this.getMessages();
@@ -52,7 +50,6 @@ export class ChatStorage {
     }
   }
 
-  // Xóa tin nhắn
   deleteMessage(messageId) {
     try {
       const messages = this.getMessages();
@@ -65,7 +62,6 @@ export class ChatStorage {
     }
   }
 
-  // Xóa tất cả tin nhắn
   clearMessages() {
     try {
       localStorage.removeItem(this.storageKey);
@@ -76,7 +72,6 @@ export class ChatStorage {
     }
   }
 
-  // Tạo ID duy nhất cho tin nhắn
   generateMessageId() {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }

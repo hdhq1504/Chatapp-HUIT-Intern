@@ -12,6 +12,7 @@ function ChatContainer({
   showSidebar,
   setShowSidebar,
   selectedContact,
+  onMessageSent,
 }) {
   const messagesEndRef = useRef(null);
 
@@ -22,7 +23,7 @@ function ChatContainer({
     addMessage: addStorageMessage,
   } = useChatStorage(selectedContact?.id);
 
-  // Auto scroll to bottom khi có messages mới
+  // Auto scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -42,37 +43,108 @@ function ChatContainer({
       senderName: 'Quân Hồ',
     };
 
-    addStorageMessage(newMessage);
+    // Lưu vào storage và nhận lại message đã lưu (có id & timestamp)
+    const saved = addStorageMessage(newMessage);
+
+    // Gọi callback để cập nhật sidebar / contacts
+    if (onMessageSent && selectedContact?.id) {
+      onMessageSent(selectedContact.id, saved || newMessage);
+    }
+
     setTimeout(scrollToBottom, 100);
   };
 
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+
+  const updateSharedMedia = (contactId, filesArray, savedMessage) => {
+    try {
+      const key = `shared_media_${contactId}`;
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : { photos: [], files: [] };
+
+      filesArray.forEach((f, idx) => {
+        const entry = {
+          id: `${savedMessage?.id || Date.now()}_${idx}`,
+          name: f.name,
+          size: f.size,
+          fileType: f.fileType,
+          dataUrl: f.dataUrl, // lưu dataUrl để persist
+          timestamp: savedMessage?.timestamp || new Date().toISOString(),
+          timestampMs: savedMessage?.timestampMs || Date.now(),
+        };
+
+        if (f.fileType === 'image') {
+          parsed.photos.unshift(entry);
+        } else {
+          parsed.files.unshift(entry);
+        }
+      });
+
+      localStorage.setItem(key, JSON.stringify(parsed));
+      window.dispatchEvent(new CustomEvent('shared-media-updated', { detail: { contactId } }));
+    } catch (e) {
+      console.error('updateSharedMedia error', e);
+    }
+  };
+
   // Add file message
-  const addFileMessage = (files, messageText = '') => {
+  const addFileMessage = async (files, messageText = '') => {
     if (!selectedContact || !files || files.length === 0) return;
 
-    const processedFiles = files.map((fileObj) => ({
-      name: fileObj.name,
-      size: fileObj.size,
-      type: fileObj.type,
-      fileType: fileObj.fileType,
-      file: fileObj.file,
-      url: URL.createObjectURL(fileObj.file),
-      preview: URL.createObjectURL(fileObj.file),
-    }));
+    try {
+      // Convert tất cả file thành dataURL (base64)
+      const processedFiles = await Promise.all(
+        files.map(async (fileObj) => {
+          const dataUrl = await fileToDataUrl(fileObj.file);
+          return {
+            name: fileObj.name,
+            size: fileObj.size,
+            type: fileObj.type,
+            fileType: fileObj.fileType,
+            // lưu dataUrl để persist qua reload
+            dataUrl,
+            // vẫn giữ file nếu cần dùng tạm thời (optional)
+            file: undefined,
+          };
+        }),
+      );
 
-    const newMessage = {
-      type: 'files',
-      files: processedFiles,
-      sender: 'self',
-      senderName: 'Quân Hồ',
-    };
+      const newMessage = {
+        type: 'files',
+        files: processedFiles,
+        sender: 'self',
+        senderName: 'Quân Hồ',
+        timestamp: new Date().toISOString(),
+        timestampMs: Date.now(),
+      };
 
-    if (messageText && messageText.trim()) {
-      newMessage.text = messageText.trim();
+      if (messageText && messageText.trim()) {
+        newMessage.text = messageText.trim();
+      }
+
+      // Lưu message qua hook/storage (đảm bảo addStorageMessage trả về savedMessage)
+      const saved = addStorageMessage(newMessage);
+
+      // Cập nhật shared media trong localStorage (lưu dataUrl)
+      if (saved && selectedContact?.id) {
+        updateSharedMedia(selectedContact.id, processedFiles, saved);
+      }
+
+      // Gọi callback lên trên để cập nhật sidebar
+      if (onMessageSent && selectedContact?.id) {
+        onMessageSent(selectedContact.id, saved || newMessage);
+      }
+
+      setTimeout(scrollToBottom, 100);
+    } catch (err) {
+      console.error('Error adding file message:', err);
     }
-
-    addStorageMessage(newMessage);
-    setTimeout(scrollToBottom, 100);
   };
 
   // Process messages for rendering

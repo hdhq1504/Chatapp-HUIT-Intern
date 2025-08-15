@@ -141,13 +141,11 @@ function MessageBubble({
     if (message.type === 'text') {
       return (
         <div
-          className={`break-words ${
-            isSelf
+          className={`break-words ${isSelf
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-black dark:bg-[#212121] dark:text-white'
-          } ${
-            isLongMessage ? 'rounded-2xl px-4 py-3' : 'rounded-full px-3 py-2'
-          }`}
+            } ${isLongMessage ? 'rounded-2xl px-4 py-3' : 'rounded-full px-3 py-2'
+            }`}
         >
           <p
             className={`text-[15px] ${isLongMessage ? 'leading-relaxed' : 'leading-snug'}`}
@@ -186,15 +184,13 @@ function MessageBubble({
         >
           {message.text?.trim() && (
             <div
-              className={`mb-2 break-words ${
-                isSelf
+              className={`mb-2 break-words ${isSelf
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-900 dark:bg-[#212121] dark:text-white'
-              } ${
-                isLongTextWithFiles
+                } ${isLongTextWithFiles
                   ? 'rounded-2xl px-4 py-3'
                   : 'rounded-full px-3 py-2'
-              }`}
+                }`}
             >
               <p
                 className={`text-[15px] ${isLongTextWithFiles ? 'leading-relaxed' : 'leading-snug'}`}
@@ -262,9 +258,8 @@ function MessageBubble({
       {timeSeparator && renderTimeSeparator()}
 
       <div
-        className={`flex ${isSelf ? 'justify-end' : 'justify-start'} ${
-          isGrouped ? 'mt-0.5' : isNewSession ? 'mt-6' : 'mt-3'
-        }`}
+        className={`flex ${isSelf ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : isNewSession ? 'mt-6' : 'mt-3'
+          }`}
       >
         <div
           className={`flex max-w-[85%] flex-col md:max-w-[45%] ${isSelf ? 'items-end' : 'items-start'}`}
@@ -289,9 +284,8 @@ function MessageBubble({
 
           {isLast && (
             <span
-              className={`mt-1 block text-[11px] text-gray-600 dark:text-neutral-400 ${
-                isSelf ? 'pr-1' : 'pl-8 md:pl-10'
-              }`}
+              className={`mt-1 block text-[11px] text-gray-600 dark:text-neutral-400 ${isSelf ? 'pr-1' : 'pl-8 md:pl-10'
+                }`}
             >
               {formatMessageTimestamp(message.timestamp)}
             </span>

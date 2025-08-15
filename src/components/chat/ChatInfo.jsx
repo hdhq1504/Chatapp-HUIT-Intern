@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ChevronUp,
-  ChevronDown,
-  Image,
-  Download,
-  X,
-  Eye,
-} from 'lucide-react';
+import { ChevronUp, ChevronDown, Image, Download, X, Eye } from 'lucide-react';
 import { customScrollbarStyles } from '../../utils/styles.jsx';
 import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
 import { getInitial } from '../../utils/string.jsx';
@@ -93,7 +86,7 @@ function ChatInfo({ onClose, selectedContact }) {
   };
 
   return (
-    <div className='flex h-screen w-full flex-col bg-[#F9F9F9] md:w-80 dark:border-[#3F3F3F] dark:bg-[#181818]'>
+    <div className='flex h-screen w-full flex-col bg-[#F9F9F9] md:w-80 lg:w-90 dark:border-[#3F3F3F] dark:bg-[#181818]'>
       <div className='border-b border-gray-200 px-4 py-3 md:py-4 dark:border-[#3F3F3F]'>
         <div className='mb-4 flex items-center justify-between md:hidden'>
           <div className='flex items-center space-x-3'>
@@ -138,9 +131,8 @@ function ChatInfo({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                chatSettingsOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-              }`}
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${chatSettingsOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+                }`}
             >
               {chatSettingsOpen && (
                 <div className='mt-2 space-y-2 px-2'>
@@ -172,9 +164,8 @@ function ChatInfo({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                privacyHelpOpen ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
-              }`}
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${privacyHelpOpen ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+                }`}
             >
               {privacyHelpOpen && (
                 <div className='mt-2 space-y-2 px-2'>
@@ -206,11 +197,10 @@ function ChatInfo({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                sharedPhotosOpen
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${sharedPhotosOpen
                   ? 'max-h-96 opacity-100 md:max-h-full'
                   : 'max-h-0 opacity-0'
-              }`}
+                }`}
             >
               {sharedPhotosOpen && (
                 <div
@@ -291,11 +281,10 @@ function ChatInfo({ onClose, selectedContact }) {
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                sharedFilesOpen
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${sharedFilesOpen
                   ? 'max-h-80 opacity-100 md:max-h-64'
                   : 'max-h-0 opacity-0'
-              }`}
+                }`}
             >
               {sharedFilesOpen && (
                 <div

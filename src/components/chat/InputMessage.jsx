@@ -173,11 +173,10 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
           />
           <label
             htmlFor='file-upload'
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-              disabled
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${disabled
                 ? 'cursor-not-allowed opacity-50'
                 : 'cursor-pointer hover:bg-gray-300 dark:hover:bg-[#303030]'
-            }`}
+              }`}
             title='Attach files'
           >
             <Paperclip size={20} className='text-gray-600 dark:text-gray-100' />
@@ -196,7 +195,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
                       {file.fileType === 'image' ||
-                      file.fileType === 'video' ? (
+                        file.fileType === 'video' ? (
                         <div className='relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 shadow-sm dark:bg-[#404040]'>
                           {file.fileType === 'image' && file.preview ? (
                             <img
@@ -256,9 +255,8 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               onKeyPress={handleKeyPress}
               placeholder='Type a message...'
               disabled={disabled}
-              className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} text-md md:text-md max-h-[120px] md:max-h-32 ${
-                disabled ? 'cursor-not-allowed opacity-50' : ''
-              } text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400`}
+              className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''
+                } text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400`}
               rows={1}
             />
           </div>
@@ -271,11 +269,10 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             disabled={
               disabled || (!message.trim() && previewFiles.length === 0)
             }
-            className={`flex h-10 w-full items-center justify-center rounded-lg p-2 transition-colors ${
-              disabled || (!message.trim() && previewFiles.length === 0)
+            className={`flex h-10 w-full items-center justify-center rounded-lg p-2 transition-colors ${disabled || (!message.trim() && previewFiles.length === 0)
                 ? 'cursor-not-allowed bg-gray-400 opacity-50'
                 : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
-            }`}
+              }`}
           >
             <Send size={20} className='mr-1 text-white' />
             <span className='hidden md:block'>Send</span>

@@ -28,13 +28,13 @@ export const useChatStorage = (contactId) => {
   const addMessage = useCallback(
     (messageData) => {
       if (!storage) return null;
-
       const savedMessage = storage.saveMessage(messageData);
       setMessages((prev) => [...prev, savedMessage]);
       return savedMessage;
     },
     [storage],
   );
+
 
   // Update message function
   const updateMessage = useCallback(
@@ -77,31 +77,6 @@ export const useChatStorage = (contactId) => {
     return success;
   }, [storage]);
 
-  // Get chat statistics
-  const getStats = useCallback(() => {
-    return storage ? storage.getStats() : null;
-  }, [storage]);
-
-  // Export chat
-  const exportChat = useCallback(() => {
-    return storage ? storage.exportChat() : null;
-  }, [storage]);
-
-  // Import chat
-  const importChat = useCallback(
-    (exportData) => {
-      if (!storage) return false;
-
-      const success = storage.importChat(exportData);
-      if (success) {
-        const importedMessages = storage.getMessages();
-        setMessages(importedMessages);
-      }
-      return success;
-    },
-    [storage],
-  );
-
   return {
     messages,
     isLoading,
@@ -109,9 +84,6 @@ export const useChatStorage = (contactId) => {
     updateMessage,
     deleteMessage,
     clearMessages,
-    getStats,
-    exportChat,
-    importChat,
     storage,
   };
 };

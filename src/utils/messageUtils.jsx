@@ -1,15 +1,9 @@
-/**
- * Tính toán thời gian giữa hai tin nhắn (phút)
- */
 export const getTimeDifferenceInMinutes = (timestamp1, timestamp2) => {
   const date1 = new Date(timestamp1);
   const date2 = new Date(timestamp2);
   return Math.abs(date2 - date1) / (1000 * 60);
 };
 
-/**
- * Kiểm tra có nên gộp tin nhắn không
- */
 export const shouldGroupMessages = (
   currentMessage,
   previousMessage,
@@ -17,10 +11,8 @@ export const shouldGroupMessages = (
 ) => {
   if (!previousMessage) return false;
 
-  // Cùng người gửi
   const sameSender = currentMessage.sender === previousMessage.sender;
 
-  // Thời gian gần nhau (mặc định 5 phút)
   const timeDiff = getTimeDifferenceInMinutes(
     currentMessage.timestamp,
     previousMessage.timestamp,
@@ -30,9 +22,6 @@ export const shouldGroupMessages = (
   return sameSender && withinTimeGap;
 };
 
-/**
- * Kiểm tra có phải session mới không (gap lớn hơn 30 phút hoặc khác ngày)
- */
 export const isNewSession = (
   currentMessage,
   previousMessage,
@@ -45,7 +34,6 @@ export const isNewSession = (
     previousMessage.timestamp,
   );
 
-  // Kiểm tra khác ngày
   const currentDate = new Date(currentMessage.timestamp).toDateString();
   const previousDate = new Date(previousMessage.timestamp).toDateString();
   const differentDay = currentDate !== previousDate;
@@ -53,16 +41,12 @@ export const isNewSession = (
   return timeDiff > sessionGapMinutes || differentDay;
 };
 
-/**
- * Tạo time separator text
- */
 export const getTimeSeparator = (currentMessage, previousMessage) => {
   const currentDate = new Date(currentMessage.timestamp);
   const previousDate = previousMessage
     ? new Date(previousMessage.timestamp)
     : null;
 
-  // Kiểm tra khác ngày
   if (
     !previousMessage ||
     currentDate.toDateString() !== previousDate.toDateString()
@@ -84,13 +68,12 @@ export const getTimeSeparator = (currentMessage, previousMessage) => {
     }
   }
 
-  // Kiểm tra gap lớn trong cùng ngày (>2 tiếng)
   if (previousMessage) {
     const timeDiff = getTimeDifferenceInMinutes(
       currentMessage.timestamp,
       previousMessage.timestamp,
     );
-    if (timeDiff > 120) {
+    if (timeDiff > 60) {
       return currentDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit',
@@ -102,9 +85,6 @@ export const getTimeSeparator = (currentMessage, previousMessage) => {
   return null;
 };
 
-/**
- * Format timestamp cho hiển thị
- */
 export const formatMessageTimestamp = (timestamp) => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString('vi-VN', {
@@ -114,9 +94,6 @@ export const formatMessageTimestamp = (timestamp) => {
   });
 };
 
-/**
- * Xử lý một mảng tin nhắn và thêm metadata để render
- */
 export const processMessagesForRendering = (messages) => {
   if (!messages || !Array.isArray(messages)) return [];
 
@@ -125,21 +102,17 @@ export const processMessagesForRendering = (messages) => {
     const nextMessage =
       index < messages.length - 1 ? messages[index + 1] : null;
 
-    // Kiểm tra grouping
     const isGrouped = shouldGroupMessages(message, previousMessage);
     const isFirstInGroup = !isGrouped;
     const isLastInGroup =
       !nextMessage || !shouldGroupMessages(nextMessage, message);
 
-    // Kiểm tra session mới
     const isNewSessionStart = isNewSession(message, previousMessage);
 
-    // Tạo time separator
     const timeSeparator = getTimeSeparator(message, previousMessage);
 
     return {
       ...message,
-      // Metadata cho rendering
       isFirst: isFirstInGroup,
       isLast: isLastInGroup,
       isGrouped: isGrouped,

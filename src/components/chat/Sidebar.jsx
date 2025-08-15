@@ -107,7 +107,7 @@ function Sidebar({
 
   return (
     <>
-      <div className='flex h-screen w-full flex-col bg-[#f9f9f9] lg:w-80 dark:bg-[#181818]'>
+      <div className='flex h-screen w-full flex-col bg-[#f9f9f9] md:w-80 lg:w-90 dark:bg-[#181818]'>
         {/* Header Section */}
         <div className='p-4'>
           <div className='mb-4 flex items-center space-x-3'>
@@ -230,18 +230,17 @@ function Sidebar({
                 return (
                   <div
                     key={contact.id}
-                    className={`group relative mb-1 flex cursor-pointer items-center space-x-3 rounded-2xl p-4 transition-colors duration-200 hover:bg-blue-100 dark:hover:bg-slate-800 ${
-                      selectedContact?.id === contact.id
+                    className={`group relative mb-1 flex cursor-pointer items-center space-x-3 rounded-2xl p-4 transition-colors duration-200 hover:bg-blue-100 dark:hover:bg-slate-800 ${selectedContact?.id === contact.id
                         ? 'bg-blue-100 dark:bg-slate-800'
                         : ''
-                    }`}
+                      }`}
                     onClick={() => handleContactClick(contact)}
                   >
                     {/* Avatar */}
                     <div className='relative h-12 w-12 flex-shrink-0'>
                       <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
                         {contact.avatar &&
-                        contact.avatar !== '/api/placeholder/32/32' ? (
+                          contact.avatar !== '/api/placeholder/32/32' ? (
                           <img
                             src={contact.avatar}
                             alt={contact.name}
@@ -264,11 +263,10 @@ function Sidebar({
                     <div className='min-w-0 flex-1'>
                       <div className='flex items-center justify-between'>
                         <p
-                          className={`truncate text-base ${
-                            contact.unreadCount > 0
+                          className={`truncate text-base ${contact.unreadCount > 0
                               ? 'font-bold'
                               : 'font-semibold'
-                          }`}
+                            }`}
                         >
                           {contact.name}
                         </p>
@@ -278,9 +276,8 @@ function Sidebar({
                       </div>
                       <div className='flex items-center justify-between'>
                         <p
-                          className={`truncate text-sm text-gray-500 dark:text-gray-400 ${
-                            contact.unreadCount > 0 ? 'font-medium' : ''
-                          }`}
+                          className={`truncate text-sm text-gray-500 dark:text-gray-400 ${contact.unreadCount > 0 ? 'font-medium' : ''
+                            }`}
                         >
                           {contact.status}
                         </p>
