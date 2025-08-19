@@ -6,14 +6,13 @@ export const useChatStorage = (contactId) => {
   const [storage, setStorage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize storage khi contactId thay đổi
   useEffect(() => {
     if (contactId) {
       setIsLoading(true);
+      
       const chatStorage = new ChatStorage(`contact_${contactId}`);
       setStorage(chatStorage);
-
-      // Load messages từ storage
+      
       const storedMessages = chatStorage.getMessages();
       setMessages(storedMessages);
       setIsLoading(false);
@@ -24,7 +23,6 @@ export const useChatStorage = (contactId) => {
     }
   }, [contactId]);
 
-  // Add message function
   const addMessage = useCallback(
     (messageData) => {
       if (!storage) return null;
@@ -35,8 +33,6 @@ export const useChatStorage = (contactId) => {
     [storage],
   );
 
-
-  // Update message function
   const updateMessage = useCallback(
     (messageId, updates) => {
       if (!storage) return null;
@@ -52,7 +48,6 @@ export const useChatStorage = (contactId) => {
     [storage],
   );
 
-  // Delete message function
   const deleteMessage = useCallback(
     (messageId) => {
       if (!storage) return false;
@@ -66,7 +61,6 @@ export const useChatStorage = (contactId) => {
     [storage],
   );
 
-  // Clear all messages
   const clearMessages = useCallback(() => {
     if (!storage) return false;
 
@@ -77,13 +71,9 @@ export const useChatStorage = (contactId) => {
     return success;
   }, [storage]);
 
-  return {
-    messages,
-    isLoading,
-    addMessage,
-    updateMessage,
-    deleteMessage,
-    clearMessages,
-    storage,
+  return { 
+    messages, isLoading, addMessage,
+    updateMessage, deleteMessage,
+    clearMessages, storage
   };
 };

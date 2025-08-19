@@ -79,7 +79,7 @@ function SettingModal({ isOpen, onClose }) {
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* Backdrop */}
       <div
-        className='absolute inset-0 bg-black/30 backdrop-blur-[1px] transition-opacity'
+        className='absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity'
         onClick={handleClose}
       />
 
@@ -100,7 +100,7 @@ function SettingModal({ isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div className='space-y-4 p-4'>
+        <div className='space-y-4 px-4 py-1'>
           {/* General */}
           <div>
             <h3 className='mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300'>

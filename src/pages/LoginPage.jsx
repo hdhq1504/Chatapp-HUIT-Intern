@@ -160,7 +160,7 @@ function LoginPage() {
             <button
               type='button'
               onClick={handleSubmit}
-              className='w-full transform rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:scale-[1.02] hover:bg-blue-700'
+              className='w-full transform rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
             >
               Log In
             </button>

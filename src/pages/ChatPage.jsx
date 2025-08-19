@@ -5,8 +5,9 @@ import ChatInfo from '../components/chat/ChatInfo.jsx';
 import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
 import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
 import { useChatStorage } from '../hooks/useChatStorage.jsx';
+import { groupStorage } from '../utils/groupStorage.jsx';
 
-const DEFAULT_CONTACTS = [
+const DEFAULT_CONTACTS = [  
   {
     id: 1,
     name: 'Maria Nelson',
@@ -15,6 +16,7 @@ const DEFAULT_CONTACTS = [
     active: true,
     unreadCount: 25,
     lastMessageTime: '2:30 PM',
+    type: 'contact',
   },
   {
     id: 2,
@@ -24,6 +26,7 @@ const DEFAULT_CONTACTS = [
     active: true,
     unreadCount: 3,
     lastMessageTime: '2:30 PM',
+    type: 'contact',
   },
   {
     id: 3,
@@ -32,6 +35,7 @@ const DEFAULT_CONTACTS = [
     avatar: '/api/placeholder/32/32',
     unreadCount: 3,
     lastMessageTime: '2:30 PM',
+    type: 'contact',
   },
   {
     id: 4,
@@ -40,6 +44,7 @@ const DEFAULT_CONTACTS = [
     avatar: '/api/placeholder/32/32',
     unreadCount: 3,
     lastMessageTime: '2:30 PM',
+    type: 'contact',
   },
   {
     id: 5,
@@ -48,6 +53,7 @@ const DEFAULT_CONTACTS = [
     avatar: '/api/placeholder/32/32',
     unreadCount: 3,
     lastMessageTime: '2:30 PM',
+    type: 'contact',
   },
 ];
 
@@ -56,15 +62,16 @@ function ChatPage() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+
   const [contacts, setContacts] = useState(() => {
     try {
       const raw = localStorage.getItem('contacts');
       const parsed = raw ? JSON.parse(raw) : DEFAULT_CONTACTS;
       const normalized = parsed.map((c) => ({
         ...c,
+        type: c.type || 'contact',
         lastMessageTimestamp: c.lastMessageTimestamp || 0,
       }));
-      normalized.sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
       return normalized;
     } catch (e) {
       console.error('load contacts error', e);
@@ -72,7 +79,30 @@ function ChatPage() {
     }
   });
 
+  const [groups, setGroups] = useState(() => {
+    return groupStorage.getGroups();
+  });
+
+  const [allChats, setAllChats] = useState([]);
+
   const { clearMessages } = useChatStorage(selectedContact?.id);
+
+  useEffect(() => {
+    const combined = [...groups, ...contacts];
+    combined.sort(
+      (a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0),
+    );
+    setAllChats(combined);
+  }, [contacts, groups]);
+
+  useEffect(() => {
+    try {
+      const contactsOnly = contacts.filter((c) => c.type === 'contact');
+      localStorage.setItem('contacts', JSON.stringify(contactsOnly));
+    } catch (e) {
+      console.error('save contacts error', e);
+    }
+  }, [contacts]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -89,8 +119,9 @@ function ChatPage() {
     };
   }, []);
 
-  const handleChatSelect = (contact) => {
-    setSelectedContact(contact);
+  // Event handlers
+  const handleChatSelect = (chat) => {
+    setSelectedContact(chat);
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
@@ -109,16 +140,23 @@ function ChatPage() {
     }
   };
 
-  const handleDeleteChat = (contactId) => {
-    if (selectedContact?.id === contactId) {
+  const handleDeleteChat = (chatId) => {
+    if (selectedContact?.id === chatId) {
       clearMessages();
     }
 
-    setContacts((prevContacts) =>
-      prevContacts.filter((contact) => contact.id !== contactId),
-    );
+    const chat = allChats.find((c) => c.id === chatId);
 
-    if (selectedContact?.id === contactId) {
+    if (chat?.type === 'group') {
+      groupStorage.deleteGroup(chatId);
+      setGroups(groupStorage.getGroups());
+    } else {
+      setContacts((prevContacts) =>
+        prevContacts.filter((contact) => contact.id !== chatId),
+      );
+    }
+
+    if (selectedContact?.id === chatId) {
       setSelectedContact(null);
       setShowDetails(false);
       if (window.innerWidth < 768) {
@@ -127,47 +165,57 @@ function ChatPage() {
     }
   };
 
-  const handleMessageSent = (contactId, message) => {
-    if (!contactId || !message) return;
+  const handleMessageSent = (chatId, message) => {
+    if (!chatId || !message) return;
 
-    const preview = message.type === 'text'
-      ? (message.content || message.text || '')
-      : message.type === 'files'
-        ? (message.text && message.text.trim() ? message.text : `Đã gửi ${message.files ? message.files.length : 1} tập tin`)
-        : (message.content || message.text || '');
+    const preview =
+      message.type === 'text'
+        ? message.content || message.text || ''
+        : message.type === 'files'
+          ? message.text && message.text.trim()
+            ? message.text
+            : `Sent ${message.files ? message.files.length : 1} files`
+          : message.content || message.text || '';
 
     const ts = message.timestampMs || Date.now();
-
-    setContacts((prevContacts) => {
-      const updated = prevContacts.map((c) => {
-        if (c.id === contactId) {
-          return {
-            ...c,
-            lastMessageTime: new Date(ts).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }),
-            status: preview,
-            unreadCount: 0,
-            lastMessageTimestamp: ts,
-          };
-        }
-        return c;
-      });
-
-      const idx = updated.findIndex((c) => c.id === contactId);
-      if (idx > -1) {
-        const [chat] = updated.splice(idx, 1);
-        updated.unshift(chat);
-      }
-
-      try {
-        localStorage.setItem('contacts', JSON.stringify(updated));
-      } catch (e) {
-        console.error('save contacts error', e);
-      }
-
-      return updated;
+    const timeString = new Date(ts).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
     });
+
+    const chat = allChats.find((c) => c.id === chatId);
+
+    if (chat?.type === 'group') {
+      groupStorage.updateGroup(chatId, {
+        lastMessageTime: timeString,
+        status: preview,
+        unreadCount: 0,
+        lastMessageTimestamp: ts,
+      });
+      setGroups(groupStorage.getGroups());
+    } else {
+      setContacts((prevContacts) => {
+        const updated = prevContacts.map((c) => {
+          if (c.id === chatId) {
+            return {
+              ...c,
+              lastMessageTime: timeString,
+              status: preview,
+              unreadCount: 0,
+              lastMessageTimestamp: ts,
+            };
+          }
+          return c;
+        });
+        return updated;
+      });
+    }
   };
 
+  const handleGroupCreated = () => {
+    setGroups(groupStorage.getGroups());
+  };
 
   return (
     <div className='flex h-screen overflow-hidden bg-gray-100 text-black dark:bg-[#303030] dark:text-white'>
@@ -178,7 +226,7 @@ function ChatPage() {
             onChatSelect={handleChatSelect}
             onCreateGroup={() => setIsCreateGroupModalOpen(true)}
             onDeleteChat={handleDeleteChat}
-            contacts={contacts}
+            contacts={allChats}
             selectedContact={selectedContact}
           />
         </div>
@@ -195,8 +243,9 @@ function ChatPage() {
       {/* Main Chat Area */}
       <div className='flex h-full flex-1'>
         <div
-          className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'
-            }`}
+          className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${
+            showDetails ? 'md:flex' : 'flex'
+          }`}
         >
           {selectedContact ? (
             <ChatContainer
@@ -235,7 +284,8 @@ function ChatPage() {
       <CreateGroupModal
         isOpen={isCreateGroupModalOpen}
         onClose={() => setIsCreateGroupModalOpen(false)}
-        contacts={contacts}
+        contacts={contacts.filter((c) => c.type === 'contact')}
+        onGroupCreated={handleGroupCreated}
       />
     </div>
   );

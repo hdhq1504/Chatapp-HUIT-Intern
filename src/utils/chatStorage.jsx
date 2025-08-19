@@ -15,7 +15,22 @@ export class ChatStorage {
       };
 
       messages.push(newMessage);
-      localStorage.setItem(this.storageKey, JSON.stringify(messages));
+      
+      try {
+        localStorage.setItem(this.storageKey, JSON.stringify(messages));
+      } catch (quotaError) {
+        if (quotaError.name === 'QuotaExceededError') {
+          console.warn('LocalStorage full, clearing old messages...');
+          const recentMessages = messages.slice(-50);
+          localStorage.setItem(this.storageKey, JSON.stringify(recentMessages));
+          
+          // Thông báo cho user
+          alert('Bộ nhớ đã đầy, đã xóa tin nhắn cũ để tiếp tục.');
+        } else {
+          throw quotaError;
+        }
+      }
+      
       return newMessage;
     } catch (error) {
       console.error('Error saving message:', error);

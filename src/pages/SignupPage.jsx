@@ -212,7 +212,7 @@ function SignupPage() {
             <button
               type='button'
               onClick={handleSubmit}
-              className='w-full cursor-pointer rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
+              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
             >
               Sign Up
             </button>

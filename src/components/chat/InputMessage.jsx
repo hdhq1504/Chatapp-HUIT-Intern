@@ -53,17 +53,11 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const getFileIcon = (type) => {
     switch (type) {
       case 'image':
-        return <Image size={20} className='text-blue-500' />;
+        return <Image size={24} className='text-blue-500' />;
       case 'video':
-        return <Video size={20} className='text-purple-500' />;
-      case 'pdf':
-        return <FileText size={20} className='text-red-500' />;
-      case 'document':
-        return <FileText size={20} className='text-blue-600' />;
-      case 'spreadsheet':
-        return <FileText size={20} className='text-green-600' />;
+        return <Video size={24} className='text-purple-500' />;
       default:
-        return <File size={20} className='text-gray-500' />;
+        return <FileText size={24} className='text-gray-500' />;
     }
   };
 
@@ -77,10 +71,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       const maxHeight = window.innerWidth < 768 ? 120 : 128;
-      const scrollHeight = Math.min(
-        textareaRef.current.scrollHeight,
-        maxHeight,
-      );
+      const scrollHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
       textareaRef.current.style.height = scrollHeight + 'px';
     }
   }, [message]);
@@ -132,6 +123,44 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
   const handleFileUpload = (e) => {
     if (!disabled) {
       const files = Array.from(e.target.files);
+      
+      if (files.length === 0) return;
+
+      if (files.length > 20) {
+        alert('Chỉ được tải lên tối đa 20 file cùng lúc');
+        e.target.value = '';
+        return;
+      }
+
+      const maxFileSize = 1024 * 1024 * 1024;
+      const oversizedFiles = files.filter(file => file.size > maxFileSize);
+      
+      if (oversizedFiles.length > 0) {
+        alert(`File quá lớn: ${oversizedFiles.map(f => f.name).join(', ')}\nKích thước tối đa: 1GB`);
+        e.target.value = '';
+        return;
+      }
+
+      const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+      const maxTotalSize = 5 * 1024 * 1024 * 1024;
+      
+      if (totalSize > maxTotalSize) {
+        alert('Tổng kích thước file vượt quá 5GB cho một lần tải lên');
+        e.target.value = '';
+        return;
+      }
+
+      const largeFiles = files.filter(file => file.size > 100 * 1024 * 1024);
+      if (largeFiles.length > 0) {
+        const proceed = confirm(
+          `Bạn đang tải lên ${largeFiles.length} file lớn (>100MB). Quá trình này có thể mất thời gian. Tiếp tục?`
+        );
+        if (!proceed) {
+          e.target.value = '';
+          return;
+        }
+      }
+
       if (files.length > 0) {
         const processedFiles = files.map((file) => {
           const fileType = getFileType(file);
@@ -144,7 +173,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             fileType,
           };
 
-          if (fileType === 'image' || fileType === 'video') {
+          if (['image', 'video', 'audio'].includes(fileType)) {
             processedFile.preview = URL.createObjectURL(file);
           }
 
@@ -173,11 +202,11 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
           />
           <label
             htmlFor='file-upload'
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${disabled
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              disabled
                 ? 'cursor-not-allowed opacity-50'
                 : 'cursor-pointer hover:bg-gray-300 dark:hover:bg-[#303030]'
-              }`}
-            title='Attach files'
+            }`}
           >
             <Paperclip size={20} className='text-gray-600 dark:text-gray-100' />
           </label>
@@ -189,13 +218,10 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             {/* Files Preview */}
             {previewFiles.length > 0 && (
               <div className='p-3 pb-2'>
-                <div
-                  className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${customScrollbarStyles}`}
-                >
+                <div className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${customScrollbarStyles}`}>
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
-                      {file.fileType === 'image' ||
-                        file.fileType === 'video' ? (
+                      {(['image', 'video', 'audio'].includes(file.fileType)) ? (
                         <div className='relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 shadow-sm dark:bg-[#404040]'>
                           {file.fileType === 'image' && file.preview ? (
                             <img
@@ -204,16 +230,21 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                               className='h-full w-full object-cover'
                             />
                           ) : file.fileType === 'video' && file.preview ? (
-                            <video
-                              src={file.preview}
-                              className='h-full w-full object-cover'
-                              muted
-                            />
+                            <div className='relative h-full w-full'>
+                              <video
+                                src={file.preview}
+                                className='h-full w-full object-cover'
+                                muted
+                              />
+                            </div>
+                          ) : file.fileType === 'audio' ? (
+                            <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
+                            </div>
                           ) : null}
 
                           <button
                             onClick={() => removePreviewFile(index)}
-                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md'
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md hover:bg-gray-100'
                           >
                             <X size={12} />
                           </button>
@@ -223,19 +254,19 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                           <div className='mr-3 flex-shrink-0'>
                             {getFileIcon(file.fileType)}
                           </div>
+
                           <div className='flex flex-1 flex-col justify-center overflow-hidden'>
                             <span className='mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
                               {file.name}
                             </span>
                             <span className='text-xs text-gray-500 dark:text-gray-400'>
-                              {formatFileSize(file.size)} •{' '}
-                              {file.name.split('.').pop()}
+                              {formatFileSize(file.size)} • {file.fileType.charAt(0).toUpperCase() + file.fileType.slice(1)}
                             </span>
                           </div>
 
                           <button
                             onClick={() => removePreviewFile(index)}
-                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md'
+                            className='absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[#181818] shadow-md hover:bg-gray-100'
                           >
                             <X size={12} />
                           </button>
@@ -247,7 +278,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               </div>
             )}
 
-            {/* Textarea */}
+            {/* Textarea Input */}
             <textarea
               ref={textareaRef}
               value={message}
@@ -255,8 +286,11 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               onKeyPress={handleKeyPress}
               placeholder='Type a message...'
               disabled={disabled}
-              className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''
-                } text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400`}
+              className={`
+                w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} 
+                text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''} 
+                text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400
+              `}
               rows={1}
             />
           </div>
@@ -269,13 +303,14 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             disabled={
               disabled || (!message.trim() && previewFiles.length === 0)
             }
-            className={`flex h-10 w-full items-center justify-center rounded-lg p-2 transition-colors ${disabled || (!message.trim() && previewFiles.length === 0)
+            className={`flex h-10 w-full items-center justify-center rounded-lg p-2 transition-colors ${
+              disabled || (!message.trim() && previewFiles.length === 0)
                 ? 'cursor-not-allowed bg-gray-400 opacity-50'
                 : 'cursor-pointer bg-blue-600 hover:bg-blue-700'
-              }`}
+            } `}
           >
             <Send size={20} className='mr-1 text-white' />
-            <span className='hidden md:block'>Send</span>
+            <span className='hidden text-white md:block'>Send</span>
           </button>
         </div>
       </div>

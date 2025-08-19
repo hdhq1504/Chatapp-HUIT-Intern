@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside.jsx';
 
-function DeleteChatDialog({ isOpen, onClose, onConfirm }) {
-  const [shouldRender, setShouldRender] = useState(false);
+function DeleteChatDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  contactName,
+  isGroup = false,
+}) {
+  const dialogRef = useClickOutside(() => onClose(), isOpen);
 
-  const modalRef = useClickOutside(() => handleClose(), isOpen);
+  if (!isOpen) return null;
 
-  useEffect(() => {
-    if (isOpen) {
-      setShouldRender(true);
-    } else if (shouldRender) {
-      setTimeout(() => setShouldRender(false), 10);
-    }
-  }, [isOpen, shouldRender]);
+  const title = isGroup ? 'Delete Group' : 'Delete Chat';
+  const message = isGroup 
+    ? `Are you sure you want to delete the group? This action cannot be undone and all group messages will be lost.`
+    : `Are you sure you want to delete the chat? This action cannot be undone and all messages will be lost.`;
 
   const handleClose = () => {
     onClose();
   };
-
-  if (!shouldRender) return null;
 
   return (
     <>
@@ -32,7 +33,7 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm }) {
       {/* Dialog */}
       <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
         <div
-          ref={modalRef}
+          ref={dialogRef}
           className='w-full max-w-md transform rounded-xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:max-w-xl dark:bg-[#303030]'
         >
           {/* Header */}
@@ -45,22 +46,15 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm }) {
                 />
               </div>
               <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
-                Delete Chat
+                {title}
               </h3>
             </div>
-            <button
-              onClick={handleClose}
-              className='cursor-pointer rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300'
-            >
-              <X size={20} />
-            </button>
           </div>
 
           {/* Content */}
           <div className='mb-5 ml-12'>
             <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>
-              Once you delete your copy of this conversation, it cannot be
-              undone.
+              {message}
             </p>
           </div>
 

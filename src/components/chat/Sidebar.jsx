@@ -1,39 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import {
-  MoreHorizontal,
-  UserRound,
-  Settings,
-  Search,
-  Plus,
-  LogOut,
-  Ban,
-  Archive,
-  Trash2,
+import { 
+  MoreHorizontal, UserRound, Settings,
+  Search, Plus, LogOut, Archive
 } from 'lucide-react';
 import { customScrollbarStyles } from '../../utils/styles.jsx';
 import { getInitial } from '../../utils/string.jsx';
-import {
-  useClickOutside,
-  useMultipleClickOutside,
-} from '../../hooks/useClickOutside.jsx';
+import { useClickOutside, useMultipleClickOutside } from '../../hooks/useClickOutside.jsx';
 import DeleteDialog from '../common/DeleteDialog.jsx';
 import SettingModal from '../modals/SettingModal.jsx';
+import ContactItem from './ContactItem.jsx';
 
-function Sidebar({
-  onChatSelect,
-  onCreateGroup,
-  contacts = [],
-  selectedContact,
-  onDeleteChat,
-}) {
+function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat }) {
   const [openSettings, setOpenSettings] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [openUserSettingsId, setOpenUserSettingsId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteDialog, setDeleteDialog] = useState({
-    isOpen: false,
-    contact: null,
-  });
+  const [deleteDialog, setDeleteDialog] = useState({isOpen: false, contact: null});
   const [profile, setProfile] = useState({ name: 'Quân Hồ', avatar: '' });
 
   useEffect(() => {
@@ -52,7 +34,6 @@ function Sidebar({
         // ignore
       }
 
-      // Fallback to legacy avatar
       const legacyAvatar = localStorage.getItem('profile_avatar_dataurl') || '';
       setProfile((prev) => ({ ...prev, avatar: legacyAvatar }));
     };
@@ -228,113 +209,17 @@ function Sidebar({
                 );
 
                 return (
-                  <div
+                  <ContactItem
                     key={contact.id}
-                    className={`group relative mb-1 flex cursor-pointer items-center space-x-3 rounded-2xl p-4 transition-colors duration-200 hover:bg-blue-100 dark:hover:bg-slate-800 ${selectedContact?.id === contact.id
-                        ? 'bg-blue-100 dark:bg-slate-800'
-                        : ''
-                      }`}
-                    onClick={() => handleContactClick(contact)}
-                  >
-                    {/* Avatar */}
-                    <div className='relative h-12 w-12 flex-shrink-0'>
-                      <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
-                        {contact.avatar &&
-                          contact.avatar !== '/api/placeholder/32/32' ? (
-                          <img
-                            src={contact.avatar}
-                            alt={contact.name}
-                            className='h-full w-full object-cover'
-                          />
-                        ) : (
-                          <div className='flex h-full w-full items-center justify-center'>
-                            <span className='text-sm font-semibold text-white'>
-                              {getInitial(contact.name)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      {contact.active && (
-                        <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-[#181818]'></div>
-                      )}
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className='min-w-0 flex-1'>
-                      <div className='flex items-center justify-between'>
-                        <p
-                          className={`truncate text-base ${contact.unreadCount > 0
-                              ? 'font-bold'
-                              : 'font-semibold'
-                            }`}
-                        >
-                          {contact.name}
-                        </p>
-                        <span className='block flex-shrink-0 text-xs text-gray-500 group-hover:hidden dark:text-gray-400'>
-                          {contact.lastMessageTime || ''}
-                        </span>
-                      </div>
-                      <div className='flex items-center justify-between'>
-                        <p
-                          className={`truncate text-sm text-gray-500 dark:text-gray-400 ${contact.unreadCount > 0 ? 'font-medium' : ''
-                            }`}
-                        >
-                          {contact.status}
-                        </p>
-                        {contact.unreadCount > 0 && (
-                          <div className='ml-2 flex h-5 w-5.5 items-center justify-center rounded-full bg-blue-500 text-[11px] font-bold text-white group-hover:hidden'>
-                            {contact.unreadCount > 5
-                              ? '5+'
-                              : contact.unreadCount}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Options Menu */}
-                    <div className='relative hidden group-hover:block'>
-                      <button
-                        className='cursor-pointer rounded-full p-1.5 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
-                        onClick={(e) => handleUserMenuToggle(contact.id, e)}
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-
-                      {openUserSettingsId === contact.id && (
-                        <div
-                          ref={userMenuRef}
-                          className='absolute top-8 right-0 z-20 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 dark:divide-[#3F3F3F] dark:bg-[#303030]'
-                        >
-                          <button
-                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                            onClick={() => setOpenUserSettingsId(null)}
-                          >
-                            <Ban size={18} />
-                            <span>Block</span>
-                          </button>
-
-                          <button
-                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                            onClick={() => setOpenUserSettingsId(null)}
-                          >
-                            <Archive size={18} />
-                            <span>Archive Chat</span>
-                          </button>
-
-                          <button
-                            className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(contact);
-                            }}
-                          >
-                            <Trash2 size={18} />
-                            <span>Delete Chat</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    contact={contact}
+                    selectedContact={selectedContact}
+                    handleContactClick={handleContactClick}
+                    handleUserMenuToggle={handleUserMenuToggle}
+                    openUserSettingsId={openUserSettingsId}
+                    setOpenUserSettingsId={setOpenUserSettingsId}
+                    handleDeleteClick={handleDeleteClick}
+                    userMenuRef={userMenuRef}
+                  />
                 );
               })
             )}
@@ -348,6 +233,7 @@ function Sidebar({
         onClose={handleCloseDeleteDialog}
         onConfirm={handleConfirmDelete}
         contactName={deleteDialog.contact?.name}
+        isGroup={deleteDialog.contact?.type === 'group'}
       />
 
       {/* Settings Modal */}
