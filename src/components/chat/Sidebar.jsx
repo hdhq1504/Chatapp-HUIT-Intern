@@ -9,45 +9,27 @@ import { useClickOutside, useMultipleClickOutside } from '../../hooks/useClickOu
 import DeleteDialog from '../common/DeleteDialog.jsx';
 import SettingModal from '../modals/SettingModal.jsx';
 import ContactItem from './ContactItem.jsx';
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat }) {
+  const { user, logout } = useAuth();
+  const [profile, setProfile] = useState({ name: 'Guest', avatar: '' });
   const [openSettings, setOpenSettings] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [openUserSettingsId, setOpenUserSettingsId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({isOpen: false, contact: null});
-  const [profile, setProfile] = useState({ name: 'Quân Hồ', avatar: '' });
 
   useEffect(() => {
-    const loadProfile = () => {
-      try {
-        const stored = localStorage.getItem('profile_user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setProfile({
-            name: parsed.name || 'Quân Hồ',
-            avatar: parsed.avatar || '',
-          });
-          return;
-        }
-      } catch {
-        // ignore
-      }
-
-      const legacyAvatar = localStorage.getItem('profile_avatar_dataurl') || '';
-      setProfile((prev) => ({ ...prev, avatar: legacyAvatar }));
-    };
-
-    loadProfile();
-
-    const handleStorage = (e) => {
-      if (e.key === 'profile_user' || e.key === 'profile_avatar_dataurl') {
-        loadProfile();
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+    if (user) {
+      setProfile({
+        name: user.username || user.name || 'User',
+        avatar: user.avatar || '',
+      });
+    } else {
+      setProfile({ name: 'Guest', avatar: '' });
+    }
+  }, [user]);
 
   const filteredContacts = contacts.filter((contact) =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -128,14 +110,14 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
                   <div className='pt-0 pb-2'>
                     <a
                       href='/profile'
-                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                      className='flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
                     >
                       <UserRound size={18} />
                       <span>My Profile</span>
                     </a>
                     <a
                       href='/archive'
-                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                      className='flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
                     >
                       <Archive size={18} />
                       <span>Archived Chat</span>
@@ -153,13 +135,16 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
                   </div>
 
                   <div className='pt-2 pb-0'>
-                    <a
-                      href='/login'
-                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    <button
+                      onClick={() => {
+                        setOpenSettings(false);
+                        logout();
+                      }}
+                      className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
                     >
                       <LogOut size={18} />
                       <span>Sign Out</span>
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}

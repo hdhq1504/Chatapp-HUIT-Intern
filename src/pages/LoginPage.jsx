@@ -1,78 +1,73 @@
 import React, { useState } from 'react';
 import leftGradient from '../assets/images/left-gradient.png';
 import { Eye, EyeOff } from 'lucide-react';
-import useValidator from '../utils/validator';
+import { useAuth } from "../contexts/AuthContext";
 
 function LoginPage() {
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const {
-    errors,
-    touched,
-    validators,
-    validateField,
-    validateAll,
-    clearErrors,
-  } = useValidator();
-
-  const getValidationRules = () => ({
-    email: [
-      (value) => validators.isRequired(value, 'Please enter the email'),
-      (value) => validators.isEmail(value, 'Email is invalid'),
-    ],
-    password: [
-      (value) => validators.isRequired(value, 'Please enter the password'),
-      (value) =>
-        validators.minLength(value, 6, 'The password is at least 6 characters'),
-    ],
-  });
+  const validateField = (name, value) => {
+    const errors = {};
+    
+    if (name === 'email') {
+      if (!value) {
+        errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(value)) {
+        errors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    if (name === 'password') {
+      if (!value) {
+        errors.password = 'Password is required';
+      } else if (value.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+      }
+    }
+    
+    return errors;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (touched[name] && errors[name]) {
-      validateField(name, value, getValidationRules()[name] || []);
-    }
+    setFormData({ ...formData, [name]: value });
+    
+    const fieldError = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: fieldError[name] || null
+    }));
   };
 
-  const handleInputBlur = (e) => {
-    const { name, value } = e.target;
-    const rules = getValidationRules()[name];
-    if (rules) {
-      validateField(name, value, rules);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationRules = getValidationRules();
-    const isValid = validateAll(formData, validationRules);
-    if (isValid) {
-      console.log('Login form submitted successfully:', formData);
-      alert('Log in successfully!');
-      setFormData({
-        email: '',
-        password: '',
-      });
-      clearErrors();
+    setError('');
+    
+    const emailErrors = validateField('email', formData.email);
+    const passwordErrors = validateField('password', formData.password);
+    const allFieldErrors = { ...emailErrors, ...passwordErrors };
+    
+    setFieldErrors(allFieldErrors);
+    
+    if (Object.keys(allFieldErrors).length > 0) {
+      return;
+    }
+    
+    try {
+      await login({ email: formData.email, password: formData.password });
+    } catch (err) {
+      console.error(err);
+      setError('Login failed');
     }
   };
 
-  const getFieldError = (fieldName) => {
-    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : null;
-  };
-
-  const getInputClassName = (fieldName) => {
-    const baseClass =
-      'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
-    const hasError = touched[fieldName] && errors[fieldName];
-    return hasError
-      ? `${baseClass} border-red-500 focus:ring-red-500`
-      : `${baseClass} border-gray-300`;
+  const getInputClassName = () => {
+    const baseClass = 'w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
+    return baseClass;
   };
 
   return (
@@ -90,7 +85,7 @@ function LoginPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please log in to your account to continue
           </p>
-          <div className='space-y-5'>
+          <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
                 Email
@@ -100,13 +95,12 @@ function LoginPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className={getInputClassName('email')}
+                className={getInputClassName()}
                 placeholder='Enter your email'
               />
-              {getFieldError('email') && (
+              {fieldErrors.email && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('email')}
+                  {fieldErrors.email}
                 </p>
               )}
             </div>
@@ -115,12 +109,6 @@ function LoginPage() {
                 <label className='block font-medium text-gray-700'>
                   Password
                 </label>
-                <button
-                  type='button'
-                  className='cursor-pointer text-sm font-medium text-blue-600 transition hover:text-blue-800'
-                >
-                  Forgot Password?
-                </button>
               </div>
               <div className='relative'>
                 <input
@@ -128,8 +116,7 @@ function LoginPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  className={getInputClassName('password')}
+                  className={getInputClassName()}
                   placeholder='Enter your password'
                 />
                 <button
@@ -140,31 +127,28 @@ function LoginPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {getFieldError('password') && (
+              {fieldErrors.password && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('password')}
+                  {fieldErrors.password}
                 </p>
               )}
             </div>
+            {error && <div className="text-red-600">{error}</div>}
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>
                 Don't have an account?
               </span>
-              <a
-                href='/signup'
-                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
-              >
+              <a href='/signup' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
                 Sign Up
               </a>
             </div>
             <button
-              type='button'
-              onClick={handleSubmit}
+              type='submit'
               className='w-full transform rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
             >
               Log In
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

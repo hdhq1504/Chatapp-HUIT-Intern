@@ -13,35 +13,23 @@ function ContactItem({
   userMenuRef,
 }) {
   const renderAvatar = (contact) => {
-    if (contact.type === 'group') {
-      return (
-        <div className={`h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F] ${contact.avatar}`}>
+    return (
+      <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
+        {contact.avatar && contact.avatar !== '/api/placeholder/32/32' ? (
+          <img
+            src={contact.avatar}
+            alt={contact.name}
+            className='h-full w-full object-cover'
+          />
+        ) : (
           <div className='flex h-full w-full items-center justify-center'>
             <span className='text-sm font-semibold text-white'>
               {getInitial(contact.name)}
             </span>
           </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
-          {contact.avatar && contact.avatar !== '/api/placeholder/32/32' ? (
-            <img
-              src={contact.avatar}
-              alt={contact.name}
-              className='h-full w-full object-cover'
-            />
-          ) : (
-            <div className='flex h-full w-full items-center justify-center'>
-              <span className='text-sm font-semibold text-white'>
-                {getInitial(contact.name)}
-              </span>
-            </div>
-          )}
-        </div>
-      );
-    }
+        )}
+      </div>
+    );
   };
 
   const renderStatus = (contact) => {
@@ -95,10 +83,10 @@ function ContactItem({
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-2'>
-            <p className={`truncate text-base ${contact.unreadCount > 0 ? 'font-bold' : 'font-semibold'}`}>
+            <p className={`truncate text-base ${contact.unreadCount > 0 ? 'font-semibold' : 'font-medium'}`}>
               {contact.name}
             </p>
-            
+
             {/* Group badge */}
             {contact.type === 'group' && (
               <div className='flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 dark:bg-blue-900'>
@@ -113,7 +101,7 @@ function ContactItem({
             {contact.lastMessageTime || ''}
           </span>
         </div>
-        
+
         <div className='flex items-center justify-between'>
           {renderStatus(contact)}
           {contact.unreadCount > 0 && (
@@ -136,68 +124,36 @@ function ContactItem({
         {openUserSettingsId === contact.id && (
           <div
             ref={userMenuRef}
-            className='absolute top-8 right-0 z-20 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 dark:divide-[#3F3F3F] dark:bg-[#303030]'
+            className='absolute top-9 right-0 z-20 w-48 origin-top-right rounded-lg bg-[#F9F9F9] p-2 dark:bg-[#303030]'
           >
-            {/* Menu items khác nhau cho group và contact */}
-            {contact.type === 'group' ? (
-              <>
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                  onClick={() => setOpenUserSettingsId(null)}
-                >
-                  <Users size={18} />
-                  <span>Group Info</span>
-                </button>
+            <button
+              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+              onClick={() => setOpenUserSettingsId(null)}
+            >
+              <Ban size={18} />
+              <span>Block</span>
+            </button>
 
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                  onClick={() => setOpenUserSettingsId(null)}
-                >
-                  <Archive size={18} />
-                  <span>Archive Group</span>
-                </button>
+            <button
+              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+              onClick={() => setOpenUserSettingsId(null)}
+            >
+              <Archive size={18} />
+              <span>Archive Chat</span>
+            </button>
 
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(contact);
-                  }}
-                >
-                  <Trash2 size={18} />
-                  <span>Delete Group</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                  onClick={() => setOpenUserSettingsId(null)}
-                >
-                  <Ban size={18} />
-                  <span>Block</span>
-                </button>
-
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-                  onClick={() => setOpenUserSettingsId(null)}
-                >
-                  <Archive size={18} />
-                  <span>Archive Chat</span>
-                </button>
-
-                <button
-                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(contact);
-                  }}
-                >
-                  <Trash2 size={18} />
-                  <span>Delete Chat</span>
-                </button>
-              </>
-            )}
+            <button
+              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteClick(contact);
+              }}
+            >
+              <Trash2 size={18} />
+              <span>
+                {contact.type === 'group' ? 'Delete Group' : 'Delete Chat'}
+              </span>
+            </button>
           </div>
         )}
       </div>

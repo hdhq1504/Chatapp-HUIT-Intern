@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User, Camera, ChevronLeft } from 'lucide-react';
 import useValidator from '../utils/validator.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 function MyProfilePage() {
+  const { user, setUser } = useAuth();
   const [userInfo, setUserInfo] = useState({
-    name: 'Quân Hồ',
-    email: 'hoquan15042004@gmail.com',
+    name: '',
+    email: '',
     avatar: '',
   });
-  // Giữ initial để có thể reset nếu cần (hiện chưa dùng trực tiếp)
   const [initialUserInfo, setInitialUserInfo] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -16,34 +17,42 @@ function MyProfilePage() {
     useValidator();
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('profile_user');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const next = {
-          name: parsed.name || 'Quân Hồ',
-          email: parsed.email || 'hoquan15042004@gmail.com',
-          avatar: parsed.avatar || '',
-        };
-        setUserInfo(next);
-        setInitialUserInfo(next);
-        return;
+    let profileData = {
+      name: 'Quân Hồ',
+      email: 'hoquan15042004@gmail.com',
+      avatar: '',
+    };
+
+    if (user) {
+      profileData = {
+        name: user.name || user.username || profileData.name,
+        email: user.email || profileData.email,
+        avatar: user.avatar || '',
+      };
+    } else {
+      try {
+        const stored = localStorage.getItem('profile_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          profileData = {
+            name: parsed.name || profileData.name,
+            email: parsed.email || profileData.email,
+            avatar: parsed.avatar || '',
+          };
+        } else {
+          const savedAvatar = localStorage.getItem('profile_avatar_dataurl');
+          if (savedAvatar) {
+            profileData.avatar = savedAvatar;
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading profile from localStorage:', error);
       }
-    } catch {
-      // ignore parse errors
     }
 
-    const savedAvatar = localStorage.getItem('profile_avatar_dataurl');
-    const next = savedAvatar
-      ? {
-          name: 'Quân Hồ',
-          email: 'hoquan15042004@gmail.com',
-          avatar: savedAvatar,
-        }
-      : { name: 'Quân Hồ', email: 'hoquan15042004@gmail.com', avatar: '' };
-    setUserInfo(next);
-    setInitialUserInfo(next);
-  }, []);
+    setUserInfo(profileData);
+    setInitialUserInfo(profileData);
+  }, [user]);
 
   const handleAvatarUploadClick = () => {
     fileInputRef.current?.click();
@@ -78,19 +87,42 @@ function MyProfilePage() {
     ],
   };
 
-  // Lưu profile vào localStorage
-  const handleSave = () => {
+  const handleSave = async () => {
     const ok = validateAll(userInfo, validationRules);
     if (!ok) return;
+
     try {
+      if (setUser) {
+        setUser((prev) => ({
+          ...prev,
+          username: userInfo.name,
+          name: userInfo.name,
+          email: userInfo.email,
+          avatar: userInfo.avatar,
+        }));
+      }
+
       localStorage.setItem('profile_user', JSON.stringify(userInfo));
       if (userInfo.avatar) {
         localStorage.setItem('profile_avatar_dataurl', userInfo.avatar);
       }
+
+      setInitialUserInfo({ ...userInfo });
+
+      window.dispatchEvent(
+        new CustomEvent('profileUpdated', {
+          detail: userInfo,
+        }),
+      );
+
+      console.log('Profile updated successfully');
     } catch (error) {
-      console.warn('Unable to persist profile to localStorage', error);
+      console.warn('Unable to persist profile:', error);
     }
-    setInitialUserInfo(userInfo);
+  };
+
+  const handleInputChange = (field, value) => {
+    setUserInfo((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -149,9 +181,7 @@ function MyProfilePage() {
                 <input
                   type='text'
                   value={userInfo.name}
-                  onChange={(e) =>
-                    setUserInfo((p) => ({ ...p, name: e.target.value }))
-                  }
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   onBlur={(e) =>
                     validateField('name', e.target.value, validationRules.name)
                   }
@@ -172,15 +202,9 @@ function MyProfilePage() {
                   <input
                     type='email'
                     value={userInfo.email}
-                    onChange={(e) =>
-                      setUserInfo((p) => ({ ...p, email: e.target.value }))
-                    }
+                    onChange={(e) => handleInputChange('email', e.target.value)}
                     onBlur={(e) =>
-                      validateField(
-                        'email',
-                        e.target.value,
-                        validationRules.email,
-                      )
+                      validateField('email', e.target.value, validationRules.email)
                     }
                     className='w-full rounded-2xl bg-gray-100 px-4 py-3 text-gray-800 focus:border-transparent focus:outline-none dark:bg-[#3F3F3F] dark:text-gray-200'
                     placeholder='you@example.com'

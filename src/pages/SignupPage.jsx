@@ -1,100 +1,91 @@
 import React, { useState } from 'react';
 import leftGradient from '../assets/images/left-gradient.png';
 import { Eye, EyeOff } from 'lucide-react';
-import useValidator from '../utils/validator';
+import { useAuth } from "../contexts/AuthContext";
 
 function SignupPage() {
+  const { signup } = useAuth();
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const {
-    errors,
-    touched,
-    validators,
-    validateField,
-    validateAll,
-    clearErrors,
-  } = useValidator();
+  const validateField = (name, value) => {
+    const errors = {};
+    
+    if (name === 'username') {
+      if (!value) {
+        errors.username = 'Username is required';
+      } else if (value.length < 3) {
+        errors.username = 'Username must be at least 3 characters';
+      }
+    }
+  
+    if (name === 'email') {
+      if (!value) {
+        errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(value)) {
+        errors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    if (name === 'password') {
+      if (!value) {
+        errors.password = 'Password is required';
+      } else if (value.length < 6) {
+        errors.password = 'Password must be at least 6 characters';
+      }
+    }
 
-  const getValidationRules = () => ({
-    username: [
-      (value) => validators.isRequired(value, 'Please enter the username'),
-      (value) =>
-        validators.minLength(
-          value,
-          3,
-          'The username must have at least 3 characters',
-        ),
-    ],
-    email: [
-      (value) => validators.isRequired(value, 'Please enter the email'),
-      (value) => validators.isEmail(value, 'Email is invalid'),
-    ],
-    password: [
-      (value) => validators.isRequired(value, 'Please enter the password'),
-      (value) =>
-        validators.minLength(value, 6, 'The password is at least 6 characters'),
-    ],
-    confirmPassword: [
-      (value) => validators.isRequired(value, 'Please confirm the password'),
-      (value) =>
-        validators.isConfirmed(
-          value,
-          formData.password,
-          'Mật khẩu xác nhận không khớp',
-        ),
-    ],
-  });
+    if (name === 'confirmPassword') {
+      if(!value) {
+        errors.confirmPassword = 'Confirm password is required';
+      } else if (value !== formData.password) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+    }
+    
+    return errors;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (touched[name] && errors[name]) {
-      validateField(name, value, getValidationRules()[name] || []);
-    }
+    setFormData({ ...formData, [name]: value });
+    
+    const fieldError = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: fieldError[name] || null
+    }));
   };
 
-  const handleInputBlur = (e) => {
-    const { name, value } = e.target;
-    const rules = getValidationRules()[name];
-    if (rules) {
-      validateField(name, value, rules);
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationRules = getValidationRules();
-    const isValid = validateAll(formData, validationRules);
-    if (isValid) {
-      console.log('Sign up form submitted successfully:', formData);
-      alert('Sign up successfully!');
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-      });
-      clearErrors();
+    setError('');
+
+    const usernameErrors = validateField('username', formData.username);
+    const emailErrors = validateField('email', formData.email);
+    const passwordErrors = validateField('password', formData.password);
+    const confirmPasswordErrors = validateField('confirmPassword', formData.confirmPassword);
+    const allFieldErrors = { ...usernameErrors, ...emailErrors, ...passwordErrors, ...confirmPasswordErrors};
+    
+    setFieldErrors(allFieldErrors);
+    
+    if(Object.keys(allFieldErrors).length > 0) {
+      return;
+    }
+
+    try {
+      await signup({username: formData.username, email: formData.email, password: formData.password});
+    } catch(err) {
+      console.error(err);
+      setError('Signup failed');
     }
   };
 
-  const getFieldError = (fieldName) => {
-    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : null;
-  };
-
-  const getInputClassName = (fieldName) => {
-    const baseClass =
-      'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
-    const hasError = touched[fieldName] && errors[fieldName];
-    return hasError
-      ? `${baseClass} border-red-500 focus:ring-red-500`
-      : `${baseClass} border-gray-300`;
+  const getInputClassName = () => {
+    const baseClass = 'w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
+    return baseClass;
   };
 
   return (
@@ -112,7 +103,7 @@ function SignupPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please sign up to create an account
           </p>
-          <div className='space-y-5'>
+          <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
                 Username
@@ -122,13 +113,12 @@ function SignupPage() {
                 name='username'
                 value={formData.username}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className={getInputClassName('username')}
+                className={getInputClassName()}
                 placeholder='Enter your username'
               />
-              {getFieldError('username') && (
+              {fieldErrors.username && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('username')}
+                  {fieldErrors.username}
                 </p>
               )}
             </div>
@@ -141,13 +131,12 @@ function SignupPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className={getInputClassName('email')}
+                className={getInputClassName()}
                 placeholder='Enter your email'
               />
-              {getFieldError('email') && (
+              {fieldErrors.email && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('email')}
+                  {fieldErrors.email}
                 </p>
               )}
             </div>
@@ -161,8 +150,7 @@ function SignupPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  onBlur={handleInputBlur}
-                  className={getInputClassName('password')}
+                  className={getInputClassName()}
                   placeholder='Enter your password'
                 />
                 <button
@@ -173,9 +161,9 @@ function SignupPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {getFieldError('password') && (
+              {fieldErrors.password && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('password')}
+                  {fieldErrors.password}
                 </p>
               )}
             </div>
@@ -188,35 +176,31 @@ function SignupPage() {
                 name='confirmPassword'
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className={getInputClassName('confirmPassword')}
+                className={getInputClassName()}
                 placeholder='Confirm your password'
               />
-              {getFieldError('confirmPassword') && (
+              {fieldErrors.confirmPassword && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('confirmPassword')}
+                  {fieldErrors.confirmPassword}
                 </p>
               )}
             </div>
+            {error && <div className="text-red-600">{error}</div>}
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>
                 Already have an account?
               </span>
-              <a
-                href='/login'
-                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
-              >
+              <a href='/login' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
                 Log In
               </a>
             </div>
             <button
-              type='button'
-              onClick={handleSubmit}
+              type='submit'
               className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
             >
               Sign Up
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>
