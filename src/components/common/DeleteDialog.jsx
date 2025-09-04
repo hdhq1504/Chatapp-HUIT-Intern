@@ -2,19 +2,13 @@ import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside.jsx';
 
-function DeleteChatDialog({
-  isOpen,
-  onClose,
-  onConfirm,
-  contactName,
-  isGroup = false,
-}) {
+function DeleteChatDialog({ isOpen, onClose, onConfirm, contactName, isGroup = false }) {
   const dialogRef = useClickOutside(() => onClose(), isOpen);
 
   if (!isOpen) return null;
 
   const title = isGroup ? 'Delete Group' : 'Delete Chat';
-  const message = isGroup 
+  const message = isGroup
     ? `Are you sure you want to delete the group? This action cannot be undone and all group messages will be lost.`
     : `Are you sure you want to delete the chat? This action cannot be undone and all messages will be lost.`;
 
@@ -40,22 +34,15 @@ function DeleteChatDialog({
           <div className='mb-3 flex items-start justify-between'>
             <div className='flex items-center gap-3'>
               <div className='flex h-9 w-9 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/50'>
-                <AlertTriangle
-                  size={20}
-                  className='text-red-500 dark:text-red-400'
-                />
+                <AlertTriangle size={20} className='text-red-500 dark:text-red-400' />
               </div>
-              <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
-                {title}
-              </h3>
+              <h3 className='text-lg font-medium text-gray-900 dark:text-white'>{title}</h3>
             </div>
           </div>
 
           {/* Content */}
           <div className='mb-5 ml-12'>
-            <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>
-              {message}
-            </p>
+            <p className='text-sm leading-relaxed text-gray-600 dark:text-gray-300'>{message}</p>
           </div>
 
           {/* Actions */}

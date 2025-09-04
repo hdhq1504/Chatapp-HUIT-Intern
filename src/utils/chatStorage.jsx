@@ -15,7 +15,7 @@ export class ChatStorage {
       };
 
       messages.push(newMessage);
-      
+
       try {
         localStorage.setItem(this.storageKey, JSON.stringify(messages));
       } catch (quotaError) {
@@ -23,14 +23,14 @@ export class ChatStorage {
           console.warn('LocalStorage full, clearing old messages...');
           const recentMessages = messages.slice(-50);
           localStorage.setItem(this.storageKey, JSON.stringify(recentMessages));
-          
-          // Thông báo cho user
-          alert('Bộ nhớ đã đầy, đã xóa tin nhắn cũ để tiếp tục.');
+
+          // Notify the user about the cleanup
+          alert('Storage full, old messages cleared.');
         } else {
           throw quotaError;
         }
       }
-      
+
       return newMessage;
     } catch (error) {
       console.error('Error saving message:', error);

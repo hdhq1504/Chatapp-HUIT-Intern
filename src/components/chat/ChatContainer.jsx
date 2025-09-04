@@ -45,7 +45,7 @@ function ChatContainer({
   useEffect(() => {
     const handleNewMessage = (event) => {
       const { senderId } = event.detail;
-      
+
       // Nếu đang chat với người vừa gửi tin nhắn
       if (selectedContact && selectedContact.id === senderId) {
         const history = getChatHistory(selectedContact.id);
@@ -55,7 +55,7 @@ function ChatContainer({
     };
 
     window.addEventListener('message-received', handleNewMessage);
-    
+
     return () => {
       window.removeEventListener('message-received', handleNewMessage);
     };

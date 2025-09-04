@@ -1,4 +1,4 @@
-export async function loginWithEmail({ email, password }) {
+export async function loginWithEmail({ email }) {
   await new Promise((res) => setTimeout(res, 300));
   const profile = {
     name: email.split('@')[0] || 'User',
@@ -9,7 +9,7 @@ export async function loginWithEmail({ email, password }) {
   return { token, profile };
 }
 
-export async function signupWithEmail({ username, email, password }) {
+export async function signupWithEmail({ username, email }) {
   await new Promise((res) => setTimeout(res, 300));
   const profile = {
     name: username || email.split('@')[0] || 'Guest',

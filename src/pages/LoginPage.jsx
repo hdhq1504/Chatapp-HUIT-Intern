@@ -11,15 +11,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading } = useAuth();
-  
-  const {
-    errors,
-    touched,
-    validators,
-    validateField,
-    validateAll,
-    clearErrors,
-  } = useValidator();
+
+  const { errors, touched, validators, validateField, validateAll, clearErrors } = useValidator();
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -35,8 +28,7 @@ function LoginPage() {
     ],
     password: [
       (value) => validators.isRequired(value, 'Please enter the password'),
-      (value) =>
-        validators.minLength(value, 6, 'The password is at least 6 characters'),
+      (value) => validators.minLength(value, 6, 'The password is at least 6 characters'),
     ],
   });
 
@@ -58,10 +50,10 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationRules = getValidationRules();
     const isValid = validateAll(formData, validationRules);
-    
+
     if (isValid) {
       const result = await login(formData);
 
@@ -82,9 +74,7 @@ function LoginPage() {
     const baseClass =
       'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
     const hasError = touched[fieldName] && errors[fieldName];
-    return hasError
-      ? `${baseClass} border-red-500 focus:ring-red-500`
-      : `${baseClass} border-gray-300`;
+    return hasError ? `${baseClass} border-red-500 focus:ring-red-500` : `${baseClass} border-gray-300`;
   };
 
   if (isLoading && !formData.email) {
@@ -110,15 +100,11 @@ function LoginPage() {
       <div className='flex w-full flex-col items-center justify-center px-8 py-12 md:w-1/2'>
         <div className='w-full max-w-md'>
           <h1 className='mb-3 text-4xl font-semibold'>Welcome back</h1>
-          <p className='mb-6 font-medium text-gray-500'>
-            Please log in to your account to continue
-          </p>
-          
+          <p className='mb-6 font-medium text-gray-500'>Please log in to your account to continue</p>
+
           <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
-              <label className='mb-2 block font-medium text-gray-700'>
-                Email
-              </label>
+              <label className='mb-2 block font-medium text-gray-700'>Email</label>
               <input
                 type='email'
                 name='email'
@@ -128,17 +114,11 @@ function LoginPage() {
                 placeholder='Enter your email'
                 disabled={isLoading}
               />
-              {getFieldError('email') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('email')}
-                </p>
-              )}
+              {getFieldError('email') && <p className='mt-1 text-sm text-red-500'>{getFieldError('email')}</p>}
             </div>
             <div>
               <div className='flex items-center justify-between'>
-                <label className='mb-2 block font-medium text-gray-700'>
-                  Password
-                </label>
+                <label className='mb-2 block font-medium text-gray-700'>Password</label>
               </div>
               <div className='relative'>
                 <input
@@ -158,20 +138,11 @@ function LoginPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {getFieldError('password') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('password')}
-                </p>
-              )}
+              {getFieldError('password') && <p className='mt-1 text-sm text-red-500'>{getFieldError('password')}</p>}
             </div>
             <div className='mt-3 text-center'>
-              <span className='font-medium text-gray-700'>
-                Don't have an account?
-              </span>
-              <a
-                href='/signup'
-                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
-              >
+              <span className='font-medium text-gray-700'>Don't have an account?</span>
+              <a href='/signup' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
                 Sign Up
               </a>
             </div>

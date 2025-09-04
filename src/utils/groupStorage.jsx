@@ -3,7 +3,7 @@ export class GroupStorage {
     this.storageKey = 'chat_groups';
   }
 
-  // Tạo group mới
+  // Create a new group
   createGroup(groupData) {
     try {
       const groups = this.getGroups();
@@ -17,11 +17,11 @@ export class GroupStorage {
         status: 'Group created',
         unreadCount: 0,
         lastMessageTimestamp: Date.now(),
-        type: 'group', // Phân biệt group và contact
+        type: 'group', // Distinguish between group and contact
         active: true,
       };
 
-      groups.unshift(newGroup); // Thêm vào đầu list
+      groups.unshift(newGroup); // Add to the beginning of the list
       localStorage.setItem(this.storageKey, JSON.stringify(groups));
       return newGroup;
     } catch (error) {
@@ -29,7 +29,7 @@ export class GroupStorage {
     }
   }
 
-  // Lấy tất cả groups
+  // Get all groups
   getGroups() {
     try {
       const stored = localStorage.getItem(this.storageKey);
@@ -39,7 +39,7 @@ export class GroupStorage {
     }
   }
 
-  // Cập nhật group
+  // Update a group
   updateGroup(groupId, updates) {
     try {
       const groups = this.getGroups();
@@ -57,7 +57,7 @@ export class GroupStorage {
     }
   }
 
-  // Xóa group
+  // Delete group
   deleteGroup(groupId) {
     try {
       const groups = this.getGroups();
@@ -70,7 +70,7 @@ export class GroupStorage {
     }
   }
 
-  // Thêm member vào group
+  // Add a member to the group
   addMemberToGroup(groupId, member) {
     try {
       const groups = this.getGroups();
@@ -88,7 +88,7 @@ export class GroupStorage {
     }
   }
 
-  // Xóa member khỏi group
+  // Delete the member from the group
   removeMemberFromGroup(groupId, memberId) {
     try {
       const groups = this.getGroups();

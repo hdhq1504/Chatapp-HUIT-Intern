@@ -22,7 +22,7 @@ function ChatPage() {
 
   const [contacts, setContacts] = useState(() => {
     if (!user) return [];
-    
+
     try {
       const userContactsKey = `contacts_${user.id}`;
       const raw = localStorage.getItem(userContactsKey);
@@ -49,7 +49,7 @@ function ChatPage() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     try {
       const userContactsKey = `contacts_${user.id}`;
       const contactsOnly = contacts.filter((c) => c.type === 'contact');
@@ -77,16 +77,17 @@ function ChatPage() {
   useEffect(() => {
     const handleMessageReceived = (event) => {
       const { senderId, message } = event.detail;
-      
-      setContacts(prevContacts => {
-        return prevContacts.map(contact => {
+
+      setContacts((prevContacts) => {
+        return prevContacts.map((contact) => {
           if (contact.id === senderId) {
-            const preview = message.type === 'text' 
-              ? message.content 
-              : message.type === 'files' 
-                ? `Sent ${message.files ? message.files.length : 1} files`
-                : message.content || 'New message';
-                
+            const preview =
+              message.type === 'text'
+                ? message.content
+                : message.type === 'files'
+                  ? `Sent ${message.files ? message.files.length : 1} files`
+                  : message.content || 'New message';
+
             const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
               hour: '2-digit',
               minute: '2-digit',
@@ -107,7 +108,7 @@ function ChatPage() {
     };
 
     window.addEventListener('message-received', handleMessageReceived);
-    
+
     return () => {
       window.removeEventListener('message-received', handleMessageReceived);
     };
@@ -130,11 +131,11 @@ function ChatPage() {
 
   const handleChatSelect = (chat) => {
     setSelectedContact(chat);
-    
+
     // Mark as read when opening chat
     if (chat.unreadCount > 0) {
-      setContacts(prevContacts => {
-        return prevContacts.map(contact => {
+      setContacts((prevContacts) => {
+        return prevContacts.map((contact) => {
           if (contact.id === chat.id) {
             return { ...contact, unreadCount: 0 };
           }
@@ -142,7 +143,7 @@ function ChatPage() {
         });
       });
     }
-    
+
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
@@ -173,14 +174,14 @@ function ChatPage() {
       setGroups(groupStorage.getGroups());
     } else {
       setContacts((prevContacts) => prevContacts.filter((contact) => contact.id !== chatId));
-      
+
       // Also clear chat history
       if (user) {
         const getChatKey = (userId1, userId2) => {
           const sortedIds = [userId1, userId2].sort();
           return `chat_${sortedIds[0]}_${sortedIds[1]}`;
         };
-        
+
         const chatKey = getChatKey(user.id, chatId);
         localStorage.removeItem(chatKey);
       }
@@ -196,9 +197,9 @@ function ChatPage() {
   };
 
   const handleContactAdded = (newContact) => {
-    setContacts(prevContacts => {
+    setContacts((prevContacts) => {
       // Check if contact already exists
-      if (prevContacts.find(c => c.id === newContact.id)) {
+      if (prevContacts.find((c) => c.id === newContact.id)) {
         return prevContacts;
       }
       return [...prevContacts, newContact];
@@ -281,7 +282,9 @@ function ChatPage() {
 
         {/* Main Chat Area */}
         <div className='flex h-full flex-1'>
-          <div className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'}`}>
+          <div
+            className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'}`}
+          >
             {selectedContact ? (
               <ChatContainer
                 selectedContact={selectedContact}

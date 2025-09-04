@@ -11,14 +11,10 @@ function WelcomeScreen() {
         </div>
 
         {/* Welcome Title */}
-        <h1 className='mb-4 text-3xl font-bold text-gray-800 dark:text-white'>
-          Welcome to ChatApp
-        </h1>
+        <h1 className='mb-4 text-3xl font-bold text-gray-800 dark:text-white'>Welcome to ChatApp</h1>
 
         {/* Subtitle */}
-        <p className='mb-8 text-lg text-gray-600 dark:text-gray-300'>
-          Choose a conversation to start chatting
-        </p>
+        <p className='mb-8 text-lg text-gray-600 dark:text-gray-300'>Choose a conversation to start chatting</p>
       </div>
     </div>
   );

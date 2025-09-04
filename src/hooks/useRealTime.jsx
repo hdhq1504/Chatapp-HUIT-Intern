@@ -44,11 +44,7 @@ export function useRealtime() {
     console.log('Connecting to real-time service...');
 
     try {
-      const connection = setupRealtimeConnection(
-        user.id,
-        handleMessage,
-        handleUserStatus,
-      );
+      const connection = setupRealtimeConnection(user.id, handleMessage, handleUserStatus);
 
       connectionRef.current = connection;
       reconnectAttempts.current = 0;

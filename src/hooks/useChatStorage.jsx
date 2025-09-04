@@ -32,25 +32,15 @@ export function useChatStorage(chatId, chatType = 'contact') {
 
   useEffect(() => {
     if (chatType === 'user' && user && chatId && isAuthenticated) {
-      const conversationKey = messageService.getConversationKey(
-        user.id,
-        chatId,
-      );
+      const conversationKey = messageService.getConversationKey(user.id, chatId);
 
-      const unsubscribe = messageService.subscribe(
-        conversationKey,
-        (newMessages) => {
-          setMessages((prev) => {
-            const messageIds = new Set(prev.map((m) => m.id));
-            const uniqueNewMessages = newMessages.filter(
-              (m) => !messageIds.has(m.id),
-            );
-            return [...prev, ...uniqueNewMessages].sort(
-              (a, b) => (a.timestampMs || 0) - (b.timestampMs || 0),
-            );
-          });
-        },
-      );
+      const unsubscribe = messageService.subscribe(conversationKey, (newMessages) => {
+        setMessages((prev) => {
+          const messageIds = new Set(prev.map((m) => m.id));
+          const uniqueNewMessages = newMessages.filter((m) => !messageIds.has(m.id));
+          return [...prev, ...uniqueNewMessages].sort((a, b) => (a.timestampMs || 0) - (b.timestampMs || 0));
+        });
+      });
 
       return unsubscribe;
     }
@@ -69,12 +59,7 @@ export function useChatStorage(chatId, chatType = 'contact') {
         let pagination = null;
 
         if (chatType === 'user' && user && isAuthenticated) {
-          const response = await messageService.getConversationMessages(
-            user.id,
-            chatId,
-            pageNum,
-            50,
-          );
+          const response = await messageService.getConversationMessages(user.id, chatId, pageNum, 50);
           loadedMessages = response.messages || [];
           pagination = response.pagination;
         } else {
@@ -116,11 +101,7 @@ export function useChatStorage(chatId, chatType = 'contact') {
         let savedMessage;
 
         if (chatType === 'user' && user && isAuthenticated) {
-          savedMessage = await messageService.sendMessage(
-            user.id,
-            chatId,
-            messageData,
-          );
+          savedMessage = await messageService.sendMessage(user.id, chatId, messageData);
         } else {
           savedMessage = localStorage.saveMessage(messageData);
           setMessages((prev) => [...prev, savedMessage]);
@@ -145,18 +126,13 @@ export function useChatStorage(chatId, chatType = 'contact') {
         let updatedMessage;
 
         if (chatType === 'user' && user && isAuthenticated) {
-          updatedMessage = await messageService.updateMessage(
-            messageId,
-            updates,
-          );
+          updatedMessage = await messageService.updateMessage(messageId, updates);
         } else {
           updatedMessage = localStorage.updateMessage(messageId, updates);
         }
 
         if (updatedMessage) {
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === messageId ? updatedMessage : msg)),
-          );
+          setMessages((prev) => prev.map((msg) => (msg.id === messageId ? updatedMessage : msg)));
         }
 
         return updatedMessage;
@@ -204,11 +180,7 @@ export function useChatStorage(chatId, chatType = 'contact') {
     try {
       await messageService.markMessagesAsRead(user.id, chatId);
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.toUserId === user.id && !msg.read ? { ...msg, read: true } : msg,
-        ),
-      );
+      setMessages((prev) => prev.map((msg) => (msg.toUserId === user.id && !msg.read ? { ...msg, read: true } : msg)));
     } catch (err) {
       console.error('Error marking messages as read:', err);
     }
@@ -261,9 +233,7 @@ export function useChatStorage(chatId, chatType = 'contact') {
 
   useEffect(() => {
     if (chatType === 'user' && messages.length > 0 && user && isAuthenticated) {
-      const hasUnreadMessages = messages.some(
-        (msg) => msg.toUserId === user.id && !msg.read,
-      );
+      const hasUnreadMessages = messages.some((msg) => msg.toUserId === user.id && !msg.read);
 
       if (hasUnreadMessages) {
         markAsRead();

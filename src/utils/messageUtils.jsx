@@ -4,35 +4,21 @@ export const getTimeDifferenceInMinutes = (timestamp1, timestamp2) => {
   return Math.abs(date2 - date1) / (1000 * 60);
 };
 
-export const shouldGroupMessages = (
-  currentMessage,
-  previousMessage,
-  maxGapMinutes = 5,
-) => {
+export const shouldGroupMessages = (currentMessage, previousMessage, maxGapMinutes = 5) => {
   if (!previousMessage) return false;
 
   const sameSender = currentMessage.sender === previousMessage.sender;
 
-  const timeDiff = getTimeDifferenceInMinutes(
-    currentMessage.timestamp,
-    previousMessage.timestamp,
-  );
+  const timeDiff = getTimeDifferenceInMinutes(currentMessage.timestamp, previousMessage.timestamp);
   const withinTimeGap = timeDiff <= maxGapMinutes;
 
   return sameSender && withinTimeGap;
 };
 
-export const isNewSession = (
-  currentMessage,
-  previousMessage,
-  sessionGapMinutes = 30,
-) => {
+export const isNewSession = (currentMessage, previousMessage, sessionGapMinutes = 30) => {
   if (!previousMessage) return true;
 
-  const timeDiff = getTimeDifferenceInMinutes(
-    currentMessage.timestamp,
-    previousMessage.timestamp,
-  );
+  const timeDiff = getTimeDifferenceInMinutes(currentMessage.timestamp, previousMessage.timestamp);
 
   const currentDate = new Date(currentMessage.timestamp).toDateString();
   const previousDate = new Date(previousMessage.timestamp).toDateString();
@@ -43,14 +29,9 @@ export const isNewSession = (
 
 export const getTimeSeparator = (currentMessage, previousMessage) => {
   const currentDate = new Date(currentMessage.timestamp);
-  const previousDate = previousMessage
-    ? new Date(previousMessage.timestamp)
-    : null;
+  const previousDate = previousMessage ? new Date(previousMessage.timestamp) : null;
 
-  if (
-    !previousMessage ||
-    currentDate.toDateString() !== previousDate.toDateString()
-  ) {
+  if (!previousMessage || currentDate.toDateString() !== previousDate.toDateString()) {
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
 
@@ -69,10 +50,7 @@ export const getTimeSeparator = (currentMessage, previousMessage) => {
   }
 
   if (previousMessage) {
-    const timeDiff = getTimeDifferenceInMinutes(
-      currentMessage.timestamp,
-      previousMessage.timestamp,
-    );
+    const timeDiff = getTimeDifferenceInMinutes(currentMessage.timestamp, previousMessage.timestamp);
     if (timeDiff > 60) {
       return currentDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
@@ -99,13 +77,11 @@ export const processMessagesForRendering = (messages) => {
 
   return messages.map((message, index) => {
     const previousMessage = index > 0 ? messages[index - 1] : null;
-    const nextMessage =
-      index < messages.length - 1 ? messages[index + 1] : null;
+    const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
 
     const isGrouped = shouldGroupMessages(message, previousMessage);
     const isFirstInGroup = !isGrouped;
-    const isLastInGroup =
-      !nextMessage || !shouldGroupMessages(nextMessage, message);
+    const isLastInGroup = !nextMessage || !shouldGroupMessages(nextMessage, message);
 
     const isNewSessionStart = isNewSession(message, previousMessage);
 

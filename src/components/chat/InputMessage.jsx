@@ -12,23 +12,17 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
     const extension = file.name.toLowerCase().split('.').pop();
 
     // Image files
-    if (
-      ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)
-    ) {
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)) {
       return 'image';
     }
 
     // Video files
-    if (
-      ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)
-    ) {
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)) {
       return 'video';
     }
 
     // Audio files
-    if (
-      ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'].includes(extension)
-    ) {
+    if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a'].includes(extension)) {
       return 'audio';
     }
 
@@ -115,15 +109,13 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
     if (fileToRemove.preview?.startsWith('blob:')) {
       URL.revokeObjectURL(fileToRemove.preview);
     }
-    setPreviewFiles((prev) =>
-      prev.filter((_, index) => index !== indexToRemove),
-    );
+    setPreviewFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleFileUpload = (e) => {
     if (!disabled) {
       const files = Array.from(e.target.files);
-      
+
       if (files.length === 0) return;
 
       if (files.length > 20) {
@@ -133,27 +125,27 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
       }
 
       const maxFileSize = 1024 * 1024 * 1024;
-      const oversizedFiles = files.filter(file => file.size > maxFileSize);
-      
+      const oversizedFiles = files.filter((file) => file.size > maxFileSize);
+
       if (oversizedFiles.length > 0) {
-        alert(`File quá lớn: ${oversizedFiles.map(f => f.name).join(', ')}\nKích thước tối đa: 1GB`);
+        alert(`File quá lớn: ${oversizedFiles.map((f) => f.name).join(', ')}\nKích thước tối đa: 1GB`);
         e.target.value = '';
         return;
       }
 
       const totalSize = files.reduce((sum, file) => sum + file.size, 0);
       const maxTotalSize = 5 * 1024 * 1024 * 1024;
-      
+
       if (totalSize > maxTotalSize) {
         alert('Tổng kích thước file vượt quá 5GB cho một lần tải lên');
         e.target.value = '';
         return;
       }
 
-      const largeFiles = files.filter(file => file.size > 100 * 1024 * 1024);
+      const largeFiles = files.filter((file) => file.size > 100 * 1024 * 1024);
       if (largeFiles.length > 0) {
         const proceed = confirm(
-          `Bạn đang tải lên ${largeFiles.length} file lớn (>100MB). Quá trình này có thể mất thời gian. Tiếp tục?`
+          `Bạn đang tải lên ${largeFiles.length} file lớn (>100MB). Quá trình này có thể mất thời gian. Tiếp tục?`,
         );
         if (!proceed) {
           e.target.value = '';
@@ -203,9 +195,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
           <label
             htmlFor='file-upload'
             className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-              disabled
-                ? 'cursor-not-allowed opacity-50'
-                : 'cursor-pointer hover:bg-gray-300 dark:hover:bg-[#303030]'
+              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-300 dark:hover:bg-[#303030]'
             }`}
           >
             <Paperclip size={20} className='text-gray-600 dark:text-gray-100' />
@@ -221,25 +211,16 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                 <div className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${scrollBar}`}>
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
-                      {(['image', 'video', 'audio'].includes(file.fileType)) ? (
+                      {['image', 'video', 'audio'].includes(file.fileType) ? (
                         <div className='relative h-20 w-20 overflow-hidden rounded-lg bg-gray-100 shadow-sm dark:bg-[#404040]'>
                           {file.fileType === 'image' && file.preview ? (
-                            <img
-                              src={file.preview}
-                              alt='Preview'
-                              className='h-full w-full object-cover'
-                            />
+                            <img src={file.preview} alt='Preview' className='h-full w-full object-cover' />
                           ) : file.fileType === 'video' && file.preview ? (
                             <div className='relative h-full w-full'>
-                              <video
-                                src={file.preview}
-                                className='h-full w-full object-cover'
-                                muted
-                              />
+                              <video src={file.preview} className='h-full w-full object-cover' muted />
                             </div>
                           ) : file.fileType === 'audio' ? (
-                            <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'>
-                            </div>
+                            <div className='flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600'></div>
                           ) : null}
 
                           <button
@@ -251,16 +232,15 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
                         </div>
                       ) : (
                         <div className='relative flex h-20 w-64 max-w-full items-center rounded-lg bg-white px-3 py-2 shadow-sm dark:bg-[#404040]'>
-                          <div className='mr-3 flex-shrink-0'>
-                            {getFileIcon(file.fileType)}
-                          </div>
+                          <div className='mr-3 flex-shrink-0'>{getFileIcon(file.fileType)}</div>
 
                           <div className='flex flex-1 flex-col justify-center overflow-hidden'>
                             <span className='mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
                               {file.name}
                             </span>
                             <span className='text-xs text-gray-500 dark:text-gray-400'>
-                              {formatFileSize(file.size)} • {file.fileType.charAt(0).toUpperCase() + file.fileType.slice(1)}
+                              {formatFileSize(file.size)} •{' '}
+                              {file.fileType.charAt(0).toUpperCase() + file.fileType.slice(1)}
                             </span>
                           </div>
 
@@ -286,11 +266,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               onKeyPress={handleKeyPress}
               placeholder='Type a message...'
               disabled={disabled}
-              className={`
-                w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${scrollBar} 
-                text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''} 
-                text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400
-              `}
+              className={`w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${scrollBar} text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''} text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400`}
               rows={1}
             />
           </div>
@@ -300,9 +276,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
         <div className='flex-shrink-0 pb-1'>
           <button
             onClick={handleSendMessage}
-            disabled={
-              disabled || (!message.trim() && previewFiles.length === 0)
-            }
+            disabled={disabled || (!message.trim() && previewFiles.length === 0)}
             className={`flex h-10 w-full items-center justify-center rounded-lg p-2 transition-colors ${
               disabled || (!message.trim() && previewFiles.length === 0)
                 ? 'cursor-not-allowed bg-gray-400 opacity-50'

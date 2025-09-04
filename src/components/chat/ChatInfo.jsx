@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ChevronUp, ChevronDown, Image, Download, X, Eye,
-  Users, UserPlus, UserMinus, Edit3, Crown, Shield, 
-  Check, Settings
+  ChevronUp,
+  ChevronDown,
+  Image,
+  Download,
+  X,
+  Eye,
+  Users,
+  UserPlus,
+  UserMinus,
+  Edit3,
+  Crown,
+  Shield,
+  Check,
+  Settings,
 } from 'lucide-react';
 import { scrollBar } from '../../utils/styles.jsx';
 import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
@@ -21,7 +32,7 @@ function ChatInfo({ onClose, selectedContact }) {
 
   const [sharedPhotos, setSharedPhotos] = useState([]);
   const [sharedFiles, setSharedFiles] = useState([]);
-  const [imagePreview, setImagePreview] = useState({ open: false, url: '', name: '', });
+  const [imagePreview, setImagePreview] = useState({ open: false, url: '', name: '' });
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showAllFiles, setShowAllFiles] = useState(false);
 
@@ -64,8 +75,7 @@ function ChatInfo({ onClose, selectedContact }) {
       }
     };
     window.addEventListener('shared-media-updated', handleUpdate);
-    return () =>
-      window.removeEventListener('shared-media-updated', handleUpdate);
+    return () => window.removeEventListener('shared-media-updated', handleUpdate);
   }, [selectedContact?.id, loadSharedMedia]);
 
   const handleUpdateGroupName = () => {
@@ -89,26 +99,23 @@ function ChatInfo({ onClose, selectedContact }) {
   const renderAvatar = () => {
     if (isGroup) {
       return (
-        <div className={`mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r ${selectedContact.avatar} md:h-16 md:w-16`}>
-          <span className='text-2xl font-semibold text-white md:text-xl'>
-            {getInitial(selectedContact.name)}
-          </span>
+        <div
+          className={`mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r ${selectedContact.avatar} md:h-16 md:w-16`}
+        >
+          <span className='text-2xl font-semibold text-white md:text-xl'>{getInitial(selectedContact.name)}</span>
         </div>
       );
     } else {
       return (
         <div className='mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-orange-500 md:h-16 md:w-16'>
-          {selectedContact.avatar &&
-          selectedContact.avatar !== '/api/placeholder/32/32' ? (
+          {selectedContact.avatar && selectedContact.avatar !== '/api/placeholder/32/32' ? (
             <img
               src={selectedContact.avatar}
               alt={selectedContact.name}
               className='h-full w-full rounded-full object-cover'
             />
           ) : (
-            <span className='text-2xl font-semibold text-white md:text-xl'>
-              {getInitial(selectedContact.name)}
-            </span>
+            <span className='text-2xl font-semibold text-white md:text-xl'>{getInitial(selectedContact.name)}</span>
           )}
         </div>
       );
@@ -117,9 +124,7 @@ function ChatInfo({ onClose, selectedContact }) {
 
   const renderStatusInfo = () => {
     return (
-      <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-        {selectedContact.active ? 'Active Now' : ''}
-      </p>
+      <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>{selectedContact.active ? 'Active Now' : ''}</p>
     );
   };
 
@@ -133,7 +138,7 @@ function ChatInfo({ onClose, selectedContact }) {
   const openImagePreview = (dataUrl, name) => {
     setImagePreview({ open: true, url: dataUrl, name: name || 'Shared image' });
   };
-  
+
   const closeImagePreview = () => setImagePreview({ open: false, url: '', name: '' });
 
   const downloadFromDataUrl = (fileName, dataUrl) => {
@@ -162,9 +167,7 @@ function ChatInfo({ onClose, selectedContact }) {
             >
               <X size={18} />
             </button>
-            <h2 className='text-lg font-semibold'>
-              {isGroup ? 'Group Info' : 'Chat Info'}
-            </h2>
+            <h2 className='text-lg font-semibold'>{isGroup ? 'Group Info' : 'Chat Info'}</h2>
           </div>
         </div>
 
@@ -191,9 +194,7 @@ function ChatInfo({ onClose, selectedContact }) {
             </div>
           ) : (
             <div className='mb-2 flex items-center justify-center gap-2'>
-              <h3 className='text-xl font-semibold md:text-lg'>
-                {selectedContact.name}
-              </h3>
+              <h3 className='text-xl font-semibold md:text-lg'>{selectedContact.name}</h3>
               {isGroup && (
                 <button
                   onClick={() => setIsEditingGroupName(true)}
@@ -230,11 +231,7 @@ function ChatInfo({ onClose, selectedContact }) {
                   <Users size={18} />
                   <span>Members ({groupMembers.length})</span>
                 </div>
-                {groupMembersOpen ? (
-                  <ChevronUp size={18} />
-                ) : (
-                  <ChevronDown size={18} />
-                )}
+                {groupMembersOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
 
               <div
@@ -245,20 +242,17 @@ function ChatInfo({ onClose, selectedContact }) {
                 {groupMembersOpen && (
                   <div className='mt-2 space-y-2 px-2'>
                     {groupMembers.map((member, index) => (
-                      <div key={member.id || index}
+                      <div
+                        key={member.id || index}
                         className='flex items-center justify-between rounded-xl p-2 hover:bg-gray-100 dark:hover:bg-[#303030]'
                       >
                         <div className='flex items-center gap-3'>
                           <div className='flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-400 to-purple-500'>
-                            <span className='text-sm font-semibold text-white'>
-                              {getInitial(member.name)}
-                            </span>
+                            <span className='text-sm font-semibold text-white'>{getInitial(member.name)}</span>
                           </div>
                           <div>
                             <p className='font-medium'>{member.name}</p>
-                            <p className='text-xs text-gray-500'>
-                              {index === 0 ? 'Admin' : 'Member'}
-                            </p>
+                            <p className='text-xs text-gray-500'>{index === 0 ? 'Admin' : 'Member'}</p>
                           </div>
                         </div>
 
@@ -286,18 +280,15 @@ function ChatInfo({ onClose, selectedContact }) {
           )}
 
           <div>
-            <button onClick={() => setChatSettingsOpen(!chatSettingsOpen)}
+            <button
+              onClick={() => setChatSettingsOpen(!chatSettingsOpen)}
               className='flex w-full cursor-pointer items-center justify-between rounded-xl p-2.5 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
             >
               <div className='flex items-center gap-2'>
                 <Settings size={18} />
                 <span>{isGroup ? 'Group Settings' : 'Chat Settings'}</span>
               </div>
-              {chatSettingsOpen ? (
-                <ChevronUp size={18} />
-              ) : (
-                <ChevronDown size={18} />
-              )}
+              {chatSettingsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
 
             <div
@@ -307,33 +298,24 @@ function ChatInfo({ onClose, selectedContact }) {
             >
               {chatSettingsOpen && (
                 <div className='mt-2 space-y-2 px-2'>
-                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                    Notifications: On
-                  </div>
-                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                    Media auto-download: Wi-Fi only
-                  </div>
-                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                    Disappearing messages: Off
-                  </div>
+                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Notifications: On</div>
+                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Media auto-download: Wi-Fi only</div>
+                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Disappearing messages: Off</div>
                 </div>
               )}
             </div>
           </div>
 
           <div>
-            <button onClick={() => setPrivacyHelpOpen(!privacyHelpOpen)}
+            <button
+              onClick={() => setPrivacyHelpOpen(!privacyHelpOpen)}
               className='flex w-full cursor-pointer items-center justify-between rounded-xl p-2.5 text-left font-semibold transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
             >
               <div className='flex items-center gap-2'>
                 <Shield size={18} />
                 <span>Privacy & help</span>
               </div>
-              {privacyHelpOpen ? (
-                <ChevronUp size={18} />
-              ) : (
-                <ChevronDown size={18} />
-              )}
+              {privacyHelpOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
 
             <div
@@ -345,26 +327,16 @@ function ChatInfo({ onClose, selectedContact }) {
                 <div className='mt-2 space-y-2 px-2'>
                   {!isGroup ? (
                     <>
-                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                        Block User
-                      </div>
-                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                        Report User
-                      </div>
+                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Block User</div>
+                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Report User</div>
                     </>
                   ) : (
                     <>
-                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                        Leave Group
-                      </div>
-                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                        Report Group
-                      </div>
+                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Leave Group</div>
+                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Report Group</div>
                     </>
                   )}
-                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>
-                    Clear Chat History
-                  </div>
+                  <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Clear Chat History</div>
                 </div>
               )}
             </div>
@@ -379,11 +351,7 @@ function ChatInfo({ onClose, selectedContact }) {
                 <Image size={18} />
                 <span>Shared photos</span>
               </div>
-              {sharedPhotosOpen ? (
-                <ChevronUp size={18} />
-              ) : (
-                <ChevronDown size={18} />
-              )}
+              {sharedPhotosOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
 
             <div
@@ -395,8 +363,9 @@ function ChatInfo({ onClose, selectedContact }) {
                 <div className={`mt-2 px-2 ${showAllPhotos ? 'max-h-80 overflow-y-auto' : ''} ${scrollBar}`}>
                   <div className={`grid grid-cols-4 gap-2 py-2 md:grid-cols-3 ${showAllPhotos ? '' : ''}`}>
                     {(showAllPhotos ? sharedPhotos : sharedPhotos.slice(0, 9)).map((photo, index) => (
-                      <div 
-                        key={index} className='group relative aspect-square cursor-pointer'
+                      <div
+                        key={index}
+                        className='group relative aspect-square cursor-pointer'
                         onClick={() => openImagePreview(photo.dataUrl, photo.name)}
                       >
                         <img
@@ -454,11 +423,7 @@ function ChatInfo({ onClose, selectedContact }) {
                 <Download size={18} />
                 <span>Shared files</span>
               </div>
-              {sharedFilesOpen ? (
-                <ChevronUp size={18} />
-              ) : (
-                <ChevronDown size={18} />
-              )}
+              {sharedFilesOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
 
             <div
@@ -467,49 +432,43 @@ function ChatInfo({ onClose, selectedContact }) {
               }`}
             >
               {sharedFilesOpen && (
-                <div className={`mt-2 ${showAllFiles ? 'max-h-80' : 'max-h-56'} space-y-2 overflow-y-auto px-2 md:max-h-64 ${scrollBar}`}>
-                  {(showAllFiles ? sharedFiles : sharedFiles.slice(0, 3)).map(
-                    (file, index) => (
-                      <div key={index}
-                        className='flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
-                      >
-                        <div className='flex min-w-0 flex-1 items-center space-x-3'>
-                          <div className='flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-[#EFEFEF] dark:bg-slate-700'>
-                            <Image size={18} />
-                          </div>
-
-                          <div className='flex min-w-0 flex-1 flex-col'>
-                            <span className='truncate text-base font-medium'>
-                              {file.name}
-                            </span>
-                            <span className='text-xs font-light text-gray-500 dark:text-gray-400'>
-                              {formatSize(file.size)}
-                            </span>
-                          </div>
+                <div
+                  className={`mt-2 ${showAllFiles ? 'max-h-80' : 'max-h-56'} space-y-2 overflow-y-auto px-2 md:max-h-64 ${scrollBar}`}
+                >
+                  {(showAllFiles ? sharedFiles : sharedFiles.slice(0, 3)).map((file, index) => (
+                    <div
+                      key={index}
+                      className='flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-[#EFEFEF] dark:hover:bg-[#303030]'
+                    >
+                      <div className='flex min-w-0 flex-1 items-center space-x-3'>
+                        <div className='flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-[#EFEFEF] dark:bg-slate-700'>
+                          <Image size={18} />
                         </div>
 
-                        <div className='flex flex-shrink-0 items-center space-x-1'>
-                          <button
-                            className='cursor-pointer rounded p-1.5 transition-colors duration-200 hover:bg-[#303030]'
-                            onClick={() => {
-                              if (file.dataUrl) {
-                                downloadFromDataUrl(
-                                  file.name || `file_${index + 1}`,
-                                  file.dataUrl,
-                                );
-                              } else {
-                                alert(
-                                  'File này không có dữ liệu để tải xuống.',
-                                );
-                              }
-                            }}
-                          >
-                            <Download size={16} />
-                          </button>
+                        <div className='flex min-w-0 flex-1 flex-col'>
+                          <span className='truncate text-base font-medium'>{file.name}</span>
+                          <span className='text-xs font-light text-gray-500 dark:text-gray-400'>
+                            {formatSize(file.size)}
+                          </span>
                         </div>
                       </div>
-                    ),
-                  )}
+
+                      <div className='flex flex-shrink-0 items-center space-x-1'>
+                        <button
+                          className='cursor-pointer rounded p-1.5 transition-colors duration-200 hover:bg-[#303030]'
+                          onClick={() => {
+                            if (file.dataUrl) {
+                              downloadFromDataUrl(file.name || `file_${index + 1}`, file.dataUrl);
+                            } else {
+                              alert('File này không có dữ liệu để tải xuống.');
+                            }
+                          }}
+                        >
+                          <Download size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
 
                   {sharedFiles.length > 3 && (
                     <button

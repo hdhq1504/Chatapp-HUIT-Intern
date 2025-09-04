@@ -1,30 +1,24 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 export default function useValidator() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
   const validators = {
-    isRequired: (value, message = "Vui lòng nhập trường này") => {
+    isRequired: (value, message = 'Please enter this field') => {
       return value && value.trim() ? undefined : message;
     },
 
-    isEmail: (value, message = "Trường này phải là email") => {
+    isEmail: (value, message = 'This must be an email') => {
       const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       return regex.test(value) ? undefined : message;
     },
 
     minLength: (value, min, message) => {
-      return value && value.length >= min
-        ? undefined
-        : message || `Vui lòng nhập tối thiểu ${min} ký tự`;
+      return value && value.length >= min ? undefined : message || `Please enter at least ${min} characters`;
     },
 
-    isConfirmed: (
-      value,
-      confirmValue,
-      message = "Mật khẩu xác nhận không khớp",
-    ) => {
+    isConfirmed: (value, confirmValue, message = 'Password confirmation does not match') => {
       return value === confirmValue ? undefined : message;
     },
   };
@@ -37,7 +31,7 @@ export default function useValidator() {
         return false;
       }
     }
-    setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    setErrors((prev) => ({ ...prev, [fieldName]: '' }));
     return true;
   };
 

@@ -35,7 +35,7 @@ export const setupApiInterceptors = (getToken, clearAuth, refreshTokenFn) => {
         try {
           const newTokens = await refreshTokenFn();
           api.setToken(newTokens.token);
-          
+
           return await originalRequest.call(api, endpoint, {
             ...options,
             headers: {
@@ -62,7 +62,7 @@ export const handleApiResponse = (response) => {
 
 export const handleApiError = (error) => {
   console.error('API Error:', error);
-  
+
   if (error instanceof ApiError) {
     return {
       message: error.message,
@@ -70,7 +70,7 @@ export const handleApiError = (error) => {
       data: error.data,
     };
   }
-  
+
   return {
     message: error.message || 'An unexpected error occurred',
     status: 500,
@@ -103,7 +103,7 @@ export const setupRealtimeConnection = (userId, onMessage, onUserStatus) => {
   }
 
   const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}/ws?userId=${userId}`);
-  
+
   ws.onopen = () => {
     console.log('Real-time connection established');
   };
@@ -111,7 +111,7 @@ export const setupRealtimeConnection = (userId, onMessage, onUserStatus) => {
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      
+
       switch (data.type) {
         case 'message':
           onMessage?.(data.payload);

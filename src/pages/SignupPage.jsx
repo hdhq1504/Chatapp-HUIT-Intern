@@ -11,14 +11,7 @@ function SignupPage() {
   const navigate = useNavigate();
   const { signup, isAuthenticated, isLoading } = useAuth();
 
-  const {
-    errors,
-    touched,
-    validators,
-    validateField,
-    validateAll,
-    clearErrors,
-  } = useValidator();
+  const { errors, touched, validators, validateField, validateAll, clearErrors } = useValidator();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -64,13 +57,13 @@ function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationRules = getValidationRules();
     const isValid = validateAll(formData, validationRules);
-    
+
     if (isValid) {
       const result = await signup(formData);
-      
+
       if (result.success) {
         navigate('/', { replace: true });
       } else {
@@ -88,9 +81,7 @@ function SignupPage() {
     const baseClass =
       'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
     const hasError = touched[fieldName] && errors[fieldName];
-    return hasError
-      ? `${baseClass} border-red-500 focus:ring-red-500`
-      : `${baseClass} border-gray-300`;
+    return hasError ? `${baseClass} border-red-500 focus:ring-red-500` : `${baseClass} border-gray-300`;
   };
 
   // Show loading spinner during initial auth check
@@ -117,15 +108,11 @@ function SignupPage() {
       <div className='flex w-full flex-col items-center justify-center px-8 py-12 md:w-1/2'>
         <div className='w-full max-w-md'>
           <h1 className='mb-3 text-4xl font-semibold'>Create an account</h1>
-          <p className='mb-6 font-medium text-gray-500'>
-            Please sign up to create an account
-          </p>
-          
+          <p className='mb-6 font-medium text-gray-500'>Please sign up to create an account</p>
+
           <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
-              <label className='mb-2 block font-medium text-gray-700'>
-                Username
-              </label>
+              <label className='mb-2 block font-medium text-gray-700'>Username</label>
               <input
                 type='text'
                 name='username'
@@ -136,16 +123,10 @@ function SignupPage() {
                 placeholder='Enter your username'
                 disabled={isLoading}
               />
-              {getFieldError('username') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('username')}
-                </p>
-              )}
+              {getFieldError('username') && <p className='mt-1 text-sm text-red-500'>{getFieldError('username')}</p>}
             </div>
             <div>
-              <label className='mb-2 block font-medium text-gray-700'>
-                Email
-              </label>
+              <label className='mb-2 block font-medium text-gray-700'>Email</label>
               <input
                 type='email'
                 name='email'
@@ -156,16 +137,10 @@ function SignupPage() {
                 placeholder='Enter your email'
                 disabled={isLoading}
               />
-              {getFieldError('email') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('email')}
-                </p>
-              )}
+              {getFieldError('email') && <p className='mt-1 text-sm text-red-500'>{getFieldError('email')}</p>}
             </div>
             <div>
-              <label className='mb-2 block font-medium text-gray-700'>
-                Password
-              </label>
+              <label className='mb-2 block font-medium text-gray-700'>Password</label>
               <div className='relative'>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -185,16 +160,10 @@ function SignupPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {getFieldError('password') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('password')}
-                </p>
-              )}
+              {getFieldError('password') && <p className='mt-1 text-sm text-red-500'>{getFieldError('password')}</p>}
             </div>
             <div>
-              <label className='mb-2 block font-medium text-gray-700'>
-                Confirm Password
-              </label>
+              <label className='mb-2 block font-medium text-gray-700'>Confirm Password</label>
               <input
                 type='password'
                 name='confirmPassword'
@@ -206,19 +175,12 @@ function SignupPage() {
                 disabled={isLoading}
               />
               {getFieldError('confirmPassword') && (
-                <p className='mt-1 text-sm text-red-500'>
-                  {getFieldError('confirmPassword')}
-                </p>
+                <p className='mt-1 text-sm text-red-500'>{getFieldError('confirmPassword')}</p>
               )}
             </div>
             <div className='mt-3 text-center'>
-              <span className='font-medium text-gray-700'>
-                Already have an account?
-              </span>
-              <a
-                href='/login'
-                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
-              >
+              <span className='font-medium text-gray-700'>Already have an account?</span>
+              <a href='/login' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
                 Log In
               </a>
             </div>

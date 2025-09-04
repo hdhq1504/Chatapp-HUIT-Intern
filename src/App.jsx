@@ -11,45 +11,39 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        
-        <Route 
-          path="/chat" 
+        <Route path='/login' element={<LoginPage />} />
+        <Route path='/signup' element={<SignupPage />} />
+
+        <Route
+          path='/chat'
           element={
             <ProtectedRoute>
               <ChatPage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/profile" 
+
+        <Route
+          path='/profile'
           element={
             <ProtectedRoute>
               <MyProfilePage />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/archive" 
+
+        <Route
+          path='/archive'
           element={
             <ProtectedRoute>
               <div>Archive Page - Under Development</div>
             </ProtectedRoute>
-          } 
+          }
         />
 
-        <Route 
-          path="/" 
-          element={<Navigate to="/chat" replace />} 
-        />
+        <Route path='/' element={<Navigate to='/chat' replace />} />
 
-        <Route 
-          path="*" 
-          element={<Navigate to="/chat" replace />} 
-        />
+        <Route path='*' element={<Navigate to='/chat' replace />} />
       </Routes>
     </AuthProvider>
   );

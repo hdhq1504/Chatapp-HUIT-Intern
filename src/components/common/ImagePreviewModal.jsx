@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut, RotateCw, Download } from 'lucide-react';
 
-function ImagePreviewModal({
-  imageUrl,
-  isOpen,
-  onClose,
-  altText = 'Preview image',
-}) {
+function ImagePreviewModal({ imageUrl, isOpen, onClose, altText = 'Preview image' }) {
   const [scale, setScale] = useState(0.75);
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -105,10 +100,7 @@ function ImagePreviewModal({
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* Background overlay */}
-      <div
-        className='absolute inset-0 bg-black/50 backdrop-blur-xs'
-        onClick={onClose}
-      />
+      <div className='absolute inset-0 bg-black/50 backdrop-blur-xs' onClick={onClose} />
 
       {/* Close button - Top left */}
       <button
