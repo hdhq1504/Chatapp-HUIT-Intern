@@ -1,233 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  api,
-  setupApiInterceptors,
-  handleApiResponse,
-  handleApiError,
-} from '../api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const AuthContext = createContext(null);
-
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('auth_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [token, setToken] = useState(
-    () => localStorage.getItem('auth_token') || null,
-  );
-
-  const [refreshToken, setRefreshToken] = useState(
-    () => localStorage.getItem('refresh_token') || null,
-  );
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    setupApiInterceptors(
-      () => token,
-      () => {
-        logout();
-      },
-      async () => {
-        if (refreshToken) {
-          const response = await api.refreshToken();
-          const tokens = handleApiResponse(response);
-          setToken(tokens.token);
-          setRefreshToken(tokens.refreshToken);
-          saveTokensToStorage(tokens.token, tokens.refreshToken);
-          return tokens;
-        }
-        throw new Error('No refresh token available');
-      },
-    );
-  }, [token, refreshToken]);
-
-  useEffect(() => {
-    const initializeAuth = async () => {
-      if (token && !user) {
-        try {
-          setLoading(true);
-          const response = await api.getCurrentUser();
-          const userData = handleApiResponse(response);
-          setUser(userData);
-          saveUserToStorage(userData);
-        } catch (error) {
-          console.error('Auto-login failed:', error);
-          clearAuthFromStorage();
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-  }, [token, user]);
-
-  const saveAuthToStorage = (user, token, refreshToken) => {
-    try {
-      localStorage.setItem('auth_user', JSON.stringify(user));
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('refresh_token', refreshToken);
-    } catch (error) {
-      console.warn('Error saving auth to storage:', error);
-    }
-  };
-
-  const saveUserToStorage = (user) => {
-    try {
-      localStorage.setItem('auth_user', JSON.stringify(user));
-    } catch (error) {
-      console.warn('Error saving user to storage:', error);
-    }
-  };
-
-  const saveTokensToStorage = (token, refreshToken) => {
-    try {
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('refresh_token', refreshToken);
-    } catch (error) {
-      console.warn('Error saving tokens to storage:', error);
-    }
-  };
-
-  const clearAuthFromStorage = () => {
-    try {
-      localStorage.removeItem('auth_user');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
-    } catch (error) {
-      console.warn('Error clearing auth from storage:', error);
-    }
-  };
-
-  const login = async (credentials) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await api.login(credentials);
-      const authData = handleApiResponse(response);
-
-      const {
-        user: userData,
-        token: authToken,
-        refreshToken: authRefreshToken,
-      } = authData;
-
-      setUser(userData);
-      setToken(authToken);
-      setRefreshToken(authRefreshToken);
-
-      saveAuthToStorage(userData, authToken, authRefreshToken);
-
-      navigate('/');
-    } catch (error) {
-      const errorData = handleApiError(error);
-      setError(errorData.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (userData) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await api.register(userData);
-      const authData = handleApiResponse(response);
-
-      const {
-        user: newUser,
-        token: authToken,
-        refreshToken: authRefreshToken,
-      } = authData;
-
-      setUser(newUser);
-      setToken(authToken);
-      setRefreshToken(authRefreshToken);
-
-      saveAuthToStorage(newUser, authToken, authRefreshToken);
-
-      navigate('/');
-    } catch (error) {
-      const errorData = handleApiError(error);
-      setError(errorData.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-
-      if (token) {
-        await api.logout();
-      }
-    } catch (error) {
-      console.warn('Logout API call failed:', error);
-    } finally {
-      setUser(null);
-      setToken(null);
-      setRefreshToken(null);
-      clearAuthFromStorage();
-      setLoading(false);
-      navigate('/login');
-    }
-  };
-
-  const updateProfile = async (profileData) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await api.updateProfile(profileData);
-      const updatedUser = handleApiResponse(response);
-
-      setUser(updatedUser);
-      saveUserToStorage(updatedUser);
-
-      return updatedUser;
-    } catch (error) {
-      const errorData = handleApiError(error);
-      setError(errorData.message);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearError = () => {
-    setError(null);
-  };
-
-  const value = {
-    user,
-    token,
-    loading,
-    error,
-    isAuthenticated: !!user && !!token,
-    login,
-    signup,
-    logout,
-    updateProfile,
-    clearError,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -235,4 +8,190 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Load user from localStorage on app start
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const storedUser = localStorage.getItem('authenticated_user');
+        const authToken = localStorage.getItem('auth_token');
+
+        if (storedUser && authToken) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error loading user from localStorage:', error);
+        // Clear corrupted data
+        localStorage.removeItem('authenticated_user');
+        localStorage.removeItem('auth_token');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  // Simulate API login
+  const login = async (credentials) => {
+    try {
+      setIsLoading(true);
+
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Mock authentication logic
+      const { email, password } = credentials;
+
+      // Simple validation (replace with real API call)
+      if (email && password && password.length >= 6) {
+        // Try to find existing user in localStorage (simulating database lookup)
+        const existingUser = localStorage.getItem(`user_${email}`);
+
+        if (existingUser) {
+          // User exists, use their stored information
+          const userData = JSON.parse(existingUser);
+          const authToken = btoa(`${email}:${password}:${Date.now()}`);
+
+          // Store authenticated user
+          localStorage.setItem('authenticated_user', JSON.stringify(userData));
+          localStorage.setItem('auth_token', authToken);
+
+          setUser(userData);
+          setIsAuthenticated(true);
+
+          return { success: true, user: userData };
+        } else {
+          // User doesn't exist, return error
+          throw new Error('User not found. Please sign up first.');
+        }
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Simulate API signup
+  const signup = async (userData) => {
+    try {
+      setIsLoading(true);
+
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      const { username, email, password, confirmPassword } = userData;
+
+      // Basic validation
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      // Check if user already exists (mock check)
+      const existingUser = localStorage.getItem(`user_${email}`);
+      if (existingUser) {
+        throw new Error('User already exists with this email');
+      }
+
+      const newUserData = {
+        id: Date.now(),
+        username: username,
+        email: email,
+        name: username.charAt(0).toUpperCase() + username.slice(1),
+        avatar: '',
+        createdAt: new Date().toISOString(),
+      };
+
+      const authToken = btoa(`${email}:${password}:${Date.now()}`);
+
+      // Store user data
+      localStorage.setItem(`user_${email}`, JSON.stringify(newUserData));
+      localStorage.setItem('authenticated_user', JSON.stringify(newUserData));
+      localStorage.setItem('auth_token', authToken);
+
+      setUser(newUserData);
+      setIsAuthenticated(true);
+
+      return { success: true, user: newUserData };
+    } catch (error) {
+      console.error('Signup error:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout function
+  const logout = () => {
+    try {
+      // Clear localStorage
+      localStorage.removeItem('authenticated_user');
+      localStorage.removeItem('auth_token');
+
+      // Reset state
+      setUser(null);
+      setIsAuthenticated(false);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Logout error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Update user profile
+  const updateProfile = (updates) => {
+    try {
+      const updatedUser = { ...user, ...updates };
+
+      // Update localStorage
+      localStorage.setItem('authenticated_user', JSON.stringify(updatedUser));
+
+      // Update state
+      if (updatedUser.email) {
+        localStorage.setItem(`user_${updatedUser.email}`, JSON.stringify(updatedUser));
+      }
+
+      setUser(updatedUser);
+
+      window.dispatchEvent(
+        new CustomEvent('user-profile-updated', {
+          detail: { user: updatedUser },
+        }),
+      );
+
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const value = {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    signup,
+    logout,
+    updateProfile,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

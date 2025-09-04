@@ -43,20 +43,16 @@ export const useMultipleClickOutside = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      Object.entries(callbacks.current).forEach(
-        ([id, { callback, isOpen }]) => {
-          const ref = refs.current[id];
+      Object.entries(callbacks.current).forEach(([id, { callback, isOpen }]) => {
+        const ref = refs.current[id];
 
-          if (isOpen && ref?.current && !ref.current.contains(event.target)) {
-            callback();
-          }
-        },
-      );
+        if (isOpen && ref?.current && !ref.current.contains(event.target)) {
+          callback();
+        }
+      });
     };
 
-    const hasOpenElements = Object.values(callbacks.current).some(
-      ({ isOpen }) => isOpen,
-    );
+    const hasOpenElements = Object.values(callbacks.current).some(({ isOpen }) => isOpen);
 
     if (hasOpenElements) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -73,11 +69,7 @@ export const useMultipleClickOutside = () => {
   };
 };
 
-export const useClickOutsideWithException = (
-  callback,
-  isOpen = true,
-  triggerSelector = null,
-) => {
+export const useClickOutsideWithException = (callback, isOpen = true, triggerSelector = null) => {
   const ref = useRef(null);
 
   useEffect(() => {

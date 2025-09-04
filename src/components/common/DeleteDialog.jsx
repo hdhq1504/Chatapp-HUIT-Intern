@@ -59,7 +59,7 @@ function DeleteChatDialog({
           </div>
 
           {/* Actions */}
-          <div className='ml-12 flex justify-start gap-2.5'>
+          <div className='flex justify-end gap-2.5'>
             <button
               onClick={() => {
                 onConfirm();

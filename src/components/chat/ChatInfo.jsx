@@ -4,7 +4,7 @@ import {
   Users, UserPlus, UserMinus, Edit3, Crown, Shield, 
   Check, Settings
 } from 'lucide-react';
-import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { scrollBar } from '../../utils/styles.jsx';
 import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
 import { getInitial } from '../../utils/string.jsx';
 import { groupStorage } from '../../utils/groupStorage.jsx';
@@ -147,7 +147,7 @@ function ChatInfo({ onClose, selectedContact }) {
       document.body.removeChild(a);
     } catch (e) {
       console.error('Download failed', e);
-      alert('Không thể tải xuống file.');
+      alert('Cannot download the file.');
     }
   };
 
@@ -218,7 +218,7 @@ function ChatInfo({ onClose, selectedContact }) {
         </div>
       </div>
 
-      <div className={`flex-1 overflow-y-auto ${customScrollbarStyles}`}>
+      <div className={`flex-1 overflow-y-auto ${scrollBar}`}>
         <div className='space-y-4 p-4'>
           {isGroup && (
             <div>
@@ -392,7 +392,7 @@ function ChatInfo({ onClose, selectedContact }) {
               }`}
             >
               {sharedPhotosOpen && (
-                <div className={`mt-2 px-2 ${showAllPhotos ? 'max-h-80 overflow-y-auto' : ''} ${customScrollbarStyles}`}>
+                <div className={`mt-2 px-2 ${showAllPhotos ? 'max-h-80 overflow-y-auto' : ''} ${scrollBar}`}>
                   <div className={`grid grid-cols-4 gap-2 py-2 md:grid-cols-3 ${showAllPhotos ? '' : ''}`}>
                     {(showAllPhotos ? sharedPhotos : sharedPhotos.slice(0, 9)).map((photo, index) => (
                       <div 
@@ -467,7 +467,7 @@ function ChatInfo({ onClose, selectedContact }) {
               }`}
             >
               {sharedFilesOpen && (
-                <div className={`mt-2 ${showAllFiles ? 'max-h-80' : 'max-h-56'} space-y-2 overflow-y-auto px-2 md:max-h-64 ${customScrollbarStyles}`}>
+                <div className={`mt-2 ${showAllFiles ? 'max-h-80' : 'max-h-56'} space-y-2 overflow-y-auto px-2 md:max-h-64 ${scrollBar}`}>
                   {(showAllFiles ? sharedFiles : sharedFiles.slice(0, 3)).map(
                     (file, index) => (
                       <div key={index}

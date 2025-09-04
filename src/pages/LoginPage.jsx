@@ -1,74 +1,102 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import leftGradient from '../assets/images/left-gradient.png';
-import { Eye, EyeOff } from 'lucide-react';
-import { useAuth } from "../contexts/AuthContext";
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import useValidator from '../utils/validator';
+import { useAuth } from '../contexts/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function LoginPage() {
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated, isLoading } = useAuth();
+  
+  const {
+    errors,
+    touched,
+    validators,
+    validateField,
+    validateAll,
+    clearErrors,
+  } = useValidator();
 
-  const validateField = (name, value) => {
-    const errors = {};
-    
-    if (name === 'email') {
-      if (!value) {
-        errors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(value)) {
-        errors.email = 'Please enter a valid email address';
-      }
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      const from = location.state?.from?.pathname || '/chat';
+      navigate(from, { replace: true });
     }
-    
-    if (name === 'password') {
-      if (!value) {
-        errors.password = 'Password is required';
-      } else if (value.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
-      }
-    }
-    
-    return errors;
-  };
+  }, [isAuthenticated, isLoading, navigate, location]);
+
+  const getValidationRules = () => ({
+    email: [
+      (value) => validators.isRequired(value, 'Please enter the email'),
+      (value) => validators.isEmail(value, 'Email is invalid'),
+    ],
+    password: [
+      (value) => validators.isRequired(value, 'Please enter the password'),
+      (value) =>
+        validators.minLength(value, 6, 'The password is at least 6 characters'),
+    ],
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    const fieldError = validateField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: fieldError[name] || null
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (touched[name] && errors[name]) {
+      validateField(name, value, getValidationRules()[name] || []);
+    }
   };
+
+  // const handleInputBlur = (e) => {
+  //   const { name, value } = e.target;
+  //   const rules = getValidationRules()[name];
+  //   if (rules) {
+  //     validateField(name, value, rules);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
-    const emailErrors = validateField('email', formData.email);
-    const passwordErrors = validateField('password', formData.password);
-    const allFieldErrors = { ...emailErrors, ...passwordErrors };
+    const validationRules = getValidationRules();
+    const isValid = validateAll(formData, validationRules);
     
-    setFieldErrors(allFieldErrors);
-    
-    if (Object.keys(allFieldErrors).length > 0) {
-      return;
-    }
-    
-    try {
-      await login({ email: formData.email, password: formData.password });
-    } catch (err) {
-      console.error(err);
-      setError('Login failed');
+    if (isValid) {
+      const result = await login(formData);
+
+      if (result.success) {
+        const from = location.state?.from?.pathname || '/chat';
+        navigate(from, { replace: true });
+      } else {
+        alert(result.error || 'Login failed. Please try again');
+      }
     }
   };
 
-  const getInputClassName = () => {
-    const baseClass = 'w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
-    return baseClass;
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : null;
   };
+
+  const getInputClassName = (fieldName) => {
+    const baseClass =
+      'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
+    const hasError = touched[fieldName] && errors[fieldName];
+    return hasError
+      ? `${baseClass} border-red-500 focus:ring-red-500`
+      : `${baseClass} border-gray-300`;
+  };
+
+  if (isLoading && !formData.email) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+        <div className='flex items-center space-x-2'>
+          <Loader2 className='h-6 w-6 animate-spin' />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='flex min-h-screen bg-gray-100'>
@@ -85,6 +113,7 @@ function LoginPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please log in to your account to continue
           </p>
+          
           <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
@@ -95,18 +124,19 @@ function LoginPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                className={getInputClassName()}
+                className={getInputClassName('email')}
                 placeholder='Enter your email'
+                disabled={isLoading}
               />
-              {fieldErrors.email && (
+              {getFieldError('email') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.email}
+                  {getFieldError('email')}
                 </p>
               )}
             </div>
             <div>
-              <div className='mb-2 flex items-center justify-between'>
-                <label className='block font-medium text-gray-700'>
+              <div className='flex items-center justify-between'>
+                <label className='mb-2 block font-medium text-gray-700'>
                   Password
                 </label>
               </div>
@@ -116,8 +146,9 @@ function LoginPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={getInputClassName()}
+                  className={getInputClassName('password')}
                   placeholder='Enter your password'
+                  disabled={isLoading}
                 />
                 <button
                   type='button'
@@ -127,26 +158,35 @@ function LoginPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {fieldErrors.password && (
+              {getFieldError('password') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.password}
+                  {getFieldError('password')}
                 </p>
               )}
             </div>
-            {error && <div className="text-red-600">{error}</div>}
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>
                 Don't have an account?
               </span>
-              <a href='/signup' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
+              <a
+                href='/signup'
+                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
+              >
                 Sign Up
               </a>
             </div>
             <button
               type='submit'
-              className='w-full transform rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
+              disabled={isLoading}
+              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              Log In
+              {isLoading ? (
+                <div className='flex items-center justify-center space-x-2'>
+                  <Loader2 size={18} className='animate-spin' />
+                </div>
+              ) : (
+                'Login'
+              )}
             </button>
           </form>
         </div>

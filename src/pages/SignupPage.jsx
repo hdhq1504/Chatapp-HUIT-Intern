@@ -1,92 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import leftGradient from '../assets/images/left-gradient.png';
-import { Eye, EyeOff } from 'lucide-react';
-import { useAuth } from "../contexts/AuthContext";
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import useValidator from '../utils/validator';
+import { useAuth } from '../contexts/AuthContext';
 
 function SignupPage() {
-  const { signup } = useAuth();
-  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const navigate = useNavigate();
+  const { signup, isAuthenticated, isLoading } = useAuth();
 
-  const validateField = (name, value) => {
-    const errors = {};
-    
-    if (name === 'username') {
-      if (!value) {
-        errors.username = 'Username is required';
-      } else if (value.length < 3) {
-        errors.username = 'Username must be at least 3 characters';
-      }
-    }
-  
-    if (name === 'email') {
-      if (!value) {
-        errors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(value)) {
-        errors.email = 'Please enter a valid email address';
-      }
-    }
-    
-    if (name === 'password') {
-      if (!value) {
-        errors.password = 'Password is required';
-      } else if (value.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
-      }
-    }
+  const {
+    errors,
+    touched,
+    validators,
+    validateField,
+    validateAll,
+    clearErrors,
+  } = useValidator();
 
-    if (name === 'confirmPassword') {
-      if(!value) {
-        errors.confirmPassword = 'Confirm password is required';
-      } else if (value !== formData.password) {
-        errors.confirmPassword = 'Passwords do not match';
-      }
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate('/chat', { replace: true });
     }
-    
-    return errors;
-  };
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const getValidationRules = () => ({
+    username: [
+      (value) => validators.isRequired(value, 'Please enter the username'),
+      (value) => validators.minLength(value, 3, 'The username must have at least 3 characters'),
+    ],
+    email: [
+      (value) => validators.isRequired(value, 'Please enter the email'),
+      (value) => validators.isEmail(value, 'Email is invalid'),
+    ],
+    password: [
+      (value) => validators.isRequired(value, 'Please enter the password'),
+      (value) => validators.minLength(value, 6, 'The password is at least 6 characters'),
+    ],
+    confirmPassword: [
+      (value) => validators.isRequired(value, 'Please confirm the password'),
+      (value) => validators.isConfirmed(value, formData.password, 'Password confirmation does not match'),
+    ],
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    const fieldError = validateField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: fieldError[name] || null
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (touched[name] && errors[name]) {
+      validateField(name, value, getValidationRules()[name] || []);
+    }
   };
+
+  // const handleInputBlur = (e) => {
+  //   const { name, value } = e.target;
+  //   const rules = getValidationRules()[name];
+  //   if (rules) {
+  //     validateField(name, value, rules);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    const usernameErrors = validateField('username', formData.username);
-    const emailErrors = validateField('email', formData.email);
-    const passwordErrors = validateField('password', formData.password);
-    const confirmPasswordErrors = validateField('confirmPassword', formData.confirmPassword);
-    const allFieldErrors = { ...usernameErrors, ...emailErrors, ...passwordErrors, ...confirmPasswordErrors};
     
-    setFieldErrors(allFieldErrors);
+    const validationRules = getValidationRules();
+    const isValid = validateAll(formData, validationRules);
     
-    if(Object.keys(allFieldErrors).length > 0) {
-      return;
-    }
-
-    try {
-      await signup({username: formData.username, email: formData.email, password: formData.password});
-    } catch(err) {
-      console.error(err);
-      setError('Signup failed');
+    if (isValid) {
+      const result = await signup(formData);
+      
+      if (result.success) {
+        navigate('/', { replace: true });
+      } else {
+        // Show error message
+        alert(result.error || 'Signup failed. Please try again.');
+      }
     }
   };
 
-  const getInputClassName = () => {
-    const baseClass = 'w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
-    return baseClass;
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : null;
   };
+
+  const getInputClassName = (fieldName) => {
+    const baseClass =
+      'w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition';
+    const hasError = touched[fieldName] && errors[fieldName];
+    return hasError
+      ? `${baseClass} border-red-500 focus:ring-red-500`
+      : `${baseClass} border-gray-300`;
+  };
+
+  // Show loading spinner during initial auth check
+  if (isLoading && !formData.email) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+        <div className='flex items-center space-x-2'>
+          <Loader2 className='h-6 w-6 animate-spin' />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='flex min-h-screen bg-gray-100'>
@@ -103,6 +120,7 @@ function SignupPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please sign up to create an account
           </p>
+          
           <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
@@ -113,12 +131,14 @@ function SignupPage() {
                 name='username'
                 value={formData.username}
                 onChange={handleInputChange}
-                className={getInputClassName()}
+                // onBlur={handleInputBlur}
+                className={getInputClassName('username')}
                 placeholder='Enter your username'
+                disabled={isLoading}
               />
-              {fieldErrors.username && (
+              {getFieldError('username') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.username}
+                  {getFieldError('username')}
                 </p>
               )}
             </div>
@@ -131,12 +151,14 @@ function SignupPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                className={getInputClassName()}
+                // onBlur={handleInputBlur}
+                className={getInputClassName('email')}
                 placeholder='Enter your email'
+                disabled={isLoading}
               />
-              {fieldErrors.email && (
+              {getFieldError('email') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.email}
+                  {getFieldError('email')}
                 </p>
               )}
             </div>
@@ -150,8 +172,10 @@ function SignupPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={getInputClassName()}
+                  // onBlur={handleInputBlur}
+                  className={getInputClassName('password')}
                   placeholder='Enter your password'
+                  disabled={isLoading}
                 />
                 <button
                   type='button'
@@ -161,9 +185,9 @@ function SignupPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {fieldErrors.password && (
+              {getFieldError('password') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.password}
+                  {getFieldError('password')}
                 </p>
               )}
             </div>
@@ -176,29 +200,40 @@ function SignupPage() {
                 name='confirmPassword'
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className={getInputClassName()}
+                // onBlur={handleInputBlur}
+                className={getInputClassName('confirmPassword')}
                 placeholder='Confirm your password'
+                disabled={isLoading}
               />
-              {fieldErrors.confirmPassword && (
+              {getFieldError('confirmPassword') && (
                 <p className='mt-1 text-sm text-red-500'>
-                  {fieldErrors.confirmPassword}
+                  {getFieldError('confirmPassword')}
                 </p>
               )}
             </div>
-            {error && <div className="text-red-600">{error}</div>}
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>
                 Already have an account?
               </span>
-              <a href='/login' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
+              <a
+                href='/login'
+                className='ml-2 font-medium text-blue-600 hover:text-blue-700'
+              >
                 Log In
               </a>
             </div>
             <button
               type='submit'
-              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
+              disabled={isLoading}
+              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              Sign Up
+              {isLoading ? (
+                <div className='flex items-center justify-center space-x-2'>
+                  <Loader2 size={18} className='animate-spin' />
+                </div>
+              ) : (
+                'Sign Up'
+              )}
             </button>
           </form>
         </div>

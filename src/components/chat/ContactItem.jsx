@@ -12,26 +12,6 @@ function ContactItem({
   handleDeleteClick,
   userMenuRef,
 }) {
-  const renderAvatar = (contact) => {
-    return (
-      <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
-        {contact.avatar && contact.avatar !== '/api/placeholder/32/32' ? (
-          <img
-            src={contact.avatar}
-            alt={contact.name}
-            className='h-full w-full object-cover'
-          />
-        ) : (
-          <div className='flex h-full w-full items-center justify-center'>
-            <span className='text-sm font-semibold text-white'>
-              {getInitial(contact.name)}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const renderStatus = (contact) => {
     if (contact.type === 'group') {
       const memberCount = contact.members ? contact.members.length : 0;
@@ -63,18 +43,24 @@ function ContactItem({
     <div
       key={contact.id}
       className={`group relative mb-1 flex cursor-pointer items-center space-x-3 rounded-2xl p-4 transition-colors duration-200 hover:bg-blue-100 dark:hover:bg-slate-800 ${
-        selectedContact?.id === contact.id
-          ? 'bg-blue-100 dark:bg-slate-800'
-          : ''
+        selectedContact?.id === contact.id ? 'bg-blue-100 dark:bg-slate-800' : ''
       }`}
       onClick={() => handleContactClick(contact)}
     >
       {/* Avatar */}
       <div className='relative h-12 w-12 flex-shrink-0'>
-        {renderAvatar(contact)}
+        <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
+          {contact.avatar ? (
+            <img src={contact.avatar} alt='Avatar' className='h-full w-full object-cover' />
+          ) : (
+            <div className='flex h-full w-full items-center justify-center'>
+              <span className='text-sm font-semibold text-white'>{getInitial(contact.name)}</span>
+            </div>
+          )}
+        </div>
 
-        {/* Active Status */}
-        {contact.active && (
+        {/* Online indicator */}
+        {contact.isOnline && (
           <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-[#181818]'></div>
         )}
       </div>
@@ -83,7 +69,7 @@ function ContactItem({
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-2'>
-            <p className={`truncate text-base ${contact.unreadCount > 0 ? 'font-semibold' : 'font-medium'}`}>
+            <p className={`truncate text-base ${contact.unreadCount > 0 ? 'font-bold' : 'font-semibold'}`}>
               {contact.name}
             </p>
 
@@ -124,36 +110,68 @@ function ContactItem({
         {openUserSettingsId === contact.id && (
           <div
             ref={userMenuRef}
-            className='absolute top-9 right-0 z-20 w-48 origin-top-right rounded-lg bg-[#F9F9F9] p-2 dark:bg-[#303030]'
+            className='absolute top-8 right-0 z-20 w-48 origin-top-right rounded-lg bg-[#F9F9F9] p-2 dark:bg-[#303030]'
           >
-            <button
-              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-              onClick={() => setOpenUserSettingsId(null)}
-            >
-              <Ban size={18} />
-              <span>Block</span>
-            </button>
+            {/* Menu items khác nhau cho group và contact */}
+            {contact.type === 'group' ? (
+              <>
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                  onClick={() => setOpenUserSettingsId(null)}
+                >
+                  <Users size={18} />
+                  <span>Group Info</span>
+                </button>
 
-            <button
-              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
-              onClick={() => setOpenUserSettingsId(null)}
-            >
-              <Archive size={18} />
-              <span>Archive Chat</span>
-            </button>
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                  onClick={() => setOpenUserSettingsId(null)}
+                >
+                  <Archive size={18} />
+                  <span>Archive Group</span>
+                </button>
 
-            <button
-              className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteClick(contact);
-              }}
-            >
-              <Trash2 size={18} />
-              <span>
-                {contact.type === 'group' ? 'Delete Group' : 'Delete Chat'}
-              </span>
-            </button>
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(contact);
+                  }}
+                >
+                  <Trash2 size={18} />
+                  <span>Delete Group</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                  onClick={() => setOpenUserSettingsId(null)}
+                >
+                  <Ban size={18} />
+                  <span>Block</span>
+                </button>
+
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                  onClick={() => setOpenUserSettingsId(null)}
+                >
+                  <Archive size={18} />
+                  <span>Archive Chat</span>
+                </button>
+
+                <button
+                  className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-left text-sm text-red-600 hover:bg-red-200 dark:text-red-400 hover:dark:bg-red-950'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(contact);
+                  }}
+                >
+                  <Trash2 size={18} />
+                  <span>Delete Chat</span>
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
