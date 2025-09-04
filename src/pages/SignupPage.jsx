@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import leftGradient from '../assets/images/left-gradient.png';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import useValidator from '../utils/validator';
+import { useAuth } from '../contexts/AuthContext';
 
 function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const navigate = useNavigate();
+  const { signup, isAuthenticated, isLoading } = useAuth();
 
   const {
     errors,
@@ -21,15 +20,17 @@ function SignupPage() {
     clearErrors,
   } = useValidator();
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate('/chat', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
   const getValidationRules = () => ({
     username: [
       (value) => validators.isRequired(value, 'Please enter the username'),
-      (value) =>
-        validators.minLength(
-          value,
-          3,
-          'The username must have at least 3 characters',
-        ),
+      (value) => validators.minLength(value, 3, 'The username must have at least 3 characters'),
     ],
     email: [
       (value) => validators.isRequired(value, 'Please enter the email'),
@@ -37,17 +38,11 @@ function SignupPage() {
     ],
     password: [
       (value) => validators.isRequired(value, 'Please enter the password'),
-      (value) =>
-        validators.minLength(value, 6, 'The password is at least 6 characters'),
+      (value) => validators.minLength(value, 6, 'The password is at least 6 characters'),
     ],
     confirmPassword: [
       (value) => validators.isRequired(value, 'Please confirm the password'),
-      (value) =>
-        validators.isConfirmed(
-          value,
-          formData.password,
-          'Mật khẩu xác nhận không khớp',
-        ),
+      (value) => validators.isConfirmed(value, formData.password, 'Password confirmation does not match'),
     ],
   });
 
@@ -59,28 +54,29 @@ function SignupPage() {
     }
   };
 
-  const handleInputBlur = (e) => {
-    const { name, value } = e.target;
-    const rules = getValidationRules()[name];
-    if (rules) {
-      validateField(name, value, rules);
-    }
-  };
+  // const handleInputBlur = (e) => {
+  //   const { name, value } = e.target;
+  //   const rules = getValidationRules()[name];
+  //   if (rules) {
+  //     validateField(name, value, rules);
+  //   }
+  // };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const validationRules = getValidationRules();
     const isValid = validateAll(formData, validationRules);
+    
     if (isValid) {
-      console.log('Sign up form submitted successfully:', formData);
-      alert('Sign up successfully!');
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-      });
-      clearErrors();
+      const result = await signup(formData);
+      
+      if (result.success) {
+        navigate('/', { replace: true });
+      } else {
+        // Show error message
+        alert(result.error || 'Signup failed. Please try again.');
+      }
     }
   };
 
@@ -97,6 +93,18 @@ function SignupPage() {
       : `${baseClass} border-gray-300`;
   };
 
+  // Show loading spinner during initial auth check
+  if (isLoading && !formData.email) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+        <div className='flex items-center space-x-2'>
+          <Loader2 className='h-6 w-6 animate-spin' />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='flex min-h-screen bg-gray-100'>
       <div className='relative hidden w-1/2 items-center justify-center md:flex'>
@@ -112,7 +120,8 @@ function SignupPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please sign up to create an account
           </p>
-          <div className='space-y-5'>
+          
+          <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
                 Username
@@ -122,9 +131,10 @@ function SignupPage() {
                 name='username'
                 value={formData.username}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
+                // onBlur={handleInputBlur}
                 className={getInputClassName('username')}
                 placeholder='Enter your username'
+                disabled={isLoading}
               />
               {getFieldError('username') && (
                 <p className='mt-1 text-sm text-red-500'>
@@ -141,9 +151,10 @@ function SignupPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
+                // onBlur={handleInputBlur}
                 className={getInputClassName('email')}
                 placeholder='Enter your email'
+                disabled={isLoading}
               />
               {getFieldError('email') && (
                 <p className='mt-1 text-sm text-red-500'>
@@ -161,9 +172,10 @@ function SignupPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  onBlur={handleInputBlur}
+                  // onBlur={handleInputBlur}
                   className={getInputClassName('password')}
                   placeholder='Enter your password'
+                  disabled={isLoading}
                 />
                 <button
                   type='button'
@@ -188,9 +200,10 @@ function SignupPage() {
                 name='confirmPassword'
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
+                // onBlur={handleInputBlur}
                 className={getInputClassName('confirmPassword')}
                 placeholder='Confirm your password'
+                disabled={isLoading}
               />
               {getFieldError('confirmPassword') && (
                 <p className='mt-1 text-sm text-red-500'>
@@ -210,13 +223,19 @@ function SignupPage() {
               </a>
             </div>
             <button
-              type='button'
-              onClick={handleSubmit}
-              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
+              type='submit'
+              disabled={isLoading}
+              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              Sign Up
+              {isLoading ? (
+                <div className='flex items-center justify-center space-x-2'>
+                  <Loader2 size={18} className='animate-spin' />
+                </div>
+              ) : (
+                'Sign Up'
+              )}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

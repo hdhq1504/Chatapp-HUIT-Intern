@@ -12,38 +12,6 @@ function ContactItem({
   handleDeleteClick,
   userMenuRef,
 }) {
-  const renderAvatar = (contact) => {
-    if (contact.type === 'group') {
-      return (
-        <div className={`h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F] ${contact.avatar}`}>
-          <div className='flex h-full w-full items-center justify-center'>
-            <span className='text-sm font-semibold text-white'>
-              {getInitial(contact.name)}
-            </span>
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
-          {contact.avatar && contact.avatar !== '/api/placeholder/32/32' ? (
-            <img
-              src={contact.avatar}
-              alt={contact.name}
-              className='h-full w-full object-cover'
-            />
-          ) : (
-            <div className='flex h-full w-full items-center justify-center'>
-              <span className='text-sm font-semibold text-white'>
-                {getInitial(contact.name)}
-              </span>
-            </div>
-          )}
-        </div>
-      );
-    }
-  };
-
   const renderStatus = (contact) => {
     if (contact.type === 'group') {
       const memberCount = contact.members ? contact.members.length : 0;
@@ -75,18 +43,24 @@ function ContactItem({
     <div
       key={contact.id}
       className={`group relative mb-1 flex cursor-pointer items-center space-x-3 rounded-2xl p-4 transition-colors duration-200 hover:bg-blue-100 dark:hover:bg-slate-800 ${
-        selectedContact?.id === contact.id
-          ? 'bg-blue-100 dark:bg-slate-800'
-          : ''
+        selectedContact?.id === contact.id ? 'bg-blue-100 dark:bg-slate-800' : ''
       }`}
       onClick={() => handleContactClick(contact)}
     >
       {/* Avatar */}
       <div className='relative h-12 w-12 flex-shrink-0'>
-        {renderAvatar(contact)}
+        <div className='h-12 w-12 overflow-hidden rounded-full bg-[#3F3F3F]'>
+          {contact.avatar ? (
+            <img src={contact.avatar} alt='Avatar' className='h-full w-full object-cover' />
+          ) : (
+            <div className='flex h-full w-full items-center justify-center'>
+              <span className='text-sm font-semibold text-white'>{getInitial(contact.name)}</span>
+            </div>
+          )}
+        </div>
 
-        {/* Active Status */}
-        {contact.active && (
+        {/* Online indicator */}
+        {contact.isOnline && (
           <div className='absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-green-500 dark:border-[#181818]'></div>
         )}
       </div>
@@ -98,7 +72,7 @@ function ContactItem({
             <p className={`truncate text-base ${contact.unreadCount > 0 ? 'font-bold' : 'font-semibold'}`}>
               {contact.name}
             </p>
-            
+
             {/* Group badge */}
             {contact.type === 'group' && (
               <div className='flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 dark:bg-blue-900'>
@@ -113,7 +87,7 @@ function ContactItem({
             {contact.lastMessageTime || ''}
           </span>
         </div>
-        
+
         <div className='flex items-center justify-between'>
           {renderStatus(contact)}
           {contact.unreadCount > 0 && (
@@ -136,7 +110,7 @@ function ContactItem({
         {openUserSettingsId === contact.id && (
           <div
             ref={userMenuRef}
-            className='absolute top-8 right-0 z-20 w-48 origin-top-right divide-y divide-gray-200 rounded-lg bg-[#F9F9F9] p-2 shadow-lg ring-1 ring-black/5 dark:divide-[#3F3F3F] dark:bg-[#303030]'
+            className='absolute top-8 right-0 z-20 w-48 origin-top-right rounded-lg bg-[#F9F9F9] p-2 dark:bg-[#303030]'
           >
             {/* Menu items khác nhau cho group và contact */}
             {contact.type === 'group' ? (

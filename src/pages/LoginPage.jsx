@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import leftGradient from '../assets/images/left-gradient.png';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import useValidator from '../utils/validator';
+import { useAuth } from '../contexts/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isAuthenticated, isLoading } = useAuth();
+  
   const {
     errors,
     touched,
@@ -18,6 +20,13 @@ function LoginPage() {
     validateAll,
     clearErrors,
   } = useValidator();
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      const from = location.state?.from?.pathname || '/chat';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, location]);
 
   const getValidationRules = () => ({
     email: [
@@ -39,26 +48,29 @@ function LoginPage() {
     }
   };
 
-  const handleInputBlur = (e) => {
-    const { name, value } = e.target;
-    const rules = getValidationRules()[name];
-    if (rules) {
-      validateField(name, value, rules);
-    }
-  };
+  // const handleInputBlur = (e) => {
+  //   const { name, value } = e.target;
+  //   const rules = getValidationRules()[name];
+  //   if (rules) {
+  //     validateField(name, value, rules);
+  //   }
+  // };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     const validationRules = getValidationRules();
     const isValid = validateAll(formData, validationRules);
+    
     if (isValid) {
-      console.log('Login form submitted successfully:', formData);
-      alert('Log in successfully!');
-      setFormData({
-        email: '',
-        password: '',
-      });
-      clearErrors();
+      const result = await login(formData);
+
+      if (result.success) {
+        const from = location.state?.from?.pathname || '/chat';
+        navigate(from, { replace: true });
+      } else {
+        alert(result.error || 'Login failed. Please try again');
+      }
     }
   };
 
@@ -75,6 +87,17 @@ function LoginPage() {
       : `${baseClass} border-gray-300`;
   };
 
+  if (isLoading && !formData.email) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-gray-100'>
+        <div className='flex items-center space-x-2'>
+          <Loader2 className='h-6 w-6 animate-spin' />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='flex min-h-screen bg-gray-100'>
       <div className='relative hidden w-1/2 items-center justify-center md:flex'>
@@ -90,7 +113,8 @@ function LoginPage() {
           <p className='mb-6 font-medium text-gray-500'>
             Please log in to your account to continue
           </p>
-          <div className='space-y-5'>
+          
+          <form onSubmit={handleSubmit} className='space-y-5'>
             <div>
               <label className='mb-2 block font-medium text-gray-700'>
                 Email
@@ -100,9 +124,9 @@ function LoginPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                onBlur={handleInputBlur}
                 className={getInputClassName('email')}
                 placeholder='Enter your email'
+                disabled={isLoading}
               />
               {getFieldError('email') && (
                 <p className='mt-1 text-sm text-red-500'>
@@ -111,16 +135,10 @@ function LoginPage() {
               )}
             </div>
             <div>
-              <div className='mb-2 flex items-center justify-between'>
-                <label className='block font-medium text-gray-700'>
+              <div className='flex items-center justify-between'>
+                <label className='mb-2 block font-medium text-gray-700'>
                   Password
                 </label>
-                <button
-                  type='button'
-                  className='cursor-pointer text-sm font-medium text-blue-600 transition hover:text-blue-800'
-                >
-                  Forgot Password?
-                </button>
               </div>
               <div className='relative'>
                 <input
@@ -128,9 +146,9 @@ function LoginPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  onBlur={handleInputBlur}
                   className={getInputClassName('password')}
                   placeholder='Enter your password'
+                  disabled={isLoading}
                 />
                 <button
                   type='button'
@@ -158,13 +176,19 @@ function LoginPage() {
               </a>
             </div>
             <button
-              type='button'
-              onClick={handleSubmit}
-              className='w-full transform rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700'
+              type='submit'
+              disabled={isLoading}
+              className='w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
             >
-              Log In
+              {isLoading ? (
+                <div className='flex items-center justify-center space-x-2'>
+                  <Loader2 size={18} className='animate-spin' />
+                </div>
+              ) : (
+                'Login'
+              )}
             </button>
-          </div>
+          </form>
         </div>
       </div>
     </div>

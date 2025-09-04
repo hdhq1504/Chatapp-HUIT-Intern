@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, Check } from 'lucide-react';
-import { getInitial } from '../../utils/string.jsx';
-import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { useChat } from '../../contexts/ChatContext.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useClickOutside } from '../../hooks/useClickOutside.jsx';
+import { getInitial } from '../../utils/string.jsx';
+import { scrollBar } from '../../utils/styles.jsx';
 import { groupStorage } from '../../utils/groupStorage.jsx';
 
 function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
+  const { user } = useAuth();
+  const { sendMessage } = useChat();
+  const [selectedMembers, setSelectedMembers] = useState([]);
   const [groupName, setGroupName] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [shouldRender, setShouldRender] = useState(false);
   const [error, setError] = useState('');
@@ -25,67 +29,80 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
 
   const filteredContacts = contacts
     .filter((contact) => contact.type !== 'group')
-    .filter((contact) =>
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    .filter((contact) => contact.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleUserToggle = (userId) => {
-    setSelectedUsers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId],
-    );
+    setSelectedMembers((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
     setError('');
   };
 
-  const validateForm = () => {
-    if (!groupName.trim()) {
-      setError('Group name is required');
-      return false;
-    }
-    if (groupName.trim().length < 2) {
-      setError('Group name must be at least 2 characters');
-      return false;
-    }
-    if (selectedUsers.length < 2) {
-      setError('Please select at least 2 members for the group');
-      return false;
-    }
-    return true;
-  };
+  // const validateForm = () => {
+  //   if (!groupName.trim()) {
+  //     setError('Group name is required');
+  //     return false;
+  //   }
+  //   if (groupName.trim().length < 2) {
+  //     setError('Group name must be at least 2 characters');
+  //     return false;
+  //   }
+  //   if (selectedMembers.length < 2) {
+  //     setError('Please select at least 2 members for the group');
+  //     return false;
+  //   }
+  //   return true;
+  // };
 
   const handleCreateGroup = async () => {
-    if (!validateForm()) return;
+    if (!groupName.trim() || selectedMembers.length === 0) return;
 
-    setError('');
+    const newGroup = {
+      id: Date.now(),
+      name: groupName,
+      type: 'group',
+      avatar: '',
+      members: [
+        { id: user.id, name: user.name || user.username, avatar: user.avatar, role: 'admin' },
+        ...selectedMembers.map((member) => ({ ...member, role: 'member' })),
+      ],
+      createdBy: user.id,
+      createdAt: Date.now(),
+      lastMessageTime: new Date().toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+      status: 'Group created',
+      unreadCount: 0,
+      lastMessageTimestamp: Date.now(),
+    };
 
-    try {
-      const selectedContactsData = contacts.filter((contact) =>
-        selectedUsers.includes(contact.id),
-      );
+    // Save to storage
+    groupStorage.createGroup(newGroup);
 
-      const newGroup = groupStorage.createGroup({
-        name: groupName.trim(),
-        members: selectedContactsData,
-      });
+    // Send system message to group
+    await sendMessage(
+      newGroup.id,
+      {
+        content: `${user.name || user.username} created the group`,
+        type: 'system',
+      },
+      'group',
+    );
 
-      if (newGroup) {
-        if (onGroupCreated) {
-          onGroupCreated(newGroup);
-        }
-
-        handleClose();
-      } else {
-        throw new Error('Failed to create group');
-      }
-    } catch (err) {
-      setError('Failed to create group. Please try again.');
+    // Notify parent
+    if (onGroupCreated) {
+      onGroupCreated();
     }
+
+    // Reset and close
+    setGroupName('');
+    setSelectedMembers([]);
+    onClose();
   };
 
   const handleClose = () => {
     setGroupName('');
-    setSelectedUsers([]);
+    setSelectedMembers([]);
     setSearchTerm('');
     setError('');
     onClose();
@@ -125,13 +142,11 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
 
         {/* Group Name Input */}
         <div className='border-b border-gray-200 p-4 dark:border-[#3F3F3F]'>
-          <div className='flex justify-between items-start'>
+          <div className='flex items-start justify-between'>
             <label className='mb-2 block text-sm font-medium'>
               Group name <span className='text-red-500'>*</span>
             </label>
-            <div className='mt-1 text-right text-xs text-gray-500'>
-              {groupName.length}/50
-            </div>
+            <div className='mt-1 text-right text-xs text-gray-500'>{groupName.length}/50</div>
           </div>
           <input
             type='text'
@@ -150,9 +165,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
         <div className='border-b border-gray-200 p-4 dark:border-[#3F3F3F]'>
           <label className='mb-2 block text-sm font-medium'>
             Add Members <span className='text-red-500'>*</span>
-            <span className='ml-2 text-xs font-normal text-gray-500'>
-              (minimum 2 required)
-            </span>
+            <span className='ml-2 text-xs font-normal text-gray-500'>(minimum 2 required)</span>
           </label>
           <input
             type='text'
@@ -164,9 +177,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
         </div>
 
         {/* Members List */}
-        <div
-          className={`max-h-60 flex-1 overflow-y-auto ${customScrollbarStyles}`}
-        >
+        <div className={`max-h-60 flex-1 overflow-y-auto ${scrollBar}`}>
           {filteredContacts.length > 0 ? (
             filteredContacts.map((contact) => (
               <div
@@ -176,9 +187,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
               >
                 <div className='relative'>
                   <div className='flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-blue-500'>
-                    <span className='text-sm font-semibold text-white'>
-                      {getInitial(contact.name)}
-                    </span>
+                    <span className='text-sm font-semibold text-white'>{getInitial(contact.name)}</span>
                   </div>
                 </div>
 
@@ -188,16 +197,13 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
 
                 <div
                   className={`flex h-5 w-5 transform items-center justify-center rounded border-2 transition-all duration-300 ${
-                    selectedUsers.includes(contact.id)
+                    selectedMembers.includes(contact.id)
                       ? 'scale-110 border-blue-500 bg-blue-500'
                       : 'scale-100 border-gray-300 dark:border-[#3F3F3F]'
                   }`}
                 >
-                  {selectedUsers.includes(contact.id) && (
-                    <Check
-                      size={12}
-                      className='animate-in slide-in-from-top-1 text-white duration-200'
-                    />
+                  {selectedMembers.includes(contact.id) && (
+                    <Check size={12} className='animate-in slide-in-from-top-1 text-white duration-200' />
                   )}
                 </div>
               </div>
@@ -219,7 +225,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
 
           <button
             onClick={handleCreateGroup}
-            disabled={!groupName.trim() || selectedUsers.length < 2}
+            disabled={!groupName.trim() || selectedMembers.length < 2}
             className='flex-1 cursor-pointer rounded-full bg-blue-500 px-4 py-2 text-white transition-all duration-200 hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300'
           >
             Create

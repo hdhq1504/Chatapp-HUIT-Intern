@@ -1,4 +1,4 @@
-export const customScrollbarStyles = `
+export const scrollBar = `
   [&::-webkit-scrollbar]:w-2
   [&::-webkit-scrollbar-track]:rounded-full
   [&::-webkit-scrollbar-track]:bg-gray-100

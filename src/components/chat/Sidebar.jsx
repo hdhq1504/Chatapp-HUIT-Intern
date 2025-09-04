@@ -1,62 +1,69 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  MoreHorizontal, UserRound, Settings,
-  Search, Plus, LogOut, Archive
-} from 'lucide-react';
-import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive, UserPlus } from 'lucide-react';
+import { scrollBar } from '../../utils/styles.jsx';
 import { getInitial } from '../../utils/string.jsx';
 import { useClickOutside, useMultipleClickOutside } from '../../hooks/useClickOutside.jsx';
 import DeleteDialog from '../common/DeleteDialog.jsx';
 import SettingModal from '../modals/SettingModal.jsx';
+import AddContactModal from '../modals/AddContactModal.jsx';
 import ContactItem from './ContactItem.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useChat } from '../../contexts/ChatContext.jsx';
 
-function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat }) {
+function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat, onContactAdded }) {
   const [openSettings, setOpenSettings] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [openUserSettingsId, setOpenUserSettingsId] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, contact: null });
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteDialog, setDeleteDialog] = useState({isOpen: false, contact: null});
-  const [profile, setProfile] = useState({ name: 'Quân Hồ', avatar: '' });
+  const { isUserOnline } = useChat();
+  const { user, logout } = useAuth();
+  const profile = {
+    name: user?.name || user?.username || 'Guest User',
+    avatar: user?.avatar || '',
+    email: user?.email || '',
+  };
 
   useEffect(() => {
-    const loadProfile = () => {
-      try {
-        const stored = localStorage.getItem('profile_user');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setProfile({
-            name: parsed.name || 'Quân Hồ',
-            avatar: parsed.avatar || '',
-          });
-          return;
-        }
-      } catch {
-        // ignore
-      }
-
-      const legacyAvatar = localStorage.getItem('profile_avatar_dataurl') || '';
-      setProfile((prev) => ({ ...prev, avatar: legacyAvatar }));
+    const handleProfileUpdate = (event) => {
+      console.log('Profile updated:', event.detail.user);
     };
 
-    loadProfile();
+    window.addEventListener('user-profile-updated', handleProfileUpdate);
 
-    const handleStorage = (e) => {
-      if (e.key === 'profile_user' || e.key === 'profile_avatar_dataurl') {
-        loadProfile();
-      }
+    return () => {
+      window.removeEventListener('user-profile-updated', handleProfileUpdate);
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  const filteredContacts = contacts.filter((contact) =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const handleLogout = async () => {
+    const result = logout();
+    if (result.success) {
+      // Redirect to login page
+      window.location.href = '/login';
+    } else {
+      alert('Logout failed. Please try again');
+    }
+  };
 
-  const mainMenuRef = useClickOutside(
-    () => setOpenSettings(false),
-    openSettings,
-  );
+  const handleContactAdded = (newContact) => {
+    const existingContact = contacts.find((c) => c.id === newContact.id);
+    if (!existingContact) {
+      onContactAdded(newContact);
+    } else {
+      alert('This user is already in your contact list!');
+    }
+  };
+
+  const filteredContacts = contacts
+    .filter((contact) => contact.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .map((contact) => ({
+      ...contact,
+      isOnline: isUserOnline(contact.id),
+    }));
+
+  const mainMenuRef = useClickOutside(() => setOpenSettings(false), openSettings);
   const { registerClickOutside } = useMultipleClickOutside();
 
   const handleUserMenuToggle = (contactId, event) => {
@@ -94,25 +101,17 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
           <div className='mb-4 flex items-center space-x-3'>
             <div className='h-10 w-10 overflow-hidden rounded-full bg-[#3F3F3F]'>
               {profile.avatar ? (
-                <img
-                  src={profile.avatar}
-                  alt='Avatar'
-                  className='h-full w-full object-cover'
-                />
+                <img src={profile.avatar} alt='Avatar' className='h-full w-full object-cover' />
               ) : (
                 <div className='flex h-full w-full items-center justify-center'>
-                  <span className='text-sm font-semibold text-white'>
-                    {getInitial(profile.name)}
-                  </span>
+                  <span className='text-sm font-semibold text-white'>{getInitial(profile.name)}</span>
                 </div>
               )}
             </div>
 
             <div className='min-w-0 flex-1'>
               <h2 className='truncate text-lg font-semibold'>{profile.name}</h2>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                Active Now
-              </p>
+              <p className='text-xs text-gray-500 dark:text-gray-400'>Active Now</p>
             </div>
 
             <div className='relative inline-block' ref={mainMenuRef}>
@@ -153,13 +152,16 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
                   </div>
 
                   <div className='pt-2 pb-0'>
-                    <a
-                      href='/login'
-                      className='flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
+                    <button
+                      onClick={() => {
+                        setOpenSettings(false);
+                        handleLogout();
+                      }}
+                      className='flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-[#EFEFEF] dark:text-gray-200 dark:hover:bg-[#3F3F3F]'
                     >
                       <LogOut size={18} />
                       <span>Sign Out</span>
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}
@@ -169,10 +171,7 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
           <div className='flex gap-2'>
             {/* Search Bar */}
             <div className='relative flex-1'>
-              <Search
-                className='absolute top-1/2 left-3 -translate-y-1/2 transform dark:text-[#EFEFEF]'
-                size={20}
-              />
+              <Search className='absolute top-1/2 left-3 -translate-y-1/2 transform dark:text-[#EFEFEF]' size={20} />
               <input
                 type='text'
                 placeholder='Search'
@@ -181,6 +180,14 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
                 className='w-full rounded-full bg-gray-200 py-2 pr-4 pl-10 text-sm focus:outline-none dark:bg-[#303030]'
               />
             </div>
+
+            {/* Add Contact Button */}
+            <button
+              className='flex-shrink-0 cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030]'
+              onClick={() => setShowAddContactModal(true)}
+            >
+              <UserPlus size={18} className='h-[20px] w-[20px]' />
+            </button>
 
             {/* Create Group Button */}
             <button
@@ -193,7 +200,7 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
         </div>
 
         {/* Contacts List */}
-        <div className={`flex-1 overflow-y-auto ${customScrollbarStyles}`}>
+        <div className={`flex-1 overflow-y-auto ${scrollBar}`}>
           <div className='px-2'>
             {filteredContacts.length === 0 ? (
               <div className='flex h-32 flex-col items-center justify-center text-gray-500 dark:text-gray-400'>
@@ -237,9 +244,13 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
       />
 
       {/* Settings Modal */}
-      <SettingModal
-        isOpen={showSettingModal}
-        onClose={() => setShowSettingModal(false)}
+      <SettingModal isOpen={showSettingModal} onClose={() => setShowSettingModal(false)} />
+
+      {/* Add Contact Modal */}
+      <AddContactModal
+        isOpen={showAddContactModal}
+        onClose={() => setShowAddContactModal(false)}
+        onContactAdded={handleContactAdded}
       />
     </>
   );

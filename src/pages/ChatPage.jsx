@@ -4,68 +4,28 @@ import ChatContainer from '../components/chat/ChatContainer.jsx';
 import ChatInfo from '../components/chat/ChatInfo.jsx';
 import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
 import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
+import { ChatProvider } from '../contexts/ChatContext.jsx';
 import { useChatStorage } from '../hooks/useChatStorage.jsx';
+import { useTheme } from '../hooks/useTheme.jsx';
 import { groupStorage } from '../utils/groupStorage.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
-const DEFAULT_CONTACTS = [  
-  {
-    id: 1,
-    name: 'Maria Nelson',
-    status: 'looks good',
-    avatar: '/api/placeholder/32/32',
-    active: true,
-    unreadCount: 25,
-    lastMessageTime: '2:30 PM',
-    type: 'contact',
-  },
-  {
-    id: 2,
-    name: 'Ashley Harris',
-    status: 'lucky you',
-    avatar: '/api/placeholder/32/32',
-    active: true,
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-    type: 'contact',
-  },
-  {
-    id: 3,
-    name: 'Andrew Wilson',
-    status: 'same here.',
-    avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-    type: 'contact',
-  },
-  {
-    id: 4,
-    name: 'Jennifer Brown',
-    status: 'wait a second',
-    avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-    type: 'contact',
-  },
-  {
-    id: 5,
-    name: 'Edward Davis',
-    status: "how's it going?",
-    avatar: '/api/placeholder/32/32',
-    unreadCount: 3,
-    lastMessageTime: '2:30 PM',
-    type: 'contact',
-  },
-];
+const DEFAULT_CONTACTS = [];
 
 function ChatPage() {
+  useTheme();
+  const { user } = useAuth();
   const [showDetails, setShowDetails] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
 
   const [contacts, setContacts] = useState(() => {
+    if (!user) return [];
+    
     try {
-      const raw = localStorage.getItem('contacts');
+      const userContactsKey = `contacts_${user.id}`;
+      const raw = localStorage.getItem(userContactsKey);
       const parsed = raw ? JSON.parse(raw) : DEFAULT_CONTACTS;
       const normalized = parsed.map((c) => ({
         ...c,
@@ -88,21 +48,70 @@ function ChatPage() {
   const { clearMessages } = useChatStorage(selectedContact?.id);
 
   useEffect(() => {
-    const combined = [...groups, ...contacts];
-    combined.sort(
-      (a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0),
-    );
-    setAllChats(combined);
-  }, [contacts, groups]);
-
-  useEffect(() => {
+    if (!user) return;
+    
     try {
+      const userContactsKey = `contacts_${user.id}`;
       const contactsOnly = contacts.filter((c) => c.type === 'contact');
-      localStorage.setItem('contacts', JSON.stringify(contactsOnly));
+      localStorage.setItem(userContactsKey, JSON.stringify(contactsOnly));
     } catch (e) {
       console.error('save contacts error', e);
     }
-  }, [contacts]);
+  }, [contacts, user]);
+
+  useEffect(() => {
+    const combined = [...groups, ...contacts];
+    combined.sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
+    setAllChats(combined);
+  }, [contacts, groups]);
+
+  // useEffect(() => {
+  //   try {
+  //     const contactsOnly = contacts.filter((c) => c.type === 'contact');
+  //     localStorage.setItem('contacts', JSON.stringify(contactsOnly));
+  //   } catch (e) {
+  //     console.error('save contacts error', e);
+  //   }
+  // }, [contacts]);
+
+  useEffect(() => {
+    const handleMessageReceived = (event) => {
+      const { senderId, message } = event.detail;
+      
+      setContacts(prevContacts => {
+        return prevContacts.map(contact => {
+          if (contact.id === senderId) {
+            const preview = message.type === 'text' 
+              ? message.content 
+              : message.type === 'files' 
+                ? `Sent ${message.files ? message.files.length : 1} files`
+                : message.content || 'New message';
+                
+            const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            });
+
+            return {
+              ...contact,
+              lastMessageTime: timeString,
+              status: preview,
+              unreadCount: (contact.unreadCount || 0) + 1,
+              lastMessageTimestamp: message.timestamp,
+            };
+          }
+          return contact;
+        });
+      });
+    };
+
+    window.addEventListener('message-received', handleMessageReceived);
+    
+    return () => {
+      window.removeEventListener('message-received', handleMessageReceived);
+    };
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -119,9 +128,21 @@ function ChatPage() {
     };
   }, []);
 
-  // Event handlers
   const handleChatSelect = (chat) => {
     setSelectedContact(chat);
+    
+    // Mark as read when opening chat
+    if (chat.unreadCount > 0) {
+      setContacts(prevContacts => {
+        return prevContacts.map(contact => {
+          if (contact.id === chat.id) {
+            return { ...contact, unreadCount: 0 };
+          }
+          return contact;
+        });
+      });
+    }
+    
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
@@ -151,9 +172,18 @@ function ChatPage() {
       groupStorage.deleteGroup(chatId);
       setGroups(groupStorage.getGroups());
     } else {
-      setContacts((prevContacts) =>
-        prevContacts.filter((contact) => contact.id !== chatId),
-      );
+      setContacts((prevContacts) => prevContacts.filter((contact) => contact.id !== chatId));
+      
+      // Also clear chat history
+      if (user) {
+        const getChatKey = (userId1, userId2) => {
+          const sortedIds = [userId1, userId2].sort();
+          return `chat_${sortedIds[0]}_${sortedIds[1]}`;
+        };
+        
+        const chatKey = getChatKey(user.id, chatId);
+        localStorage.removeItem(chatKey);
+      }
     }
 
     if (selectedContact?.id === chatId) {
@@ -163,6 +193,16 @@ function ChatPage() {
         setShowSidebar(true);
       }
     }
+  };
+
+  const handleContactAdded = (newContact) => {
+    setContacts(prevContacts => {
+      // Check if contact already exists
+      if (prevContacts.find(c => c.id === newContact.id)) {
+        return prevContacts;
+      }
+      return [...prevContacts, newContact];
+    });
   };
 
   const handleMessageSent = (chatId, message) => {
@@ -218,76 +258,66 @@ function ChatPage() {
   };
 
   return (
-    <div className='flex h-screen overflow-hidden bg-gray-100 text-black dark:bg-[#303030] dark:text-white'>
-      {/* Sidebar */}
-      {showSidebar && (
-        <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80 lg:w-90'>
-          <Sidebar
-            onChatSelect={handleChatSelect}
-            onCreateGroup={() => setIsCreateGroupModalOpen(true)}
-            onDeleteChat={handleDeleteChat}
-            contacts={allChats}
-            selectedContact={selectedContact}
-          />
-        </div>
-      )}
-
-      {/* Sidebar Overlay for mobile */}
-      {showSidebar && (
-        <div
-          className='fixed inset-0 z-30 bg-black/50 md:hidden'
-          onClick={() => setShowSidebar(false)}
-        />
-      )}
-
-      {/* Main Chat Area */}
-      <div className='flex h-full flex-1'>
-        <div
-          className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${
-            showDetails ? 'md:flex' : 'flex'
-          }`}
-        >
-          {selectedContact ? (
-            <ChatContainer
-              selectedContact={selectedContact}
-              setShowDetails={handleToggleDetails}
-              onBackToSidebar={handleBackToSidebar}
-              showSidebar={showSidebar}
-              setShowSidebar={setShowSidebar}
-              onMessageSent={handleMessageSent}
-            />
-          ) : (
-            <WelcomeScreen />
-          )}
-        </div>
-
-        {/* Chat Info Panel */}
-        {showDetails && (
+    <ChatProvider>
+      <div className='flex h-screen overflow-hidden bg-gray-100 text-black dark:bg-[#303030] dark:text-white'>
+        {/* Sidebar */}
+        {showSidebar && (
           <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80 lg:w-90'>
-            <ChatInfo
+            <Sidebar
+              onChatSelect={handleChatSelect}
+              onCreateGroup={() => setIsCreateGroupModalOpen(true)}
+              onDeleteChat={handleDeleteChat}
+              onContactAdded={handleContactAdded}
+              contacts={allChats}
               selectedContact={selectedContact}
-              onClose={() => handleToggleDetails(false)}
             />
           </div>
         )}
-      </div>
 
-      {/* Details Overlay for mobile */}
-      {showDetails && (
-        <div
-          className='fixed inset-0 z-30 bg-black/50 md:hidden'
-          onClick={() => handleToggleDetails(false)}
+        {/* Sidebar Overlay for mobile */}
+        {showSidebar && (
+          <div className='fixed inset-0 z-30 bg-black/50 md:hidden' onClick={() => setShowSidebar(false)} />
+        )}
+
+        {/* Main Chat Area */}
+        <div className='flex h-full flex-1'>
+          <div className={`h-full flex-1 ${showSidebar ? 'hidden md:flex' : 'flex'} ${showDetails ? 'md:flex' : 'flex'}`}>
+            {selectedContact ? (
+              <ChatContainer
+                selectedContact={selectedContact}
+                setShowDetails={handleToggleDetails}
+                onBackToSidebar={handleBackToSidebar}
+                showSidebar={showSidebar}
+                setShowSidebar={setShowSidebar}
+                onMessageSent={handleMessageSent}
+              />
+            ) : (
+              <WelcomeScreen />
+            )}
+          </div>
+
+          {/* Chat Info Panel */}
+          {showDetails && (
+            <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80 lg:w-90'>
+              <ChatInfo selectedContact={selectedContact} onClose={() => handleToggleDetails(false)} />
+            </div>
+          )}
+        </div>
+
+        {/* Details Overlay for mobile */}
+        {showDetails && (
+          <div className='fixed inset-0 z-30 bg-black/50 md:hidden' onClick={() => handleToggleDetails(false)} />
+        )}
+
+        {/* Create Group Modal */}
+        <CreateGroupModal
+          isOpen={isCreateGroupModalOpen}
+          onClose={() => setIsCreateGroupModalOpen(false)}
+          contacts={contacts.filter((c) => c.type === 'contact')}
+          onGroupCreated={handleGroupCreated}
         />
-      )}
-
-      {/* Create Group Modal */}
-      <CreateGroupModal
-        isOpen={isCreateGroupModalOpen}
-        onClose={() => setIsCreateGroupModalOpen(false)}
-        contacts={contacts.filter((c) => c.type === 'contact')}
-        onGroupCreated={handleGroupCreated}
-      />
-    </div>
+      </div>
+    </ChatProvider>
   );
 }
 

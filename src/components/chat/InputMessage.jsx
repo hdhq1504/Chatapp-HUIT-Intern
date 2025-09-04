@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { customScrollbarStyles } from '../../utils/styles.jsx';
+import { scrollBar } from '../../utils/styles.jsx';
 import { Send, Paperclip, X, File, Image, Video, FileText } from 'lucide-react';
 
 function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
@@ -218,7 +218,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
             {/* Files Preview */}
             {previewFiles.length > 0 && (
               <div className='p-3 pb-2'>
-                <div className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${customScrollbarStyles}`}>
+                <div className={`flex max-h-40 flex-wrap gap-2 overflow-y-auto pb-1 ${scrollBar}`}>
                   {previewFiles.map((file, index) => (
                     <div key={file.id} className='group relative flex-shrink-0'>
                       {(['image', 'video', 'audio'].includes(file.fileType)) ? (
@@ -287,7 +287,7 @@ function InputMessage({ onSendMessage, onSendFile, disabled = false }) {
               placeholder='Type a message...'
               disabled={disabled}
               className={`
-                w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${customScrollbarStyles} 
+                w-full resize-none overflow-y-auto bg-transparent px-3 py-1.5 pr-8 focus:outline-none md:px-4 md:py-2 md:pr-10 ${scrollBar} 
                 text-md md:text-md max-h-[120px] md:max-h-32 ${disabled ? 'cursor-not-allowed opacity-50' : ''} 
                 text-gray-800 placeholder-gray-500 dark:text-gray-200 dark:placeholder-gray-400
               `}

@@ -1,20 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Sun, Moon, Monitor } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside.jsx';
+import { useTheme } from '../../hooks/useTheme.jsx';
 
 function SettingModal({ isOpen, onClose }) {
   const [shouldRender, setShouldRender] = useState(false);
-  const [themeOption, setThemeOption] = useState('system');
+  const { themeOption, setTheme } = useTheme();
 
   const modalRef = useClickOutside(() => handleClose(), isOpen);
-
-  const mediaQuery = useMemo(
-    () =>
-      typeof window !== 'undefined' && window.matchMedia
-        ? window.matchMedia('(prefers-color-scheme: dark)')
-        : null,
-    [],
-  );
 
   useEffect(() => {
     if (isOpen) {
@@ -24,53 +17,12 @@ function SettingModal({ isOpen, onClose }) {
     }
   }, [isOpen, shouldRender]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'light' || saved === 'dark') {
-      setThemeOption(saved);
-      applyTheme(saved);
-    } else {
-      setThemeOption('system');
-      applyTheme('system');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mediaQuery) return;
-    const handleChange = () => {
-      if (themeOption === 'system') {
-        applyTheme('system');
-      }
-    };
-    mediaQuery.addEventListener?.('change', handleChange);
-    // Fallback for older browsers
-    mediaQuery.addListener?.(handleChange);
-    return () => {
-      mediaQuery.removeEventListener?.('change', handleChange);
-      mediaQuery.removeListener?.(handleChange);
-    };
-  }, [mediaQuery, themeOption]);
-
-  const applyTheme = (option) => {
-    const root = document.documentElement;
-    const systemPrefersDark = mediaQuery ? mediaQuery.matches : false;
-    const isDark =
-      option === 'dark' || (option === 'system' && systemPrefersDark);
-    root.classList.toggle('dark', isDark);
-  };
-
   const handleClose = () => {
     onClose?.();
   };
 
   const handleChangeTheme = (option) => {
-    setThemeOption(option);
-    if (option === 'system') {
-      localStorage.setItem('theme', 'system');
-    } else {
-      localStorage.setItem('theme', option);
-    }
-    applyTheme(option);
+    setTheme(option);
   };
 
   if (!shouldRender) return null;
@@ -78,15 +30,13 @@ function SettingModal({ isOpen, onClose }) {
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* Backdrop */}
-      <div
-        className='absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity'
-        onClick={handleClose}
-      />
+      <div className='absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity' onClick={handleClose} />
 
       {/* Modal */}
       <div
         ref={modalRef}
         className='relative z-10 mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#212121]'
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className='flex items-center justify-between p-4'>
@@ -103,9 +53,7 @@ function SettingModal({ isOpen, onClose }) {
         <div className='space-y-4 px-4 py-1'>
           {/* General */}
           <div>
-            <h3 className='mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300'>
-              General
-            </h3>
+            <h3 className='mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300'>General</h3>
             <div className='space-y-1 rounded-xl border border-gray-200 p-3 dark:border-[#3F3F3F]'>
               <div className='mb-2 flex items-center gap-2'>
                 <span className='text-sm font-medium'>Appearance</span>
