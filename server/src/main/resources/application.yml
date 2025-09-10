@@ -1,0 +1,50 @@
+server:
+    port: 8080
+
+spring:
+    messages:
+        basename: i18n/messages
+    datasource:
+        url: jdbc:postgresql://localhost:5432/test-chatapp
+        username: postgres
+        password: 123456
+        driver-class-name: org.postgresql.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: false
+        properties:
+            hibernate:
+                format_sql: true
+        database: postgresql
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+    thymeleaf:
+        prefix: classpath:/templates/
+        suffix: .html
+        mode: HTML
+        cache: false
+
+application:
+    security:
+        jwt:
+            secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+            expiration: 2592000000
+            refresh-token:
+                expiration: 31536000000
+
+logging:
+    level:
+        org:
+            springframework:
+                security: trace
+        com:
+            starwars: error
+
+http:
+    request-logging-filter:
+        enabled: true
+        include-payload: true
+
+activation:
+    expired-time: 24
+    resend-interval: 30

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WebSocket Test - Chat App</title>
+        <meta charset="UTF-8" />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background-color: #f5f5f5;
+            }
+            .container {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+            .section {
+                margin: 20px 0;
+                padding: 20px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .form-group {
+                margin: 15px 0;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+                color: #333;
+            }
+            input,
+            textarea,
+            select {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 14px;
+            }
+            button {
+                padding: 12px 24px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 5px;
+                font-size: 14px;
+            }
+            button:hover {
+                background: #0056b3;
+            }
+            button:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            .success {
+                background: #28a745;
+            }
+            .success:hover {
+                background: #218838;
+            }
+            .danger {
+                background: #dc3545;
+            }
+            .danger:hover {
+                background: #c82333;
+            }
+            .warning {
+                background: #ffc107;
+                color: #212529;
+            }
+            .warning:hover {
+                background: #e0a800;
+            }
+            .messages {
+                height: 400px;
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 10px;
+                background: #f8f9fa;
+                margin-top: 10px;
+            }
+            .message {
+                margin: 10px 0;
+                padding: 10px;
+                border-radius: 5px;
+                border-left: 4px solid #007bff;
+                background: white;
+            }
+            .status {
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                font-weight: bold;
+                margin: 10px 0;
+            }
+            .status.connected {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .status.disconnected {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            .status.connecting {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            .logs {
+                height: 200px;
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 10px;
+                background: #f8f9fa;
+                font-family: monospace;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+            .log-entry {
+                margin: 2px 0;
+                padding: 2px;
+            }
+            .log-info {
+                color: #0066cc;
+            }
+            .log-error {
+                color: #cc0000;
+            }
+            .log-success {
+                color: #009900;
+            }
+            .row {
+                display: flex;
+                gap: 20px;
+            }
+            .col {
+                flex: 1;
+            }
+            .quick-actions {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin: 10px 0;
+            }
+            h1 {
+                text-align: center;
+                color: #333;
+                margin-bottom: 30px;
+            }
+            h3 {
+                color: #333;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #007bff;
+                padding-bottom: 5px;
+            }
+            .sample-data {
+                background: #e9ecef;
+                padding: 10px;
+                border-radius: 5px;
+                margin: 10px 0;
+                font-family: monospace;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 WebSocket Chat Test Interface</h1>
+
+            <!-- Connection Status -->
+            <div class="section">
+                <h3>📡 Connection Status</h3>
+                <div id="status" class="status disconnected">Disconnected</div>
+                <div class="quick-actions">
+                    <button onclick="connect()">Kết Nối WebSocket</button>
+                    <button onclick="disconnect()" class="danger">Ngắt Kết Nối</button>
+                    <button onclick="clearLogs()" class="warning">Xóa Logs</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Message Form -->
+                <div class="col">
+                    <div class="section">
+                        <h3>✉️ Send Message</h3>
+
+                        <div class="form-group">
+                            <label>Message Content:</label>
+                            <textarea id="messageContent" rows="3" placeholder="Type your message here..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Message Type:</label>
+                            <select id="messageType">
+                                <option value="TEXT">TEXT</option>
+                                <option value="IMAGE">IMAGE</option>
+                                <option value="FILE">FILE</option>
+                                <option value="SYSTEM">SYSTEM</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Room ID (for room messages):</label>
+                            <input type="text" id="roomId" placeholder="Leave empty for direct message" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Receiver User ID (for direct messages):</label>
+                            <input type="text" id="receiverId" placeholder="Leave empty for room message" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sender User ID:</label>
+                            <input type="text" id="senderId" placeholder="Your user ID" required />
+                        </div>
+
+                        <div class="quick-actions">
+                            <button onclick="sendMessage()" class="success">Gửi Tin Nhắn</button>
+                            <button onclick="fillTestData()" class="warning">Điền Dữ Liệu</button>
+                            <button onclick="clearForm()">Xóa Form</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>� Lưu ý: Vui lòng nhập UUID có sẵn của bạn</label>
+                            <div class="sample-data">
+                                <strong>Hướng dẫn:</strong><br />
+                                • Sender User ID: UUID của user đang gửi tin nhắn<br />
+                                • Room ID: UUID của phòng chat (để trống nếu gửi tin nhắn riêng)<br />
+                                • Receiver User ID: UUID của user nhận tin nhắn riêng (để trống nếu gửi trong phòng)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="col">
+                    <div class="section">
+                        <h3>⚡ Quick Actions</h3>
+
+                        <div class="form-group">
+                            <label>JWT Token (Optional):</label>
+                            <textarea
+                                id="jwtToken"
+                                rows="3"
+                                placeholder="Paste JWT token here for authenticated requests"
+                            ></textarea>
+                        </div>
+
+                        <div class="quick-actions">
+                            <button onclick="sendRoomMessage()">Gửi Tin Nhắn Phòng</button>
+                            <button onclick="sendDirectMessage()">Gửi Tin Nhắn Riêng</button>
+                            <button onclick="connectUser()" class="success">Kết Nối User</button>
+                            <button onclick="disconnectUser()" class="danger">Ngắt Kết Nối User</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>WebSocket URL:</label>
+                            <input type="text" id="websocketUrl" value="/api/ws" readonly />
+                        </div>
+
+                        <div class="form-group">
+                            <label>REST API Base:</label>
+                            <input type="text" id="restApiBase" value="/api/v1" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Display -->
+            <div class="section">
+                <h3>📨 Received Messages</h3>
+                <button onclick="clearMessages()" class="danger">Clear Messages</button>
+                <div id="messages" class="messages">
+                    <div style="color: #666; text-align: center; padding: 20px">
+                        No messages received yet. Connect and send a message to see results here.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Logs -->
+            <div class="section">
+                <h3>🔍 Debug Logs</h3>
+                <div id="logs" class="logs">
+                    <div class="log-entry log-info">Ready to connect...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Include SockJS and STOMP libraries -->
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+        <script>
+            var stompClient = null;
+            var isConnected = false;
+
+            function updateStatus(message, type) {
+                const statusElement = document.getElementById('status');
+                statusElement.textContent = message;
+                statusElement.className = `status ${type}`;
+            }
+
+            function addLog(message, type = 'info') {
+                const logs = document.getElementById('logs');
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logs.appendChild(logEntry);
+                logs.scrollTop = logs.scrollHeight;
+            }
+
+            function connect() {
+                if (isConnected) {
+                    addLog('Already connected!', 'info');
+                    return;
+                }
+
+                updateStatus('Connecting...', 'connecting');
+                addLog('Attempting to connect to WebSocket...', 'info');
+
+                const socket = new SockJS('/api/ws');
+                stompClient = Stomp.over(socket);
+
+                // Add JWT token if provided
+                const token = document.getElementById('jwtToken').value.trim();
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                    addLog('Using JWT token for authentication', 'info');
+                }
+
+                stompClient.connect(
+                    headers,
+                    function (frame) {
+                        isConnected = true;
+                        updateStatus('Connected', 'connected');
+                        addLog('Connected to WebSocket!', 'success');
+                        addLog('Frame: ' + frame, 'info');
+
+                        // Subscribe to topics
+                        stompClient.subscribe('/topic/user-status', function (message) {
+                            addLog('Received user status update', 'info');
+                            showMessage('User Status Update', JSON.parse(message.body));
+                        });
+
+                        // Subscribe to room messages (you can modify room ID)
+                        stompClient.subscribe('/topic/room/+', function (message) {
+                            addLog('Received room message', 'info');
+                            showMessage('Room Message', JSON.parse(message.body));
+                        });
+
+                        // Subscribe to direct messages
+                        const userId = document.getElementById('senderId').value;
+                        if (userId) {
+                            stompClient.subscribe('/user/' + userId + '/queue/messages', function (message) {
+                                addLog('Received direct message', 'info');
+                                showMessage('Direct Message', JSON.parse(message.body));
+                            });
+                        }
+                    },
+                    function (error) {
+                        isConnected = false;
+                        updateStatus('Connection Error', 'disconnected');
+                        addLog('Connection error: ' + error, 'error');
+                        console.error('Connection error:', error);
+                    },
+                );
+            }
+
+            function disconnect() {
+                if (stompClient !== null && isConnected) {
+                    stompClient.disconnect();
+                    isConnected = false;
+                    updateStatus('Disconnected', 'disconnected');
+                    addLog('Disconnected from WebSocket', 'info');
+                }
+            }
+
+            function sendMessage() {
+                if (!stompClient || !isConnected) {
+                    alert('Please connect to WebSocket first!');
+                    return;
+                }
+
+                const content = document.getElementById('messageContent').value.trim();
+                const messageType = document.getElementById('messageType').value;
+                const roomId = document.getElementById('roomId').value.trim();
+                const receiverId = document.getElementById('receiverId').value.trim();
+                const senderId = document.getElementById('senderId').value.trim();
+
+                if (!content) {
+                    alert('Please enter message content!');
+                    return;
+                }
+
+                if (!senderId) {
+                    alert('Please enter sender user ID!');
+                    return;
+                }
+
+                if (!roomId && !receiverId) {
+                    alert('Please enter either Room ID or Receiver ID!');
+                    return;
+                }
+
+                const messageRequest = {
+                    content: content,
+                    messageType: messageType,
+                    recivedMessageRoomId: roomId || null,
+                    recivedMessageUserId: receiverId || null,
+                    sendUserId: senderId,
+                };
+
+                addLog('Sending message: ' + JSON.stringify(messageRequest), 'info');
+
+                stompClient.send('/app/sendMessage', {}, JSON.stringify(messageRequest));
+
+                addLog('Message sent successfully!', 'success');
+
+                // Clear content after sending
+                document.getElementById('messageContent').value = '';
+            }
+
+            function sendRoomMessage() {
+                const roomId = prompt('Nhập Room ID có sẵn của bạn:');
+                if (!roomId) {
+                    alert('Vui lòng nhập Room ID!');
+                    return;
+                }
+
+                document.getElementById('roomId').value = roomId;
+                document.getElementById('receiverId').value = '';
+                document.getElementById('messageContent').value =
+                    prompt('Nhập nội dung tin nhắn:') || 'Xin chào mọi người trong phòng! 👋';
+
+                if (!document.getElementById('senderId').value) {
+                    const senderId = prompt('Nhập Sender User ID của bạn:');
+                    if (!senderId) {
+                        alert('Vui lòng nhập Sender ID!');
+                        return;
+                    }
+                    document.getElementById('senderId').value = senderId;
+                }
+
+                sendMessage();
+            }
+
+            function sendDirectMessage() {
+                const receiverId = prompt('Nhập Receiver User ID có sẵn của bạn:');
+                if (!receiverId) {
+                    alert('Vui lòng nhập Receiver ID!');
+                    return;
+                }
+
+                document.getElementById('roomId').value = '';
+                document.getElementById('receiverId').value = receiverId;
+                document.getElementById('messageContent').value =
+                    prompt('Nhập nội dung tin nhắn:') || 'Xin chào! Đây là tin nhắn riêng 💬';
+
+                if (!document.getElementById('senderId').value) {
+                    const senderId = prompt('Nhập Sender User ID của bạn:');
+                    if (!senderId) {
+                        alert('Vui lòng nhập Sender ID!');
+                        return;
+                    }
+                    document.getElementById('senderId').value = senderId;
+                }
+
+                sendMessage();
+            }
+
+            function connectUser() {
+                if (!stompClient || !isConnected) {
+                    alert('Please connect to WebSocket first!');
+                    return;
+                }
+
+                const request = { status: 'ONLINE' };
+                stompClient.send('/app/user/connect', {}, JSON.stringify(request));
+                addLog('Sent user connect request', 'success');
+            }
+
+            function disconnectUser() {
+                if (!stompClient || !isConnected) {
+                    alert('Please connect to WebSocket first!');
+                    return;
+                }
+
+                const request = { status: 'OFFLINE' };
+                stompClient.send('/app/user/disconnect', {}, JSON.stringify(request));
+                addLog('Sent user disconnect request', 'info');
+            }
+
+            function showMessage(type, message) {
+                const messages = document.getElementById('messages');
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message';
+                messageElement.innerHTML = `
+                <strong>[${type}]</strong> ${new Date().toLocaleTimeString()}<br>
+                <pre>${JSON.stringify(message, null, 2)}</pre>
+            `;
+                messages.appendChild(messageElement);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function clearMessages() {
+                document.getElementById('messages').innerHTML = `
+                <div style="color: #666; text-align: center; padding: 20px;">
+                    Tin nhắn đã được xóa. Gửi tin nhắn để xem kết quả ở đây.
+                </div>
+            `;
+            }
+
+            function clearLogs() {
+                document.getElementById('logs').innerHTML = `
+                <div class="log-entry log-info">Logs đã được xóa - Sẵn sàng kết nối...</div>
+            `;
+            }
+
+            function clearForm() {
+                document.getElementById('messageContent').value = '';
+                document.getElementById('roomId').value = '';
+                document.getElementById('receiverId').value = '';
+                document.getElementById('senderId').value = '';
+            }
+
+            function copyToClipboard(elementId) {
+                const element = document.getElementById(elementId);
+                if (element.value) {
+                    navigator.clipboard.writeText(element.value).then(function () {
+                        addLog('Đã copy ' + elementId + ' vào clipboard', 'success');
+                    });
+                } else {
+                    alert('Không có dữ liệu để copy!');
+                }
+            }
+
+            function fillTestData() {
+                const messageContent = prompt('Nhập nội dung tin nhắn:') || 'Đây là tin nhắn test! 🚀';
+                const messageType = prompt('Nhập loại tin nhắn (TEXT/IMAGE/FILE/SYSTEM):') || 'TEXT';
+
+                document.getElementById('messageContent').value = messageContent;
+                document.getElementById('messageType').value = messageType.toUpperCase();
+
+                if (!document.getElementById('senderId').value) {
+                    const senderId = prompt('Nhập Sender User ID của bạn:');
+                    if (!senderId) {
+                        alert('Vui lòng nhập Sender ID!');
+                        return;
+                    }
+                    document.getElementById('senderId').value = senderId;
+                }
+
+                const isRoomMessage = confirm('Bạn muốn gửi tin nhắn phòng (OK) hay tin nhắn riêng (Cancel)?');
+                if (isRoomMessage) {
+                    const roomId = prompt('Nhập Room ID có sẵn của bạn:');
+                    if (!roomId) {
+                        alert('Vui lòng nhập Room ID!');
+                        return;
+                    }
+                    document.getElementById('roomId').value = roomId;
+                    document.getElementById('receiverId').value = '';
+                } else {
+                    const receiverId = prompt('Nhập Receiver User ID có sẵn của bạn:');
+                    if (!receiverId) {
+                        alert('Vui lòng nhập Receiver ID!');
+                        return;
+                    }
+                    document.getElementById('receiverId').value = receiverId;
+                    document.getElementById('roomId').value = '';
+                }
+
+                addLog('Đã điền dữ liệu test vào form', 'info');
+            }
+
+            // Auto-connect on page load (optional)
+            window.onload = function () {
+                addLog('Trang đã tải - Nhấn Connect để bắt đầu test', 'info');
+            };
+
+            // Handle page unload
+            window.onbeforeunload = function () {
+                if (isConnected) {
+                    disconnect();
+                }
+            };
+        </script>
+    </body>
+</html>
