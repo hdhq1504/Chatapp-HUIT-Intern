@@ -1,4 +1,4 @@
-import apiService from '../api/apiService';
+import { api } from '../api';
 
 export class UserService {
   constructor() {
@@ -18,20 +18,14 @@ export class UserService {
       return this.cache.get(cacheKey).data;
     }
 
-    try {
-      const response = await apiService.request('/users', {
-        method: 'GET',
-      });
+    const response = await api.getAllUsers();
 
-      this.cache.set(cacheKey, {
-        data: response,
-        timestamp: Date.now(),
-      });
+    this.cache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now(),
+    });
 
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    return response;
   }
 
   async getUserById(userId, useCache = true) {
@@ -42,9 +36,7 @@ export class UserService {
     }
 
     try {
-      const response = await apiService.request(`/users/${userId}`, {
-        method: 'GET',
-      });
+      const response = await api.getUserById(userId);
 
       this.cache.set(cacheKey, {
         data: response,
@@ -60,40 +52,29 @@ export class UserService {
   }
 
   async getOtherUsers(currentUserId, useCache = true) {
-    try {
-      const allUsers = await this.getAllUsers(useCache);
-      return allUsers.filter((user) => user.id !== currentUserId);
-    } catch (error) {
-      throw error;
-    }
+    const allUsers = await this.getAllUsers(useCache);
+    return allUsers.filter((user) => user.id !== currentUserId);
   }
 
   async searchUsers(query, excludeUserId = null) {
-    try {
-      const allUsers = await this.getAllUsers(true);
+    const allUsers = await this.getAllUsers(true);
 
-      const filtered = allUsers.filter((user) => {
-        if (excludeUserId && user.id === excludeUserId) return false;
+    const filtered = allUsers.filter((user) => {
+      if (excludeUserId && user.id === excludeUserId) return false;
 
-        const searchText = query.toLowerCase();
-        return (
-          user.name?.toLowerCase().includes(searchText) ||
-          user.username?.toLowerCase().includes(searchText) ||
-          user.email?.toLowerCase().includes(searchText)
-        );
-      });
+      const searchText = query.toLowerCase();
+      return (
+        user.name?.toLowerCase().includes(searchText) ||
+        user.username?.toLowerCase().includes(searchText) ||
+        user.email?.toLowerCase().includes(searchText)
+      );
+    });
 
-      return filtered;
-    } catch (error) {
-      throw error;
-    }
+    return filtered;
   }
 
   async updateProfile(profileData) {
-    const response = await apiService.request('/users/profile', {
-      method: 'PUT',
-      body: profileData,
-    });
+    const response = await api.updateProfile(profileData);
 
     // Update cache with new profile data
     this.cache.set(`user_${response.id}`, {
@@ -108,16 +89,7 @@ export class UserService {
   }
 
   async uploadAvatar(file) {
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append('avatar', file);
-
-    const response = await apiService.request('/users/avatar', {
-      method: 'POST',
-      body: formData,
-      // Don't set Content-Type header for FormData
-      headers: {},
-    });
+    const response = await api.uploadFile(file, 'avatar');
 
     // Update profile with new avatar URL
     return await this.updateProfile({
@@ -154,8 +126,8 @@ export class UserService {
 
   async getUserStatus(userId) {
     try {
-      // Note: apiService doesn't have getUserStatus method
-      // You may need to add this method to apiService or use a different approach
+      // The API layer doesn't expose a user status endpoint yet
+      // so we return a default offline status
       return {
         userId,
         status: 'offline',

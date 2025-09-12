@@ -7,7 +7,8 @@ import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
 import { ChatProvider } from '../contexts/ChatContext.jsx';
 import { useChatStorage } from '../hooks/useChatStorage.jsx';
 import { useTheme } from '../hooks/useTheme.jsx';
-import { groupStorage, safeGetItem, safeSetItem, getConversationKey, safeRemoveItem } from '../utils/storage/index.js';
+import { groupStorage, safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage/index.js';
+import { getConversationKey } from '../storage/helpers/index.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 const DEFAULT_CONTACTS = [];

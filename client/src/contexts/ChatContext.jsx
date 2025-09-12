@@ -1,8 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { safeGetItem, safeSetItem, generateId, getConversationKey } from '../utils/storage/index';
+import { safeGetItem, safeSetItem, generateId } from '../utils/storage/index';
 
 const ChatContext = createContext();
+
+const getConversationKey = (userId1, userId2) => [userId1, userId2].sort().join('_');
 
 export const ChatProvider = ({ children }) => {
   const { user } = useAuth();

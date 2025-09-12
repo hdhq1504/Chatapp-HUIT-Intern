@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageService } from '../services/messageService';
 
-const WS_BASE_URL = 'ws://localhost:8080/ws';
+const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
 
 export function useRealtime() {
   const { user, isAuthenticated, token } = useAuth();
@@ -43,7 +43,7 @@ export function useRealtime() {
     console.log('Connecting to WebSocket...');
 
     try {
-      const socket = new WebSocket(`${WS_BASE_URL}?token=${token}`);
+      const socket = new WebSocket(`${WS_BASE_URL}/ws?token=${token}`);
 
       socket.onopen = () => {
         console.log('WebSocket connection established');

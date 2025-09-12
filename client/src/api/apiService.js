@@ -1,6 +1,6 @@
 class ApiService {
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    this.baseURL = import.meta.env.VITE_API_URL || '/api';
     this.token = null;
   }
 
@@ -155,4 +155,4 @@ class ApiService {
   }
 }
 
-export const apiService = new ApiService();
+export const api = new ApiService();

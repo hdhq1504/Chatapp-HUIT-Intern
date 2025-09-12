@@ -15,7 +15,8 @@ import {
   Check,
   Settings,
 } from 'lucide-react';
-import { scrollBar, getInitial, groupStorage, safeGetItem } from '../../utils/storage/index.js';
+import { groupStorage, safeGetItem } from '../../utils/storage/index.js';
+import { scrollBar, getInitial } from '../../storage/helpers/index.js';
 import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
 
 function ChatInfo({ onClose, selectedContact }) {

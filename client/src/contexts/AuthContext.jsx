@@ -1,6 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { safeGetItem, safeSetItem, generateId, safeRemoveItem } from '../utils/storage/index';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage/index';
+import { api } from '../api/apiService';
 
 const AuthContext = createContext();
 
@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState(null);
 
   // Load user from localStorage on app start
   useEffect(() => {
@@ -27,6 +28,8 @@ export const AuthProvider = ({ children }) => {
         if (parsedUser && authToken) {
           setUser(parsedUser);
           setIsAuthenticated(true);
+          setToken(authToken);
+          api.setToken(authToken);
         }
       } catch (error) {
         console.error('Error loading user from storage:', error);
@@ -45,39 +48,18 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Simulate API login
   const login = async (credentials) => {
     try {
       setIsLoading(true);
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock authentication logic
-      const { email, password } = credentials;
-
-      // Simple validation (replace with real API call)
-      if (email && password && password.length >= 6) {
-        // Try to find existing user in localStorage (simulating database lookup)
-        const existingUser = safeGetItem(`user_${email}`, null);
-
-        if (existingUser) {
-          const userData = existingUser;
-          const authToken = btoa(`${email}:${password}:${Date.now()}`);
-
-          // Store authenticated user
-          safeSetItem('authenticated_user', userData);
-          safeSetItem('auth_token', authToken);
-
-          setUser(userData);
-          setIsAuthenticated(true);
-
-          return { success: true, user: userData };
-        }
-        throw new Error('User not found. Please sign up first.');
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      
+      const { token: authToken, user: userData } = await api.login(credentials);
+      safeSetItem('authenticated_user', userData);
+      safeSetItem('auth_token', authToken);
+      api.setToken(authToken);
+      setUser(userData);
+      setToken(authToken);
+      setIsAuthenticated(true);
+      return { success: true, user: userData };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, error: error.message };
@@ -86,57 +68,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Simulate API signup
   const signup = async (userData) => {
     try {
       setIsLoading(true);
+      const { password, confirmPassword, ...rest } = userData;
 
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      const { username, email, password, confirmPassword } = userData;
-
-      // Basic validation
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
       }
 
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
+      const { token: authToken, user: newUser } = await api.register({
+        ...rest,
+        password,
+      });
 
-      // Check if user already exists (mock check)
-      const existingUser = safeGetItem(`user_${email}`, null);
-      if (existingUser) throw new Error('User already exists with this email');
-
-      const newUserData = {
-        id: generateId('user'),
-        username,
-        email,
-        name: username.charAt(0).toUpperCase() + username.slice(1),
-        avatar: '',
-        createdAt: new Date().toISOString(),
-      };
-
-      const authToken = btoa(`${email}:${password}:${Date.now()}`);
-
-      // Store user data
-      safeSetItem(`user_${email}`, newUserData);
-      // Add to global users list so other accounts can find and add this user as contact
-      try {
-        const allUsers = safeGetItem('all_users', []);
-        allUsers.push(newUserData);
-        safeSetItem('all_users', allUsers);
-      } catch (err) {
-        console.warn('Failed to update all_users during signup', err);
-      }
-      safeSetItem('authenticated_user', newUserData);
+      safeSetItem('authenticated_user', newUser);
       safeSetItem('auth_token', authToken);
-
-      setUser(newUserData);
+      api.setToken(authToken);
+      setUser(newUser);
+      setToken(authToken);
       setIsAuthenticated(true);
 
-      return { success: true, user: newUserData };
+      return { success: true, user: newUser };
     } catch (error) {
       console.error('Signup error:', error);
       return { success: false, error: error.message };
@@ -145,45 +98,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
-  const logout = () => {
+  const logout = async () => {
     try {
-      // Clear localStorage
+      setIsLoading(true);
+      await api.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
       try {
         safeRemoveItem('authenticated_user');
         safeRemoveItem('auth_token');
       } catch (err) {
         console.warn('Error clearing local storage during logout', err);
       }
-
-      // Reset state
+      api.setToken(null);
       setUser(null);
+      setToken(null);
       setIsAuthenticated(false);
-
-      return { success: true };
-    } catch (error) {
-      console.error('Logout error:', error);
-      return { success: false, error: error.message };
+      setIsLoading(false);
     }
   };
 
-  // Update user profile
-  const updateProfile = (updates) => {
+  const updateProfile = async (updates) => {
     try {
-      const updatedUser = { ...user, ...updates };
-
-      // Update local storage
+      const updatedUser = await api.updateProfile(updates);
       safeSetItem('authenticated_user', updatedUser);
-      if (updatedUser.email) safeSetItem(`user_${updatedUser.email}`, updatedUser);
-
       setUser(updatedUser);
-
       window.dispatchEvent(
         new CustomEvent('user-profile-updated', {
           detail: { user: updatedUser },
         }),
       );
-
       return { success: true, user: updatedUser };
     } catch (error) {
       console.error('Update profile error:', error);
@@ -193,6 +138,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    token,
     isAuthenticated,
     isLoading,
     login,

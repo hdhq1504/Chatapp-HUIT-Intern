@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive, UserPlus } from 'lucide-react';
-import { scrollBar, getInitial } from '../../utils/storage/index.js';
+import { scrollBar, getInitial } from '../../storage/helpers/index.js';
 import { useClickOutside, useMultipleClickOutside } from '../../hooks/useClickOutside.jsx';
 import DeleteDialog from '../common/DeleteDialog.jsx';
 import SettingModal from '../modals/SettingModal.jsx';

@@ -1,4 +1,4 @@
-import { apiService } from '../api/apiService';
+import { api } from '../api/apiService';
 
 export class MessageService {
   static instance = null;
@@ -48,7 +48,7 @@ export class MessageService {
       return this.cache.get(`${roomId}_${page}`);
     }
 
-    const response = await apiService.request(
+    const response = await api.request(
       `/messages/${roomId}?page=${page - 1}&size=${limit}`,
       {
         method: 'GET',
@@ -61,7 +61,7 @@ export class MessageService {
   }
 
   async sendMessage(roomId, messageData) {
-    const response = await apiService.request(`/messages/${roomId}`, {
+    const response = await api.request(`/messages/${roomId}`, {
       method: 'POST',
       body: {
         content: messageData.content,
@@ -95,7 +95,7 @@ export class MessageService {
   }
 
   async updateMessage(messageId, updates) {
-    const response = await apiService.request(`/messages/${messageId}`, {
+    const response = await api.request(`/messages/${messageId}`, {
       method: 'PUT',
       body: updates,
     });
@@ -105,7 +105,7 @@ export class MessageService {
   }
 
   async deleteMessage(messageId) {
-    await apiService.request(`/messages/${messageId}`, {
+    await api.request(`/messages/${messageId}`, {
       method: 'DELETE',
     });
 
@@ -114,7 +114,7 @@ export class MessageService {
   }
 
   async markMessagesAsRead(roomId, userId) {
-    const response = await apiService.request(`/messages/${roomId}/read`, {
+    const response = await api.request(`/messages/${roomId}/read`, {
       method: 'PUT',
     });
 
