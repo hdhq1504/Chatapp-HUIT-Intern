@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import ImagePreviewModal from '../common/ImagePreviewModal.jsx';
+import ImagePreviewModal from './ImagePreviewModal.jsx';
 import { File, Image, Video, FileText, Download, Play } from 'lucide-react';
-import { formatMessageTimestamp } from '../../storage/helpers/index.js';
+import { formatMessageTimestamp } from '../storage/helpers/index.js';
 
 function MessageBubble({ message, isLast, isGrouped, isNewSession = false, timeSeparator = null }) {
   const [showImageModal, setShowImageModal] = useState(false);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, MoreHorizontal, Ban, Archive, Trash2 } from 'lucide-react';
-import { getInitial } from '../../storage/helpers/index';
+import { getInitial } from '../storage/helpers/index';
 
 function ContactItem({
   contact,

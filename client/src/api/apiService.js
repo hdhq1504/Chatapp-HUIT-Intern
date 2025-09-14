@@ -10,25 +10,44 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
+    const config = { ...options };
+
+    const headers = {
+      ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      ...config.headers,
     };
 
-    if (config.body && typeof config.body !== 'string') {
-      config.body = JSON.stringify(config.body);
+    if (!(config.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+
+      if (config.body && typeof config.body !== 'string') {
+        config.body = JSON.stringify(config.body);
+      }
     }
+
+    config.headers = headers;
 
     try {
       const response = await fetch(url, config);
+      const contentType = response.headers.get('content-type');
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `HTTP ${response.status}`);
+        let errorData = {};
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json().catch(() => ({}));
+        } else {
+          const text = await response.text().catch(() => '');
+          errorData = { message: text };
+        }
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      if (response.status === 204) {
+        return null;
+      }
+
+      if (!contentType || !contentType.includes('application/json')) {
+        return await response.text();
       }
 
       return await response.json();

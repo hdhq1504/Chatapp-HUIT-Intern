@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { scrollBar } from '../../storage/helpers/index.js';
+import { scrollBar } from '../storage/helpers/index.js';
 import { Send, Paperclip, X, Image, Video, FileText } from 'lucide-react';
 
 function InputMessage({ onSendMessage, onSendFile, disabled = false }) {

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive, UserPlus } from 'lucide-react';
-import { scrollBar, getInitial } from '../../storage/helpers/index.js';
-import { useClickOutside, useMultipleClickOutside } from '../../hooks/useClickOutside.jsx';
-import DeleteDialog from '../common/DeleteDialog.jsx';
-import SettingModal from '../modals/SettingModal.jsx';
-import AddContactModal from '../modals/AddContactModal.jsx';
+import { scrollBar, getInitial } from '../storage/helpers/index.js';
+import { useClickOutside, useMultipleClickOutside } from '../hooks/useClickOutside.jsx';
+import DeleteDialog from './DeleteDialog.jsx';
+import SettingModal from './modals/SettingModal.jsx';
+import AddContactModal from './modals/AddContactModal.jsx';
 import ContactItem from './ContactItem.jsx';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useChat } from '../../contexts/ChatContext.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { useChat } from '../contexts/ChatContext.jsx';
 
 function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat, onContactAdded }) {
   const [openSettings, setOpenSettings] = useState(false);

@@ -114,14 +114,12 @@ export class MessageService {
   }
 
   async markMessagesAsRead(roomId, userId) {
-    const response = await api.request(`/messages/${roomId}/read`, {
+    await api.request(`/messages/${roomId}/read`, {
       method: 'PUT',
     });
 
     // Update read status in cache
     this.updateReadStatusInCache(roomId, userId);
-
-    return response;
   }
 
   getUnreadCount(messages, currentUserId) {

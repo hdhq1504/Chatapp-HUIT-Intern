@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useChat } from '../../contexts/ChatContext.jsx';
-import { safeGetItem, safeSetItem } from '../../utils/storage/index.js';
-import { scrollBar, processMessagesForRendering } from '../../storage/helpers/index.js';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { useChat } from '../contexts/ChatContext.jsx';
+import { safeGetItem, safeSetItem } from '../utils/storage/index.js';
+import { scrollBar, processMessagesForRendering } from '../storage/helpers/index.js';
 import MessageHeader from './MessageHeader.jsx';
 import MessageBubble from './MessageBubble.jsx';
 import InputMessage from './InputMessage.jsx';
