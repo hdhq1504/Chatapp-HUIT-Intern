@@ -40,14 +40,6 @@ function LoginPage() {
     }
   };
 
-  // const handleInputBlur = (e) => {
-  //   const { name, value } = e.target;
-  //   const rules = getValidationRules()[name];
-  //   if (rules) {
-  //     validateField(name, value, rules);
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -116,6 +108,7 @@ function LoginPage() {
               />
               {getFieldError('email') && <p className='mt-1 text-sm text-red-500'>{getFieldError('email')}</p>}
             </div>
+
             <div>
               <div className='flex items-center justify-between'>
                 <label className='mb-2 block font-medium text-gray-700'>Password</label>
@@ -140,12 +133,14 @@ function LoginPage() {
               </div>
               {getFieldError('password') && <p className='mt-1 text-sm text-red-500'>{getFieldError('password')}</p>}
             </div>
+
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>Don't have an account?</span>
               <a href='/signup' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>
                 Sign Up
               </a>
             </div>
+
             <button
               type='submit'
               disabled={isLoading}
@@ -154,9 +149,10 @@ function LoginPage() {
               {isLoading ? (
                 <div className='flex items-center justify-center space-x-2'>
                   <Loader2 size={18} className='animate-spin' />
+                  <span>Signing In...</span>
                 </div>
               ) : (
-                'Login'
+                'Sign In'
               )}
             </button>
           </form>

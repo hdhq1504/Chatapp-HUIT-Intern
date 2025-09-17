@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import leftGradient from '../assets/images/left-gradient.png';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import useValidator from '../hooks/useValidator';
+import leftGradient from '../assets/images/left-gradient.png';
 import { useAuth } from '../contexts/AuthContext';
+import useValidator from '../hooks/useValidator';
 
 function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
   const navigate = useNavigate();
   const { signup, isAuthenticated, isLoading } = useAuth();
 
   const { errors, touched, validators, validateField, validateAll } = useValidator();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate('/chat', { replace: true });
@@ -23,15 +28,20 @@ function SignupPage() {
   const getValidationRules = () => ({
     username: [
       (value) => validators.isRequired(value, 'Please enter the username'),
-      (value) => validators.minLength(value, 3, 'The username must have at least 3 characters'),
+      (value) => validators.minLength(value, 3, 'Username must have at least 3 characters'),
     ],
     email: [
       (value) => validators.isRequired(value, 'Please enter the email'),
       (value) => validators.isEmail(value, 'Email is invalid'),
     ],
+    phone: [
+      (value) => validators.isRequired(value, 'Please enter the phone number'),
+      (value) => validators.minLength(value, 10, 'Phone number must be at least 10 digits'),
+      (value) => /^[0-9+\-\s()]+$/.test(value) || 'Please enter a valid phone number',
+    ],
     password: [
       (value) => validators.isRequired(value, 'Please enter the password'),
-      (value) => validators.minLength(value, 6, 'The password is at least 6 characters'),
+      (value) => validators.minLength(value, 8, 'The password must be at least 8 characters'),
     ],
     confirmPassword: [
       (value) => validators.isRequired(value, 'Please confirm the password'),
@@ -47,14 +57,6 @@ function SignupPage() {
     }
   };
 
-  // const handleInputBlur = (e) => {
-  //   const { name, value } = e.target;
-  //   const rules = getValidationRules()[name];
-  //   if (rules) {
-  //     validateField(name, value, rules);
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -65,9 +67,8 @@ function SignupPage() {
       const result = await signup(formData);
 
       if (result.success) {
-        navigate('/', { replace: true });
+        navigate('/chat', { replace: true });
       } else {
-        // Show error message
         alert(result.error || 'Signup failed. Please try again.');
       }
     }
@@ -111,6 +112,7 @@ function SignupPage() {
           <p className='mb-6 font-medium text-gray-500'>Please sign up to create an account</p>
 
           <form onSubmit={handleSubmit} className='space-y-5'>
+            {/* Username */}
             <div>
               <label className='mb-2 block font-medium text-gray-700'>Username</label>
               <input
@@ -118,13 +120,14 @@ function SignupPage() {
                 name='username'
                 value={formData.username}
                 onChange={handleInputChange}
-                // onBlur={handleInputBlur}
                 className={getInputClassName('username')}
                 placeholder='Enter your username'
                 disabled={isLoading}
               />
               {getFieldError('username') && <p className='mt-1 text-sm text-red-500'>{getFieldError('username')}</p>}
             </div>
+
+            {/* Email */}
             <div>
               <label className='mb-2 block font-medium text-gray-700'>Email</label>
               <input
@@ -132,13 +135,29 @@ function SignupPage() {
                 name='email'
                 value={formData.email}
                 onChange={handleInputChange}
-                // onBlur={handleInputBlur}
                 className={getInputClassName('email')}
                 placeholder='Enter your email'
                 disabled={isLoading}
               />
               {getFieldError('email') && <p className='mt-1 text-sm text-red-500'>{getFieldError('email')}</p>}
             </div>
+
+            {/* Phone */}
+            <div>
+              <label className='mb-2 block font-medium text-gray-700'>Phone Number</label>
+              <input
+                type='tel'
+                name='phone'
+                value={formData.phone}
+                onChange={handleInputChange}
+                className={getInputClassName('phone')}
+                placeholder='Enter your phone number'
+                disabled={isLoading}
+              />
+              {getFieldError('phone') && <p className='mt-1 text-sm text-red-500'>{getFieldError('phone')}</p>}
+            </div>
+
+            {/* Password */}
             <div>
               <label className='mb-2 block font-medium text-gray-700'>Password</label>
               <div className='relative'>
@@ -147,7 +166,6 @@ function SignupPage() {
                   name='password'
                   value={formData.password}
                   onChange={handleInputChange}
-                  // onBlur={handleInputBlur}
                   className={getInputClassName('password')}
                   placeholder='Enter your password'
                   disabled={isLoading}
@@ -162,6 +180,8 @@ function SignupPage() {
               </div>
               {getFieldError('password') && <p className='mt-1 text-sm text-red-500'>{getFieldError('password')}</p>}
             </div>
+
+            {/* Confirm password */}
             <div>
               <label className='mb-2 block font-medium text-gray-700'>Confirm Password</label>
               <input
@@ -169,7 +189,6 @@ function SignupPage() {
                 name='confirmPassword'
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                // onBlur={handleInputBlur}
                 className={getInputClassName('confirmPassword')}
                 placeholder='Confirm your password'
                 disabled={isLoading}
@@ -178,6 +197,7 @@ function SignupPage() {
                 <p className='mt-1 text-sm text-red-500'>{getFieldError('confirmPassword')}</p>
               )}
             </div>
+
             <div className='mt-3 text-center'>
               <span className='font-medium text-gray-700'>Already have an account?</span>
               <a href='/login' className='ml-2 font-medium text-blue-600 hover:text-blue-700'>

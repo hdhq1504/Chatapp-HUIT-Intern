@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, Video, Info, ArrowLeft } from 'lucide-react';
-import { getInitial } from '../storage/helpers/index.js';
+import { getInitial } from '../storage/helpers';
 
 function MessageHeader({ setShowDetails, onBackToSidebar, selectedContact }) {
   if (!selectedContact) {

@@ -1,4 +1,4 @@
-import { api } from '../api';
+import { api } from '../api/apiService';
 
 export class UserService {
   constructor() {
@@ -11,21 +11,17 @@ export class UserService {
     return cached && Date.now() - cached.timestamp < this.cacheExpiry;
   }
 
-  async getAllUsers(useCache = true) {
-    const cacheKey = 'all_users';
+  async getAllUsers() {
+    const response = await api.request('/users/all-user-online');
+    return response.data || [];
+  }
 
-    if (useCache && this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey).data;
-    }
+  async connect() {
+    return api.request('/users/connect', { method: 'POST' });
+  }
 
-    const response = await api.getAllUsers();
-
-    this.cache.set(cacheKey, {
-      data: response,
-      timestamp: Date.now(),
-    });
-
-    return response;
+  async disconnect() {
+    return api.request('/users/disconnect', { method: 'POST' });
   }
 
   async getUserById(userId, useCache = true) {

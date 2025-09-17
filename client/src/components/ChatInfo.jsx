@@ -15,9 +15,9 @@ import {
   Check,
   Settings,
 } from 'lucide-react';
-import { groupStorage, safeGetItem } from '../utils/storage/index.js';
-import { scrollBar, getInitial } from '../storage/helpers/index.js';
-import ImagePreviewModal from './ImagePreviewModal.jsx';
+import ImagePreviewModal from './ImagePreviewModal';
+import { groupStorage, safeGetItem } from '../utils/storage';
+import { scrollBar, getInitial } from '../storage/helpers';
 
 function ChatInfo({ onClose, selectedContact }) {
   const [chatSettingsOpen, setChatSettingsOpen] = useState(true);

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/chat/Sidebar.jsx';
-import ChatContainer from '../components/chat/ChatContainer.jsx';
-import ChatInfo from '../components/chat/ChatInfo.jsx';
-import CreateGroupModal from '../components/modals/CreateGroupModal.jsx';
-import WelcomeScreen from '../components/common/WelcomeScreen.jsx';
-import { ChatProvider } from '../contexts/ChatContext.jsx';
-import { useChatStorage } from '../hooks/useChatStorage.jsx';
-import { useTheme } from '../hooks/useTheme.jsx';
-import { groupStorage, safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage/index.js';
-import { getConversationKey } from '../storage/helpers/index.js';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import ChatContainer from '../components/ChatContainer';
+import ChatInfo from '../components/ChatInfo';
+import CreateGroupModal from '../components/CreateGroupModal';
+import Sidebar from '../components/Sidebar';
+import WelcomeScreen from '../components/WelcomeScreen';
+import { useAuth } from '../contexts/AuthContext';
+import { ChatProvider } from '../contexts/ChatContext';
+import { useChatStorage } from '../hooks/useChatStorage';
+import { useTheme } from '../hooks/useTheme';
+import { groupStorage, safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
+import { getConversationKey } from '../storage/helpers';
 
 const DEFAULT_CONTACTS = [];
 
@@ -64,15 +64,6 @@ function ChatPage() {
     combined.sort((a, b) => (b.lastMessageTimestamp || 0) - (a.lastMessageTimestamp || 0));
     setAllChats(combined);
   }, [contacts, groups]);
-
-  // useEffect(() => {
-  //   try {
-  //     const contactsOnly = contacts.filter((c) => c.type === 'contact');
-  //     localStorage.setItem('contacts', JSON.stringify(contactsOnly));
-  //   } catch (e) {
-  //     console.error('save contacts error', e);
-  //   }
-  // }, [contacts]);
 
   useEffect(() => {
     const handleMessageReceived = (event) => {

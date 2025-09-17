@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Sun, Moon, Monitor } from 'lucide-react';
-import { useClickOutside } from '../../hooks/useClickOutside.jsx';
-import { useTheme } from '../../hooks/useTheme.jsx';
+import { useClickOutside } from '../hooks/useClickOutside';
+import { useTheme } from '../hooks/useTheme';
 
 function SettingModal({ isOpen, onClose }) {
   const [shouldRender, setShouldRender] = useState(false);

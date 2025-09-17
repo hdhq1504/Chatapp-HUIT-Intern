@@ -10,12 +10,15 @@ export const useTheme = () => {
     [],
   );
 
-  const applyTheme = useCallback((option) => {
-    const root = document.documentElement;
-    const systemPrefersDark = mediaQuery ? mediaQuery.matches : false;
-    const isDark = option === 'dark' || (option === 'system' && systemPrefersDark);
-    root.classList.toggle('dark', isDark);
-  }, [mediaQuery]);
+  const applyTheme = useCallback(
+    (option) => {
+      const root = document.documentElement;
+      const systemPrefersDark = mediaQuery ? mediaQuery.matches : false;
+      const isDark = option === 'dark' || (option === 'system' && systemPrefersDark);
+      root.classList.toggle('dark', isDark);
+    },
+    [mediaQuery],
+  );
 
   useEffect(() => {
     const saved = safeGetItem('theme', null);
@@ -44,9 +47,9 @@ export const useTheme = () => {
   }, [mediaQuery, themeOption]);
 
   const setTheme = (option) => {
-  setThemeOption(option);
-  safeSetItem('theme', option === 'system' ? 'system' : option);
-  applyTheme(option);
+    setThemeOption(option);
+    safeSetItem('theme', option === 'system' ? 'system' : option);
+    applyTheme(option);
   };
 
   return {

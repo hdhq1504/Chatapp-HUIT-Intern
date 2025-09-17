@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, Check } from 'lucide-react';
-import { useChat } from '../../contexts/ChatContext.jsx';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { useClickOutside } from '../../hooks/useClickOutside.jsx';
-import { getInitial, scrollBar } from '../../storage/helpers/index.js';
-import { groupStorage } from '../../utils/storage/index.js';
+import { useChat } from '../contexts/ChatContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useClickOutside } from '../hooks/useClickOutside';
+import { getInitial, scrollBar } from '../storage/helpers';
+import { groupStorage } from '../utils/storage';
 
 function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
   const { user } = useAuth();
@@ -34,22 +34,6 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
     setSelectedMembers((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
     setError('');
   };
-
-  // const validateForm = () => {
-  //   if (!groupName.trim()) {
-  //     setError('Group name is required');
-  //     return false;
-  //   }
-  //   if (groupName.trim().length < 2) {
-  //     setError('Group name must be at least 2 characters');
-  //     return false;
-  //   }
-  //   if (selectedMembers.length < 2) {
-  //     setError('Please select at least 2 members for the group');
-  //     return false;
-  //   }
-  //   return true;
-  // };
 
   const handleCreateGroup = async () => {
     if (!groupName.trim() || selectedMembers.length === 0) return;
@@ -171,7 +155,7 @@ function CreateGroupModal({ isOpen, onClose, contacts = [], onGroupCreated }) {
             placeholder='Search contacts...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className='w-full rounded-xl border border-gray-300 bg-white px-3 py-2 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-none dark:bg-[#303030]'
+            className='w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-none dark:bg-[#303030]'
           />
         </div>
 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { X, Search, UserPlus, Loader2 } from 'lucide-react';
-import { getInitial } from '../../storage/helpers/index.js';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { safeGetItem } from '../../utils/storage/index.js';
+import { getInitial } from '../storage/helpers';
+import { useAuth } from '../contexts/AuthContext';
+import { safeGetItem } from '../utils/storage';
 
 function AddContactModal({ isOpen, onClose, onContactAdded }) {
   const [searchTerm, setSearchTerm] = useState('');

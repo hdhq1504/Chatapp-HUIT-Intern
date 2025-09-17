@@ -48,12 +48,9 @@ export class MessageService {
       return this.cache.get(`${roomId}_${page}`);
     }
 
-    const response = await api.request(
-      `/messages/${roomId}?page=${page - 1}&size=${limit}`,
-      {
-        method: 'GET',
-      }
-    );
+    const response = await api.request(`/messages/${roomId}?page=${page - 1}&size=${limit}`, {
+      method: 'GET',
+    });
 
     this.cache.set(`${roomId}_${page}`, response.content);
 
@@ -75,19 +72,11 @@ export class MessageService {
     this.clearRoomCache(roomId);
 
     // Get updated messages and notify subscribers
-    const messages = await this.getConversationMessages(
-      roomId,
-      1,
-      50,
-      false
-    );
+    const messages = await this.getConversationMessages(roomId, 1, 50, false);
 
     // Create conversation key from room participants if available
     if (messageData.fromUserId && messageData.toUserId) {
-      const conversationKey = this.getConversationKey(
-        messageData.fromUserId,
-        messageData.toUserId
-      );
+      const conversationKey = this.getConversationKey(messageData.fromUserId, messageData.toUserId);
       this.notifySubscribers(conversationKey, messages || []);
     }
 
@@ -124,9 +113,7 @@ export class MessageService {
 
   getUnreadCount(messages, currentUserId) {
     if (!messages || !Array.isArray(messages)) return 0;
-    return messages.filter(
-      (msg) => msg.toUserId === currentUserId && !msg.read
-    ).length;
+    return messages.filter((msg) => msg.toUserId === currentUserId && !msg.read).length;
   }
 
   clearConversationCache(conversationKey) {
@@ -167,10 +154,7 @@ export class MessageService {
   }
 
   handleRealtimeMessage(message) {
-    const conversationKey = this.getConversationKey(
-      message.fromUserId,
-      message.toUserId
-    );
+    const conversationKey = this.getConversationKey(message.fromUserId, message.toUserId);
 
     // Add message to cache
     for (const [key, data] of this.cache.entries()) {

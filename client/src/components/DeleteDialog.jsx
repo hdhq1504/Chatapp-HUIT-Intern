@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { useClickOutside } from '../hooks/useClickOutside.jsx';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 function DeleteChatDialog({ isOpen, onClose, onConfirm, isGroup = false }) {
   const dialogRef = useClickOutside(() => onClose(), isOpen);

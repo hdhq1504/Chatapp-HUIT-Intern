@@ -1,180 +1,11 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
-import { safeGetItem, safeSetItem, generateId } from '../utils/storage/index';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../api/apiService';
+import { safeGetItem, safeSetItem, generateId } from '../utils/storage';
 
 const ChatContext = createContext();
-
-const getConversationKey = (userId1, userId2) => [userId1, userId2].sort().join('_');
-
-export const ChatProvider = ({ children }) => {
-  const { user } = useAuth();
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [activeChats, setActiveChats] = useState(new Map());
-
-  // Simulated online users - in real app, this would come from WebSocket
-  useEffect(() => {
-    // Simulate some users being online
-    const simulatedOnlineUsers = new Set([1, 2, 3, 4, 5]);
-    setOnlineUsers(simulatedOnlineUsers);
-
-    // In real app: establish WebSocket connection here
-    // const ws = new WebSocket('ws://your-server/chat');
-    // ws.onmessage = handleIncomingMessage;
-  }, []);
-
-  const sendMessage = async (chatId, message, chatType = 'contact') => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      const messageData = {
-        id: generateId('msg'),
-        senderId: user.id,
-        receiverId: chatId,
-        senderName: user.name || user.username,
-        senderAvatar: user.avatar,
-        content: message.content || message.text,
-        type: message.type || 'text',
-        files: message.files || null,
-        timestamp: Date.now(),
-        chatId,
-        chatType,
-        status: 'sent',
-        sender: 'self', // For UI rendering
-      };
-
-      // Tạo unique chat key cho cả 2 user
-  const chatKey = `chat_${getConversationKey(user.id, chatId)}`;
-
-  // Lấy tin nhắn hiện tại và lưu an toàn
-  const existingMessages = safeGetItem(chatKey, []);
-  const updatedMessages = [...existingMessages, messageData];
-  safeSetItem(chatKey, updatedMessages);
-
-      // Cập nhật active chats
-      setActiveChats((prev) => {
-        const newChats = new Map(prev);
-        const chatHistory = newChats.get(chatId) || [];
-        newChats.set(chatId, [...chatHistory, messageData]);
-        return newChats;
-      });
-
-      // Simulate message delivery (replace with real WebSocket/API call)
-      if (chatType === 'group') {
-        await simulateGroupMessageDelivery(messageData);
-      } else {
-        await simulateDirectMessageDelivery(messageData, chatKey);
-      }
-
-      return { success: true, messageData };
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
-  const simulateDirectMessageDelivery = async (messageData, chatKey) => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Create a copy for the receiver with different sender info
-    const messageForReceiver = {
-      ...messageData,
-      sender: 'other', // This will be 'other' for the receiver
-      status: 'delivered',
-    };
-
-    // In real app: server would handle delivery to recipient
-    // For now, we'll trigger a custom event that the receiver can listen to
-    window.dispatchEvent(
-      new CustomEvent('new-message', {
-        detail: {
-          chatKey,
-          message: messageForReceiver,
-          senderId: messageData.senderId,
-          receiverId: messageData.receiverId,
-        },
-      }),
-    );
-
-    console.log('Message delivered:', messageData);
-  };
-
-  const simulateGroupMessageDelivery = async (messageData) => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 150));
-
-    // In real app: server would broadcast to all group members
-    console.log('Message sent to group:', messageData);
-  };
-
-  const getChatHistory = (contactId) => {
-    if (!user) return [];
-
-  const chatKey = `chat_${getConversationKey(user.id, contactId)}`;
-  const messages = safeGetItem(chatKey, []);
-
-    // Transform messages to have correct sender info for current user
-    return messages.map((msg) => ({
-      ...msg,
-      sender: msg.senderId === user.id ? 'self' : 'other',
-    }));
-  };
-
-  const markMessageAsRead = (chatId, messageId) => {
-    // In real app: send read receipt to server
-    console.log(`Message ${messageId} in chat ${chatId} marked as read`);
-  };
-
-  const isUserOnline = (userId) => {
-    return onlineUsers.has(userId);
-  };
-
-  // Listen for new messages (simulate real-time updates)
-  useEffect(() => {
-    if (!user) return;
-
-    const handleNewMessage = (event) => {
-      const { message, senderId, receiverId } = event.detail;
-
-      // Only process if this message is for current user
-      if (receiverId === user.id) {
-        setActiveChats((prev) => {
-          const newChats = new Map(prev);
-          const chatHistory = newChats.get(senderId) || [];
-          newChats.set(senderId, [...chatHistory, message]);
-          return newChats;
-        });
-
-        // Trigger UI update for unread count, etc.
-        window.dispatchEvent(
-          new CustomEvent('message-received', {
-            detail: { senderId, message },
-          }),
-        );
-      }
-    };
-
-    window.addEventListener('new-message', handleNewMessage);
-
-    return () => {
-      window.removeEventListener('new-message', handleNewMessage);
-    };
-  }, [user]);
-
-  const value = {
-    sendMessage,
-    getChatHistory,
-    markMessageAsRead,
-    isUserOnline,
-    onlineUsers,
-    activeChats,
-  };
-
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
-};
 
 export const useChat = () => {
   const context = useContext(ChatContext);
@@ -182,4 +13,448 @@ export const useChat = () => {
     throw new Error('useChat must be used within a ChatProvider');
   }
   return context;
+};
+
+const getConversationKey = (userId1, userId2) => [userId1, userId2].sort().join('_');
+
+export const ChatProvider = ({ children }) => {
+  const { user, token, isAuthenticated } = useAuth();
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [activeChats, setActiveChats] = useState(new Map());
+  const [isConnected, setIsConnected] = useState(false);
+  const [messageHistory, setMessageHistory] = useState(new Map());
+
+  // WebSocket client ref
+  const stompClient = useRef(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
+
+  // Initialize WebSocket connection
+  const connectWebSocket = useCallback(() => {
+    if (!token || !user || stompClient.current) return;
+
+    try {
+      const client = new Client({
+        webSocketFactory: () => {
+          // Use the correct backend WebSocket endpoint
+          const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+          return new SockJS(`${baseURL}/api/ws`);
+        },
+        connectHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+        debug: (str) => {
+          console.log('STOMP Debug:', str);
+        },
+        onConnect: (frame) => {
+          console.log('WebSocket Connected:', frame);
+          setIsConnected(true);
+          reconnectAttempts.current = 0;
+
+          // Subscribe to user-specific messages
+          client.subscribe(`/user/queue/messages`, (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              handleIncomingMessage(data);
+            } catch (error) {
+              console.error('Error parsing direct message:', error);
+            }
+          });
+
+          // Subscribe to room messages
+          client.subscribe(`/topic/room/+`, (message) => {
+            try {
+              const data = JSON.parse(message.body);
+              handleIncomingRoomMessage(data);
+            } catch (error) {
+              console.error('Error parsing room message:', error);
+            }
+          });
+
+          // Subscribe to online users updates
+          client.subscribe('/topic/online', (message) => {
+            try {
+              const userData = JSON.parse(message.body);
+              setOnlineUsers((prev) => new Set([...prev, userData.id]));
+            } catch (error) {
+              console.error('Error parsing online user:', error);
+            }
+          });
+
+          client.subscribe('/topic/offline', (message) => {
+            try {
+              const userData = JSON.parse(message.body);
+              setOnlineUsers((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(userData.id);
+                return newSet;
+              });
+            } catch (error) {
+              console.error('Error parsing offline user:', error);
+            }
+          });
+
+          // Notify server that user is online
+          client.publish({
+            destination: '/app/user/connect',
+            body: JSON.stringify({ email: user.email }),
+          });
+        },
+        onDisconnect: () => {
+          console.log('WebSocket Disconnected');
+          setIsConnected(false);
+        },
+        onStompError: (frame) => {
+          console.error('STOMP Error:', frame);
+          setIsConnected(false);
+
+          // Attempt to reconnect
+          if (reconnectAttempts.current < maxReconnectAttempts) {
+            reconnectAttempts.current++;
+            setTimeout(() => {
+              console.log(`Reconnection attempt ${reconnectAttempts.current}`);
+              connectWebSocket();
+            }, 3000 * reconnectAttempts.current);
+          }
+        },
+        onWebSocketError: (error) => {
+          console.error('WebSocket Error:', error);
+        },
+      });
+
+      client.activate();
+      stompClient.current = client;
+    } catch (error) {
+      console.error('Error connecting WebSocket:', error);
+    }
+  }, [token, user]);
+
+  // Disconnect WebSocket
+  const disconnectWebSocket = useCallback(() => {
+    if (stompClient.current) {
+      // Notify server that user is going offline
+      if (stompClient.current.connected && user) {
+        stompClient.current.publish({
+          destination: '/app/user/disconnect',
+          body: JSON.stringify({ email: user.email }),
+        });
+      }
+
+      stompClient.current.deactivate();
+      stompClient.current = null;
+      setIsConnected(false);
+    }
+  }, [user]);
+
+  // Handle incoming direct messages
+  const handleIncomingMessage = useCallback(
+    (messageData) => {
+      const mappedMessage = mapBackendMessageToClient(messageData);
+
+      // Add to message history
+      const conversationKey = getConversationKey(messageData.userId, user.id);
+      setMessageHistory((prev) => {
+        const messages = prev.get(conversationKey) || [];
+        const newMessages = [...messages, mappedMessage];
+        const updatedHistory = new Map(prev);
+        updatedHistory.set(conversationKey, newMessages);
+        return updatedHistory;
+      });
+
+      // Update active chats
+      setActiveChats((prev) => {
+        const newChats = new Map(prev);
+        const chatHistory = newChats.get(messageData.userId) || [];
+        newChats.set(messageData.userId, [...chatHistory, mappedMessage]);
+        return newChats;
+      });
+
+      // Trigger event for UI updates
+      window.dispatchEvent(
+        new CustomEvent('message-received', {
+          detail: { senderId: messageData.userId, message: mappedMessage },
+        }),
+      );
+    },
+    [user],
+  );
+
+  // Handle incoming room messages
+  const handleIncomingRoomMessage = useCallback((messageData) => {
+    const mappedMessage = mapBackendMessageToClient(messageData);
+
+    // Update room message history
+    setMessageHistory((prev) => {
+      const roomKey = `room_${messageData.roomId}`;
+      const messages = prev.get(roomKey) || [];
+      const newMessages = [...messages, mappedMessage];
+      const updatedHistory = new Map(prev);
+      updatedHistory.set(roomKey, newMessages);
+      return updatedHistory;
+    });
+
+    // Trigger event for UI updates
+    window.dispatchEvent(
+      new CustomEvent('room-message-received', {
+        detail: { roomId: messageData.roomId, message: mappedMessage },
+      }),
+    );
+  }, []);
+
+  // Map backend message format to client format
+  const mapBackendMessageToClient = useCallback(
+    (backendMessage) => {
+      return {
+        id: backendMessage.id,
+        senderId: backendMessage.userId,
+        receiverId: user.id,
+        senderName: backendMessage.senderName || 'Unknown',
+        senderAvatar: backendMessage.senderAvatar || null,
+        content: backendMessage.content,
+        type: backendMessage.messageType?.toLowerCase() || 'text',
+        timestamp: new Date(backendMessage.dateSent).getTime(),
+        chatId: backendMessage.roomId || backendMessage.userId,
+        chatType: backendMessage.roomId ? 'room' : 'contact',
+        status: 'received',
+        sender: backendMessage.userId === user.id ? 'self' : 'other',
+      };
+    },
+    [user],
+  );
+
+  // Send message function
+  const sendMessage = useCallback(
+    async (chatId, message, chatType = 'contact') => {
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
+      try {
+        const messageData = {
+          content: message.content || message.text,
+          messageType: (message.type || 'text').toUpperCase(),
+          sendUserId: user.id,
+          ...(chatType === 'room' ? { recivedMessageRoomId: chatId } : { recivedMessageUserId: chatId }),
+        };
+
+        let response;
+
+        // Try WebSocket first, fallback to REST API
+        if (isConnected && stompClient.current?.connected) {
+          try {
+            stompClient.current.publish({
+              destination: '/app/sendMessage',
+              body: JSON.stringify(messageData),
+            });
+
+            // Create local message object for immediate UI update
+            response = {
+              id: generateId('msg'),
+              ...messageData,
+              userId: user.id,
+              dateSent: new Date().toISOString(),
+            };
+          } catch (wsError) {
+            console.warn('WebSocket send failed, using REST API:', wsError);
+            // Fallback to REST API
+            const restResponse = await api.sendMessage(messageData);
+            response = restResponse.data;
+          }
+        } else {
+          // Use REST API
+          const restResponse = await api.sendMessage(messageData);
+          response = restResponse.data;
+        }
+
+        // Map response to client format
+        const clientMessage = {
+          id: response.id,
+          senderId: user.id,
+          receiverId: chatId,
+          senderName: user.name || user.username,
+          senderAvatar: user.avatar,
+          content: message.content || message.text,
+          type: message.type || 'text',
+          files: message.files || null,
+          timestamp: new Date(response.dateSent || Date.now()).getTime(),
+          chatId,
+          chatType,
+          status: 'sent',
+          sender: 'self',
+        };
+
+        // Store message locally
+        const storageKey = chatType === 'room' ? `room_${chatId}` : `chat_${getConversationKey(user.id, chatId)}`;
+
+        const existingMessages = safeGetItem(storageKey, []);
+        const updatedMessages = [...existingMessages, clientMessage];
+        safeSetItem(storageKey, updatedMessages);
+
+        // Update message history
+        setMessageHistory((prev) => {
+          const key = chatType === 'room' ? `room_${chatId}` : getConversationKey(user.id, chatId);
+          const messages = prev.get(key) || [];
+          const updatedHistory = new Map(prev);
+          updatedHistory.set(key, [...messages, clientMessage]);
+          return updatedHistory;
+        });
+
+        // Update active chats
+        setActiveChats((prev) => {
+          const newChats = new Map(prev);
+          const chatHistory = newChats.get(chatId) || [];
+          newChats.set(chatId, [...chatHistory, clientMessage]);
+          return newChats;
+        });
+
+        return { success: true, messageData: clientMessage };
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        return {
+          success: false,
+          error: error.response?.data?.message || error.message || 'Failed to send message',
+        };
+      }
+    },
+    [user, isConnected],
+  );
+
+  // Get chat history
+  const getChatHistory = useCallback(
+    (contactId, chatType = 'contact') => {
+      if (!user) return [];
+
+      const key = chatType === 'room' ? `room_${contactId}` : getConversationKey(user.id, contactId);
+
+      // First try from memory
+      const memoryMessages = messageHistory.get(key) || [];
+      if (memoryMessages.length > 0) {
+        return memoryMessages;
+      }
+
+      // Then try from localStorage
+      const storageKey = chatType === 'room' ? `room_${contactId}` : `chat_${key}`;
+      const messages = safeGetItem(storageKey, []);
+
+      // Transform messages to have correct sender info for current user
+      return messages.map((msg) => ({
+        ...msg,
+        sender: msg.senderId === user.id ? 'self' : 'other',
+      }));
+    },
+    [user, messageHistory],
+  );
+
+  // Load message history from backend
+  const loadMessageHistory = useCallback(
+    async (contactId, chatType = 'contact') => {
+      if (!user) return [];
+
+      try {
+        let response;
+
+        if (chatType === 'room') {
+          response = await api.getConversationMessages(contactId);
+        } else {
+          // For direct messages, we might need to get conversation between two users
+          response = await api.getConversation(user.id, contactId);
+        }
+
+        const messages = (response.data || response.content || []).map((msg) => mapBackendMessageToClient(msg));
+
+        // Store in memory and localStorage
+        const key = chatType === 'room' ? `room_${contactId}` : getConversationKey(user.id, contactId);
+        const storageKey = chatType === 'room' ? `room_${contactId}` : `chat_${key}`;
+
+        setMessageHistory((prev) => {
+          const updatedHistory = new Map(prev);
+          updatedHistory.set(key, messages);
+          return updatedHistory;
+        });
+
+        safeSetItem(storageKey, messages);
+        return messages;
+      } catch (error) {
+        console.error('Error loading message history:', error);
+        return getChatHistory(contactId, chatType); // Fallback to cached data
+      }
+    },
+    [user, getChatHistory, mapBackendMessageToClient],
+  );
+
+  // Mark message as read
+  const markMessageAsRead = useCallback(async (chatId, messageId) => {
+    try {
+      await api.markMessagesAsRead(chatId);
+
+      // Update local message status
+      setMessageHistory((prev) => {
+        const updatedHistory = new Map();
+        for (const [key, messages] of prev.entries()) {
+          updatedHistory.set(
+            key,
+            messages.map((msg) => (msg.id === messageId ? { ...msg, read: true } : msg)),
+          );
+        }
+        return updatedHistory;
+      });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  }, []);
+
+  // Check if user is online
+  const isUserOnline = useCallback(
+    (userId) => {
+      return onlineUsers.has(userId);
+    },
+    [onlineUsers],
+  );
+
+  // Load online users
+  const loadOnlineUsers = useCallback(async () => {
+    try {
+      const response = await api.getAllUsers();
+      const onlineUserIds = response.data.filter((u) => u.status === 'ONLINE').map((u) => u.id);
+      setOnlineUsers(new Set(onlineUserIds));
+    } catch (error) {
+      console.error('Error loading online users:', error);
+    }
+  }, []);
+
+  // WebSocket connection management
+  useEffect(() => {
+    if (isAuthenticated && token && user) {
+      connectWebSocket();
+      loadOnlineUsers();
+    } else {
+      disconnectWebSocket();
+    }
+
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [isAuthenticated, token, user, connectWebSocket, disconnectWebSocket, loadOnlineUsers]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [disconnectWebSocket]);
+
+  const value = {
+    sendMessage,
+    getChatHistory,
+    loadMessageHistory,
+    markMessageAsRead,
+    isUserOnline,
+    onlineUsers,
+    activeChats,
+    messageHistory,
+    isConnected,
+    loadOnlineUsers,
+  };
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };

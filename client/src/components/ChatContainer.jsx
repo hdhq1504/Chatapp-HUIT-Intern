@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { useChat } from '../contexts/ChatContext.jsx';
-import { safeGetItem, safeSetItem } from '../utils/storage/index.js';
-import { scrollBar, processMessagesForRendering } from '../storage/helpers/index.js';
-import MessageHeader from './MessageHeader.jsx';
-import MessageBubble from './MessageBubble.jsx';
-import InputMessage from './InputMessage.jsx';
+import InputMessage from './InputMessage';
+import MessageBubble from './MessageBubble';
+import MessageHeader from './MessageHeader';
+import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../contexts/ChatContext';
+import { safeGetItem, safeSetItem } from '../utils/storage';
+import { scrollBar, processMessagesForRendering } from '../storage/helpers';
 
 function ChatContainer({
   setShowDetails,

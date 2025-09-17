@@ -28,9 +28,9 @@ export const getTimeSeparator = (currentMessage, previousMessage) => {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
 
     if (currentDate.toDateString() === today) {
-      return 'Hôm nay';
+      return 'Today';
     } else if (currentDate.toDateString() === yesterday) {
-      return 'Hôm qua';
+      return 'Yesterday';
     } else {
       return currentDate.toLocaleDateString('vi-VN', {
         weekday: 'long',

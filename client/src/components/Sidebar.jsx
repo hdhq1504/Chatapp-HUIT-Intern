@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive, UserPlus } from 'lucide-react';
-import { scrollBar, getInitial } from '../storage/helpers/index.js';
-import { useClickOutside, useMultipleClickOutside } from '../hooks/useClickOutside.jsx';
-import DeleteDialog from './DeleteDialog.jsx';
-import SettingModal from './modals/SettingModal.jsx';
-import AddContactModal from './modals/AddContactModal.jsx';
-import ContactItem from './ContactItem.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { useChat } from '../contexts/ChatContext.jsx';
+import AddContactModal from './AddContactModal';
+import ContactItem from './ContactItem';
+import DeleteDialog from './DeleteDialog';
+import SettingModal from './SettingModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../contexts/ChatContext';
+import { useClickOutside, useMultipleClickOutside } from '../hooks/useClickOutside';
+import { scrollBar, getInitial } from '../storage/helpers';
 
 function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat, onContactAdded }) {
   const [openSettings, setOpenSettings] = useState(false);
@@ -18,6 +19,7 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
   const [searchTerm, setSearchTerm] = useState('');
   const { isUserOnline } = useChat();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const profile = {
     name: user?.name || user?.username || 'Guest User',
     avatar: user?.avatar || '',
@@ -37,11 +39,11 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
   }, []);
 
   const handleLogout = async () => {
-    const result = logout();
-    if (result.success) {
-      // Redirect to login page
-      window.location.href = '/login';
-    } else {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
       alert('Logout failed. Please try again');
     }
   };
@@ -98,6 +100,7 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
         {/* Header Section */}
         <div className='p-4'>
           <div className='mb-4 flex items-center space-x-3'>
+            {/* Avatar */}
             <div className='h-10 w-10 overflow-hidden rounded-full bg-[#3F3F3F]'>
               {profile.avatar ? (
                 <img src={profile.avatar} alt='Avatar' className='h-full w-full object-cover' />
