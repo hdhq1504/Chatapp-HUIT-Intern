@@ -1,245 +1,217 @@
+import axios from 'axios';
+
 class ApiService {
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     this.apiPrefix = '/api/v1';
     this.token = null;
+
+    // Create axios instance
+    this.axiosInstance = axios.create({
+      baseURL: `${this.baseURL}${this.apiPrefix}`,
+      timeout: 30000,
+    });
+
+    // Request interceptor
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      },
+    );
+
+    // Response interceptor
+    this.axiosInstance.interceptors.response.use(
+      (response) => {
+        // Backend returns { status, message, data } format
+        return response.data;
+      },
+      (error) => {
+        console.error(`API Error:`, error);
+
+        // Handle different error scenarios
+        if (error.response) {
+          // Server responded with error status
+          const errorData = error.response.data;
+          const errorMessage = errorData?.message || `HTTP ${error.response.status}`;
+          const customError = new Error(errorMessage);
+          customError.response = {
+            status: error.response.status,
+            data: errorData,
+          };
+          throw customError;
+        } else if (error.request) {
+          // Request was made but no response received
+          throw new Error('Network error - no response from server');
+        } else {
+          // Something else happened
+          throw new Error(error.message || 'An unexpected error occurred');
+        }
+      },
+    );
   }
 
   setToken(token) {
     this.token = token;
   }
 
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${this.apiPrefix}${endpoint}`;
-    const config = { ...options };
-
-    const headers = {
-      ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      ...config.headers,
-    };
-
-    if (!(config.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-
-      if (config.body && typeof config.body !== 'string') {
-        config.body = JSON.stringify(config.body);
-      }
-    }
-
-    config.headers = headers;
-
-    try {
-      const response = await fetch(url, config);
-      const contentType = response.headers.get('content-type');
-
-      if (!response.ok) {
-        let errorData = {};
-        if (contentType && contentType.includes('application/json')) {
-          errorData = await response.json().catch(() => ({}));
-        } else {
-          const text = await response.text().catch(() => '');
-          errorData = { message: text };
-        }
-
-        // Handle backend error format
-        const errorMessage = errorData.message || `HTTP ${response.status}`;
-        const error = new Error(errorMessage);
-        error.response = { status: response.status, data: errorData };
-        throw error;
-      }
-
-      if (response.status === 204) {
-        return { data: null };
-      }
-
-      if (!contentType || !contentType.includes('application/json')) {
-        return { data: await response.text() };
-      }
-
-      const jsonResponse = await response.json();
-
-      // Handle backend response format: { status, message, data }
-      if (jsonResponse.hasOwnProperty('status') && jsonResponse.hasOwnProperty('data')) {
-        return jsonResponse; // Return full backend response
-      }
-
-      // Fallback for other response formats
-      return { data: jsonResponse };
-    } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
-      throw error;
-    }
-  }
-
   // Authentication endpoints
   async login(credentials) {
-    return this.request('/auth/signin', {
-      method: 'POST',
-      body: credentials,
-    });
+    return this.axiosInstance.post('/auth/signin', credentials);
   }
 
   async register(userData) {
-    return await this.request('/auth/signup', {
-      method: 'POST',
-      body: userData,
-    });
+    return this.axiosInstance.post('/auth/signup', userData);
   }
 
   async logout() {
-    // Backend handles logout via JWT filter at /api/v1/auth/logout
-    return this.request('/auth/logout', {
-      method: 'POST',
-    });
+    return this.axiosInstance.post('/auth/signout');
   }
 
   async refreshToken() {
+    // For refresh token, we need to get it from localStorage and use it in headers
     const refreshToken = localStorage.getItem('refresh_token');
-    return this.request('/auth/refresh-token', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${refreshToken}`,
+    return this.axiosInstance.post(
+      '/auth/refresh-token',
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
       },
-    });
+    );
   }
 
   async sendPasswordResetKey(email) {
-    return this.request('/auth/send-key', {
-      method: 'POST',
-      body: { email },
-    });
+    return this.axiosInstance.post('/auth/send-key', { email });
   }
 
   async resetPassword(resetData) {
-    return this.request('/auth/reset-password', {
-      method: 'POST',
-      body: resetData,
-    });
+    return this.axiosInstance.post('/auth/reset-password', resetData);
   }
 
   async changePassword(passwordData) {
-    return this.request('/users/change-password', {
-      method: 'POST',
-      body: passwordData,
-    });
+    return this.axiosInstance.post('/users/change-password', passwordData);
   }
 
   // User management endpoints
   async getCurrentUser() {
-    return this.request('/users');
+    return this.axiosInstance.get('/users/profile');
   }
 
   async getAllUsers() {
-    return this.request('/users/all-user-online');
+    return this.axiosInstance.get('/users/all-user-online');
   }
 
   async getUserById(userId) {
-    // Note: Backend might not have this endpoint, using current user endpoint
-    return this.request('/users');
+    // Backend uses profile endpoint for current user
+    return this.axiosInstance.get('/users/profile');
   }
 
   async updateProfile(userData) {
     // Note: Backend might need specific endpoint for profile updates
-    return this.request('/users/update-profile', {
-      method: 'PUT',
-      body: userData,
-    });
+    return this.axiosInstance.put('/users/update-profile', userData);
   }
 
   async connectUser() {
-    return this.request('/users/connect', {
-      method: 'POST',
-    });
+    return this.axiosInstance.post('/users/connect');
   }
 
   async disconnectUser() {
-    return this.request('/users/disconnect', {
-      method: 'POST',
-    });
+    return this.axiosInstance.post('/users/disconnect');
   }
 
   // Message endpoints
   async sendMessage(messageData) {
-    return this.request('/messageContents/send', {
-      method: 'POST',
-      body: messageData,
-    });
+    return this.axiosInstance.post('/messageContents/send', messageData);
   }
 
   async getConversationMessages(roomId, page = 0, size = 50) {
-    return this.request(`/messagerooms/find-message-room-at-least-one-content/${roomId}?page=${page}&size=${size}`);
+    return this.axiosInstance.get(
+      `/messagerooms/find-message-room-at-least-one-content/${roomId}?page=${page}&size=${size}`,
+    );
   }
 
   async getConversation(userId1, userId2, page = 0, size = 50) {
     // For direct messages between two users
-    return this.request(
+    return this.axiosInstance.get(
       `/messageroomUsers/find-message-user-at-least-one-content/${userId1}?page=${page}&size=${size}`,
     );
   }
 
-  async getMessagesByRoomId(roomId, page = 0, size = 50) {
-    return this.request(`/messageContents/room/${roomId}?page=${page}&size=${size}`);
+  async getMessagesByRoomId(roomId, page = 0, size = 50, before = null) {
+    const params = new URLSearchParams({ page: page.toString(), limit: size.toString() });
+    if (before) {
+      params.append('before', before);
+    }
+    return this.axiosInstance.get(`/messagerooms/${roomId}/messages?${params.toString()}`);
   }
 
   async updateMessage(messageId, updates) {
-    return this.request(`/messageContents/${messageId}`, {
-      method: 'PUT',
-      body: updates,
-    });
+    return this.axiosInstance.put(`/messageContents/${messageId}`, updates);
   }
 
   async deleteMessage(messageId) {
-    return this.request(`/messageContents/${messageId}`, {
-      method: 'DELETE',
-    });
+    return this.axiosInstance.delete(`/messageContents/${messageId}`);
   }
 
   async markMessagesAsRead(roomId) {
-    return this.request(`/messageContents/read`, {
-      method: 'PUT',
-      body: { roomId },
-    });
+    return this.axiosInstance.put(`/messageContents/read`, { roomId });
   }
 
   // Room management endpoints
   async createMessageRoom(memberIds) {
-    return this.request('/messagerooms/create-room', {
-      method: 'POST',
-      body: { members: memberIds },
+    return this.axiosInstance.post('/messagerooms/create-room', {
+      members: memberIds,
     });
   }
 
   async getMessageRooms(userId) {
-    return this.request(`/messagerooms/find-message-room-at-least-one-content/${userId}`);
+    return this.axiosInstance.get(`/messagerooms/find-message-room-at-least-one-content/${userId}`);
   }
 
   async getMessageUsers(userId) {
-    return this.request(`/messageroomUsers/find-message-user-at-least-one-content/${userId}`);
+    return this.axiosInstance.get(`/messageroomUsers/find-message-user-at-least-one-content/${userId}`);
+  }
+
+  async getUserRooms() {
+    return this.axiosInstance.get('/messagerooms/me/rooms');
+  }
+
+  async getRoom(roomId) {
+    return this.axiosInstance.get(`/messagerooms/${roomId}`);
   }
 
   async updateRoom(roomId, updates) {
-    return this.request(`/messagerooms/${roomId}`, {
-      method: 'PUT',
-      body: updates,
-    });
+    return this.axiosInstance.patch(`/messagerooms/${roomId}`, updates);
   }
 
   async deleteRoom(roomId) {
-    return this.request(`/messagerooms/${roomId}`, {
-      method: 'DELETE',
-    });
+    return this.axiosInstance.delete(`/messagerooms/${roomId}`);
   }
 
-  async addMemberToRoom(roomId, userId) {
-    return this.request(`/messagerooms/${roomId}/members`, {
-      method: 'POST',
-      body: { userId },
+  async addMemberToRoom(roomId, userIds) {
+    return this.axiosInstance.post(`/messagerooms/${roomId}/members`, {
+      userIds: Array.isArray(userIds) ? userIds : [userIds],
     });
   }
 
   async removeMemberFromRoom(roomId, userId) {
-    return this.request(`/messagerooms/${roomId}/members/${userId}`, {
-      method: 'DELETE',
+    return this.axiosInstance.delete(`/messagerooms/${roomId}/members/${userId}`);
+  }
+
+  async leaveRoom(roomId) {
+    return this.axiosInstance.post(`/messagerooms/${roomId}/leave`);
+  }
+
+  async searchUsers(query, page = 0, limit = 20) {
+    return this.axiosInstance.get('/messagerooms/search', {
+      params: { query, page, limit },
     });
   }
 
@@ -249,13 +221,10 @@ class ApiService {
     formData.append('file', file);
     formData.append('type', type);
 
-    return this.request('/files/upload', {
-      method: 'POST',
+    return this.axiosInstance.post('/files/upload', formData, {
       headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        // Don't set Content-Type for FormData, let browser set it with boundary
+        'Content-Type': 'multipart/form-data',
       },
-      body: formData,
     });
   }
 
@@ -270,7 +239,7 @@ class ApiService {
     return {
       id: backendUser.id,
       name: backendUser.name,
-      username: backendUser.name, // Map email to username for compatibility
+      username: backendUser.name, // Map name to username for compatibility
       email: backendUser.email,
       phone: backendUser.phone,
       avatar: backendUser.avatar || null,
@@ -289,13 +258,13 @@ class ApiService {
     return {
       id: backendMessage.id,
       senderId: backendMessage.userId,
-      receiverId: backendMessage.receiverId || null,
+      receiverId: backendMessage.recivedMessageUserId || null,
       content: backendMessage.content,
       type: backendMessage.messageType?.toLowerCase() || 'text',
-      timestamp: new Date(backendMessage.dateSent).getTime(),
+      timestamp: new Date(backendMessage.dateSent || backendMessage.sendedAt).getTime(),
       status: 'sent',
       sender: backendMessage.userId === currentUserId ? 'self' : 'other',
-      roomId: backendMessage.roomId || null,
+      roomId: backendMessage.recivedMessageRoomId || null,
       read: backendMessage.read || false,
     };
   }
@@ -343,7 +312,9 @@ class ApiService {
   // Batch operations for efficiency
   async batchRequest(requests) {
     try {
-      const promises = requests.map(({ endpoint, options }) => this.request(endpoint, options));
+      const promises = requests.map(({ endpoint, options }) =>
+        this.axiosInstance.request({ url: endpoint, ...options }),
+      );
       return await Promise.allSettled(promises);
     } catch (error) {
       console.error('Batch request error:', error);
@@ -354,8 +325,8 @@ class ApiService {
   // Health check endpoint
   async healthCheck() {
     try {
-      const response = await fetch(`${this.baseURL}/actuator/health`);
-      return response.ok;
+      const response = await axios.get(`${this.baseURL}/actuator/health`);
+      return response.status === 200;
     } catch (error) {
       console.error('Health check failed:', error);
       return false;
