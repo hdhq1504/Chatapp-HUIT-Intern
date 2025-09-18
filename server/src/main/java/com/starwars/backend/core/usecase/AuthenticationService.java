@@ -21,6 +21,7 @@ import com.starwars.backend.exception.Exceptions;
 import com.starwars.commonmessage.common.CustomExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import com.starwars.backend.common.enums.UserStatus;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -186,6 +187,10 @@ public class AuthenticationService {
                                 .orElseThrow(() -> exceptionHandler.notFoundException(
                                                 String.format("User %s", request.getEmail())));
 
+                user.setStatus(UserStatus.ONLINE);
+                user.setLastLogin(LocalDateTime.now());
+                userRepository.save(user);
+
                 if (Boolean.TRUE.equals(user.getBanned())) {
                         throw exceptionHandler.invalidRequest("Your account has been banned.");
                 }
@@ -219,6 +224,9 @@ public class AuthenticationService {
                                 .orElseThrow(
                                                 () -> exceptionHandler.notFoundException(
                                                                 String.format("User %s", request.getPhone())));
+                user.setStatus(UserStatus.ONLINE);
+                user.setLastLogin(LocalDateTime.now());
+                userRepository.save(user);
                 var accessToken = jwtService.generateToken(
                                 Map.of(
                                                 "authorities",

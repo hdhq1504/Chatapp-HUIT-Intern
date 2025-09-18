@@ -13,4 +13,8 @@ public interface MessageRoomMemberRepository extends JpaRepository<MessageRoomMe
     List<MessageRoomMember> findByMessageRoomId(UUID messageRoomId);
 
     List<MessageRoomMember> findByUserId(UUID userId);
+
+    void deleteByMessageRoomIdAndUserId(UUID messageRoomId, UUID userId);
+
+    boolean existsByMessageRoomIdAndUserId(UUID messageRoomId, UUID userId);
 }

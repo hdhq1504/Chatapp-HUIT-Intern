@@ -88,6 +88,7 @@ public class MessageRoomService {
                         messageContent = messageContentRepository.save(messageContent);
 
                         MessageRoomResponse response = MessageRoomResponse.builder()
+                                        .id(messageUser.getId() != null ? messageUser.getId().toString() : null)
                                         .name("Chat 1-1 với " + members.stream()
                                                         .filter(m -> !m.getId().toString().equals(creatorId))
                                                         .findFirst()
@@ -158,6 +159,7 @@ public class MessageRoomService {
                                 .findTopByRecivedMessageRoomIdOrderBySendedAtDesc(room.getId());
 
                 return MessageRoomResponse.builder()
+                                .id(room.getId().toString())
                                 .name(room.getName())
                                 .createdAt(room.getCreatedAt())
                                 .createdBy(room.getCreatedBy().toString())
@@ -179,11 +181,100 @@ public class MessageRoomService {
                                 .build();
         }
 
+        @Transactional(readOnly = true)
+        public MessageRoomResponse getRoomById(final UUID roomId) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+                return mapToMessageRoomResponse(room);
+        }
+
         public List<MessageRoomResponse> findMessageRoomAtLeastOneContent(final UUID userId) {
                 return messageRoomRepository.findMessageRoomAtLeastOneContent(userId)
                                 .stream()
                                 .map(this::mapToMessageRoomResponse)
                                 .collect(Collectors.toList());
+        }
+
+        @Transactional
+        public MessageRoomResponse addMembers(final UUID roomId, final List<String> userIds, final String performedBy) {
+                if (userIds == null || userIds.isEmpty()) {
+                        throw exceptionHandler.invalidRequest("Danh sách thành viên không được rỗng");
+                }
+
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+
+                UUID performerId = UUID.fromString(performedBy);
+                boolean isMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId, performerId);
+                if (!isMember) {
+                        throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
+                }
+
+                List<UUID> newMemberIds = userIds.stream().map(UUID::fromString).toList();
+                var users = userRepository.findAllById(newMemberIds);
+                if (users.isEmpty()) {
+                        throw exceptionHandler.invalidRequest("Không tìm thấy người dùng để thêm");
+                }
+
+                for (var user : users) {
+                        boolean alreadyMember = messageRoomMemberRepository
+                                        .existsByMessageRoomIdAndUserId(roomId, user.getId());
+                        if (alreadyMember) {
+                                continue;
+                        }
+                        MessageRoomMember roomMember = MessageRoomMember.builder()
+                                        .userId(user.getId())
+                                        .messageRoomId(room.getId())
+                                        .isAdmin(false)
+                                        .joinedAt(LocalDateTime.now())
+                                        .build();
+                        messageRoomMemberRepository.save(roomMember);
+                }
+
+                return mapToMessageRoomResponse(room);
+        }
+
+        @Transactional
+        public MessageRoomResponse removeMember(final UUID roomId, final UUID targetUserId, final UUID performedBy) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+
+                // Must be in the room to perform any action
+                boolean performerIsMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId,
+                                performedBy);
+                if (!performerIsMember) {
+                        throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
+                }
+
+                // If removing someone else, require admin or creator
+                if (!performedBy.equals(targetUserId)) {
+                        boolean isAdmin = messageRoomMemberRepository.findByMessageRoomId(roomId).stream()
+                                        .anyMatch(m -> m.getUserId().equals(performedBy)
+                                                        && Boolean.TRUE.equals(m.getIsAdmin()));
+                        boolean isCreator = room.getCreatedBy() != null && room.getCreatedBy().equals(performedBy);
+                        if (!isAdmin && !isCreator) {
+                                throw exceptionHandler.invalidRequest(
+                                                "Chỉ quản trị viên hoặc người tạo phòng mới được xóa thành viên khác");
+                        }
+                }
+
+                boolean targetIsMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId,
+                                targetUserId);
+                if (!targetIsMember) {
+                        throw exceptionHandler.invalidRequest("Thành viên cần xóa không thuộc phòng này");
+                }
+
+                messageRoomMemberRepository.deleteByMessageRoomIdAndUserId(roomId, targetUserId);
+                return mapToMessageRoomResponse(room);
+        }
+
+        @Transactional
+        public MessageRoomResponse leaveRoom(final UUID roomId, final UUID userId) {
+                // Self-removal
+                return removeMember(roomId, userId, userId);
         }
 
 }

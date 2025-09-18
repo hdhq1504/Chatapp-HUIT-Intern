@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MessageRoomResponse {
+  private String id;
   private String name;
   private LocalDateTime createdAt;
   private String createdBy;

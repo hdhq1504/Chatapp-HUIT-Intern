@@ -9,15 +9,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Service;
 
+import com.starwars.backend.common.enums.UserStatus;
+import com.starwars.backend.core.domain.User;
 import com.starwars.backend.dataprovider.repository.TokenRepository;
+import com.starwars.backend.dataprovider.repository.UserRepository;
 
 @Service
 public class LogoutUseCase implements LogoutHandler {
 
     private final TokenRepository tokenRepository;
+    private final UserRepository userRepository;
 
-    public LogoutUseCase(TokenRepository tokenRepository) {
+    public LogoutUseCase(TokenRepository tokenRepository, UserRepository userRepository) {
         this.tokenRepository = tokenRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -31,13 +36,20 @@ public class LogoutUseCase implements LogoutHandler {
             return;
         }
         jwt = authHeader.substring(7);
-        var storedToken =
-                tokenRepository.findByTokenAndExpiredIsFalseAndRevokedIsFalse(jwt).orElse(null);
+        var storedToken = tokenRepository.findByTokenAndExpiredIsFalseAndRevokedIsFalse(jwt).orElse(null);
         if (storedToken != null) {
             storedToken.setExpired(true);
             storedToken.setRevoked(true);
             tokenRepository.save(storedToken);
+
+            User user = storedToken.getUser();
+            if (user != null) {
+                user.setStatus(UserStatus.OFFLINE);
+                userRepository.save(user);
+            }
+
             SecurityContextHolder.clearContext();
         }
     }
+
 }

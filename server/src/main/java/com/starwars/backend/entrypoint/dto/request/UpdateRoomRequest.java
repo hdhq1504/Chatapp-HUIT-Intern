@@ -1,6 +1,5 @@
-package com.starwars.backend.entrypoint.dto.response;
+package com.starwars.backend.entrypoint.dto.request;
 
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,11 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponse {
-    private String id;
+public class UpdateRoomRequest {
     private String name;
-    private String email;
     private String avatar;
-    private String phone;
-    private Set<String> roles;
+    private String description;
 }

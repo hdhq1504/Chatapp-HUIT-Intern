@@ -1,11 +1,11 @@
 package com.starwars.backend.entrypoint.rest;
 
 import jakarta.validation.Valid;
-
-// import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
-// import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import com.starwars.backend.core.usecase.AuthenticationService;
+import com.starwars.backend.core.usecase.LogoutUseCase;
+import com.starwars.backend.core.usecase.UserService;
 import com.starwars.backend.entrypoint.dto.Status;
+import com.starwars.backend.entrypoint.dto.request.AuthenticationPhoneRequest;
 import com.starwars.backend.entrypoint.dto.request.AuthenticationRequest;
 import com.starwars.backend.entrypoint.dto.request.GetKeyRequest;
 import com.starwars.backend.entrypoint.dto.request.InitPasswordRequest;
@@ -29,19 +32,36 @@ import com.starwars.backend.entrypoint.dto.response.CompletedResponse;
 
 @RestController
 @RequestMapping(path = "api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationService authService;
-
-    public AuthController(AuthenticationService authService) {
-        this.authService = authService;
-    }
+    private final LogoutUseCase logoutUseCase;
+    private final UserService userService;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Successfully", "Đăng ký thành công!"));
+    }
+
+    @PostMapping("/signin")
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(
+            @RequestBody @Valid AuthenticationRequest request) {
+        AuthenticationResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Successfully", response));
+    }
+
+    @PostMapping("/signout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            userService.disconnectCurrentUser();
+        } catch (Exception ignored) {
+        }
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        logoutUseCase.logout(request, response, authentication);
+        return ResponseEntity.ok(ApiResponse.success("Logout successful", "OK"));
     }
 
     @PostMapping("/activate")
@@ -81,19 +101,12 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/signin")
-    public ResponseEntity<ApiResponse<AuthenticationResponse>> login(
-            @RequestBody @Valid AuthenticationRequest request) {
-        AuthenticationResponse response = authService.login(request);
+    @PostMapping("/signin/phone")
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> loginPhone(
+            @RequestBody @Valid AuthenticationPhoneRequest request) {
+        AuthenticationResponse response = authService.loginPhone(request);
         return ResponseEntity.ok(ApiResponse.success("Successfully", response));
     }
-
-    // @PostMapping("/signin/phone")
-    // public ResponseEntity<ApiResponse<AuthenticationResponse>> loginPhone(
-    // @RequestBody @Valid AuthenticationPhoneRequest request) {
-    // AuthenticationResponse response = authService.loginPhone(request);
-    // return ResponseEntity.ok(ApiResponse.success("Successfully", response));
-    // }
 
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<AuthenticationResponse>> refreshToken(HttpServletRequest request) {

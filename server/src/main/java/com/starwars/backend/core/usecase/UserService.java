@@ -33,6 +33,8 @@ public class UserService {
                                 .id(user.getId().toString())
                                 .email(user.getEmail())
                                 .name(user.getName())
+                                .phone(user.getPhone())
+                                .avatar(user.getAvatar())
                                 .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
                                 .build();
         }

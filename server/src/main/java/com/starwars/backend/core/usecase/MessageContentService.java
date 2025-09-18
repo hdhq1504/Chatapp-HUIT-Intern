@@ -8,6 +8,7 @@ import com.starwars.backend.entrypoint.dto.response.MessageContentResponse;
 import com.starwars.commonmessage.common.CustomExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,6 +77,63 @@ public class MessageContentService {
                     response);
         }
 
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<MessageContentResponse> getMessagesByRoomIdPaginated(
+            java.util.UUID roomId,
+            java.time.LocalDateTime before,
+            Pageable pageable) {
+        if (roomId == null) {
+            throw exceptionHandler.invalidRequest("ID phòng chat không được rỗng");
+        }
+
+        return messageContentRepository.findByRoomBefore(roomId, before, pageable)
+                .stream()
+                .map(message -> {
+                    MessageContentResponse response = modelMapper.map(message, MessageContentResponse.class);
+                    response.setId(message.getId().toString());
+                    response.setUserId(message.getSendUserId().toString());
+                    response.setDateSent(message.getSendedAt());
+                    return response;
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
+    public MessageContentResponse sendMessageToRoom(
+            java.util.UUID roomId,
+            String senderId,
+            com.starwars.backend.entrypoint.dto.request.SendRoomMessageRequest request) {
+        if (roomId == null) {
+            throw exceptionHandler.invalidRequest("ID phòng chat không được rỗng");
+        }
+        if (senderId == null) {
+            throw exceptionHandler.invalidRequest("ID người gửi không được rỗng");
+        }
+        if (request.getContent() == null || request.getContent().isBlank()) {
+            throw exceptionHandler.invalidRequest("Nội dung tin nhắn không được rỗng");
+        }
+
+        MessageContent message = MessageContent.builder()
+                .content(request.getContent())
+                .sendedAt(java.time.LocalDateTime.now())
+                .messageType(request.getMessageType() != null ? request.getMessageType()
+                        : com.starwars.backend.common.enums.MessageType.TEXT)
+                .recivedMessageRoomId(roomId)
+                .recivedMessageUserId(null)
+                .sendUserId(java.util.UUID.fromString(senderId))
+                .build();
+        message = messageContentRepository.save(message);
+
+        MessageContentResponse response = modelMapper.map(message, MessageContentResponse.class);
+        response.setId(message.getId().toString());
+        response.setUserId(message.getSendUserId().toString());
+        response.setDateSent(message.getSendedAt());
+
+        // Broadcast to room topic
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, response);
         return response;
     }
 

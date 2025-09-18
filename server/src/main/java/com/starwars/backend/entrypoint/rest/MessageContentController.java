@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,29 +29,12 @@ public class MessageContentController {
      * WebSocket endpoint để gửi tin nhắn realtime
      * Client gửi tới: /app/sendMessage
      */
-    @MessageMapping("/sendMessage")
-    public MessageContentResponse sendMessage(@Valid @Payload MessageContentRequest request) {
-        try {
-            log.info("=== WEBSOCKET DEBUG ===");
-            log.info("Received request: {}", request);
-            log.info("Content: {}", request.getContent());
-            log.info("SenderId: {}", request.getSendUserId());
-            log.info("ReceiverUserId: {}", request.getRecivedMessageUserId());
-            log.info("RoomId: {}", request.getRecivedMessageRoomId());
-
-            MessageContentResponse response = messageContentService.sendMessage(request);
-
-            log.info("=== WEBSOCKET SUCCESS ===");
-            log.info("Response ID: {}", response.getId());
-            log.info("Message saved successfully!");
-
-            return response;
-        } catch (Exception e) {
-            log.error("=== WEBSOCKET ERROR ===");
-            log.error("Error: {}", e.getMessage());
-            log.error("Stack trace: ", e);
-            throw e;
-        }
+    @MessageMapping("/sendMessage") // Receive message from clients sending to /app/sendMessage
+    @SendTo("/topic/sendMessage") // send the response to all clients subscribe to /topic/sendMessage
+    public ResponseEntity<ApiResponse<MessageContentResponse>> sendMessage(
+            @Valid @Payload @RequestBody MessageContentRequest request) {
+        MessageContentResponse response = messageContentService.sendMessage(request);
+        return ResponseEntity.ok(ApiResponse.success("Gửi tin nhắn thành công", response));
     }
 
     /**
