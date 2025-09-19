@@ -209,52 +209,90 @@ export class GroupStorage extends BaseStorage {
   }
 }
 
-// Storage Utils - Các hàm tiện ích cho localStorage
-export function safeGetItem(key, defaultValue = null) {
+// Helpers to safely access browser storage
+const localStorageRef = typeof window !== 'undefined' ? window.localStorage : null;
+const sessionStorageRef = typeof window !== 'undefined' ? window.sessionStorage : null;
+
+const isQuotaError = (err) => {
+  if (!err) return false;
+  return err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED';
+};
+
+const safeStorageGetItem = (storage, key, defaultValue = null) => {
+  if (!storage) return defaultValue;
+
   try {
-    const raw = localStorage.getItem(key);
+    const raw = storage.getItem(key);
     return raw ? JSON.parse(raw) : defaultValue;
   } catch (err) {
-    console.error(`safeGetItem(${key}) error`, err);
+    console.error(`safeStorageGetItem(${key}) error`, err);
     return defaultValue;
   }
-}
+};
 
-export function safeSetItem(key, value) {
+const safeStorageSetItem = (storage, key, value) => {
+  if (!storage) return false;
+
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    storage.setItem(key, JSON.stringify(value));
     return true;
   } catch (err) {
     // Try a simple quota handling: trim arrays to keep recent items
-    try {
-      if (err && err.name === 'QuotaExceededError') {
-        if (Array.isArray(value)) {
-          const trimmed = value.slice(-50);
-          localStorage.setItem(key, JSON.stringify(trimmed));
-          return true;
-        }
+    if (isQuotaError(err) && Array.isArray(value)) {
+      try {
+        const trimmed = value.slice(-50);
+        storage.setItem(key, JSON.stringify(trimmed));
+        return true;
+      } catch (fallbackErr) {
+        console.warn('safeStorageSetItem fallback failed', fallbackErr);
       }
-    } catch (e) {
-      console.warn('safeSetItem fallback failed', e);
     }
 
-    console.warn(`safeSetItem(${key}) failed`, err);
+    console.warn(`safeStorageSetItem(${key}) failed`, err);
     return false;
   }
+};
+
+const safeStorageRemoveItem = (storage, key) => {
+  if (!storage) return false;
+
+  try {
+    storage.removeItem(key);
+    return true;
+  } catch (err) {
+    console.warn(`safeStorageRemoveItem(${key}) failed`, err);
+    return false;
+  }
+};
+
+// Storage Utils - Các hàm tiện ích cho localStorage
+export function safeGetItem(key, defaultValue = null) {
+  return safeStorageGetItem(localStorageRef, key, defaultValue);
+}
+
+export function safeSetItem(key, value) {
+  return safeStorageSetItem(localStorageRef, key, value);
+}
+
+export function safeRemoveItem(key) {
+  return safeStorageRemoveItem(localStorageRef, key);
+}
+
+// Session storage helpers for per-tab persistence
+export function safeSessionGetItem(key, defaultValue = null) {
+  return safeStorageGetItem(sessionStorageRef, key, defaultValue);
+}
+
+export function safeSessionSetItem(key, value) {
+  return safeStorageSetItem(sessionStorageRef, key, value);
+}
+
+export function safeSessionRemoveItem(key) {
+  return safeStorageRemoveItem(sessionStorageRef, key);
 }
 
 export function generateId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-}
-
-export function safeRemoveItem(key) {
-  try {
-    localStorage.removeItem(key);
-    return true;
-  } catch (err) {
-    console.warn(`safeRemoveItem(${key}) failed`, err);
-    return false;
-  }
 }
 
 // Export instances sẵn sàng sử dụng

@@ -70,31 +70,51 @@ function ChatPage() {
       const { senderId, message } = event.detail;
 
       setContacts((prevContacts) => {
-        return prevContacts.map((contact) => {
-          if (contact.id === senderId) {
-            const preview =
-              message.type === 'text'
-                ? message.content
-                : message.type === 'files'
-                  ? `Sent ${message.files ? message.files.length : 1} files`
-                  : message.content || 'New message';
+        const preview =
+          message.type === 'text'
+            ? message.content
+            : message.type === 'files'
+              ? `Sent ${message.files ? message.files.length : 1} files`
+              : message.content || 'New message';
 
-            const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-            });
+        const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+
+        const isActiveChat = selectedContact?.id === senderId;
+        const existingContact = prevContacts.find((contact) => contact.id === senderId);
+
+        if (existingContact) {
+          return prevContacts.map((contact) => {
+            if (contact.id !== senderId) {
+              return contact;
+            }
 
             return {
               ...contact,
               lastMessageTime: timeString,
               status: preview,
-              unreadCount: (contact.unreadCount || 0) + 1,
+              unreadCount: isActiveChat ? 0 : (contact.unreadCount || 0) + 1,
               lastMessageTimestamp: message.timestamp,
             };
-          }
-          return contact;
-        });
+          });
+        }
+
+        const newContact = {
+          id: senderId,
+          name: message.senderName || `User ${senderId}`,
+          avatar: message.senderAvatar || '',
+          type: 'contact',
+          status: preview,
+          lastMessageTime: timeString,
+          unreadCount: isActiveChat ? 0 : 1,
+          lastMessageTimestamp: message.timestamp,
+          active: true,
+        };
+
+        return [...prevContacts, newContact];
       });
     };
 
@@ -103,7 +123,7 @@ function ChatPage() {
     return () => {
       window.removeEventListener('message-received', handleMessageReceived);
     };
-  }, []);
+  }, [selectedContact]);
 
   useEffect(() => {
     const handleResize = () => {
