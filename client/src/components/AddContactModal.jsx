@@ -2,55 +2,67 @@ import React, { useState } from 'react';
 import { X, Search, UserPlus, Loader2 } from 'lucide-react';
 import { getInitial } from '../storage/helpers';
 import { useAuth } from '../contexts/AuthContext';
-import { safeGetItem } from '../utils/storage';
+import { safeGetItem, safeSetItem } from '../utils/storage';
+import { api } from '../api/apiService';
 
 function AddContactModal({ isOpen, onClose, onContactAdded }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { user } = useAuth();
+
+  const filterUsers = (users, term) => {
+    const normalizedTerm = term.trim().toLowerCase();
+    if (!normalizedTerm) return [];
+
+    return users.filter((u) => {
+      const name = u.name?.toLowerCase() || '';
+      const email = u.email?.toLowerCase() || '';
+      const username = u.username?.toLowerCase() || '';
+
+      return name.includes(normalizedTerm) || email.includes(normalizedTerm) || username.includes(normalizedTerm);
+    });
+  };
 
   const searchUsers = async () => {
     if (!searchTerm.trim()) return;
 
     setIsSearching(true);
     setHasSearched(true);
+    setErrorMessage('');
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const response = await api.getAllUsers();
+      const rawUsers = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
 
-      const allUsers = [];
-      try {
-        const stored = safeGetItem('all_users', []);
-        for (const userData of stored) {
-          if (userData.id !== user.id && userData.email !== user.email) {
-            allUsers.push({
-              id: userData.id,
-              name: userData.name || userData.username,
-              email: userData.email,
-              username: userData.username,
-              avatar: userData.avatar || '',
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Error reading users from storage', err);
-      }
+      const normalizedUsers = rawUsers
+        .filter((userData) => userData.id && userData.id !== user.id)
+        .map((userData) => ({
+          id: userData.id,
+          name: userData.name || userData.username || userData.email || `User ${userData.id}`,
+          email: userData.email || '',
+          username: userData.username || userData.name || userData.email || '',
+          avatar: userData.avatar || '',
+        }));
 
-      // Filter theo search term
-      const filtered = allUsers.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())),
-      );
+      safeSetItem('all_users', normalizedUsers);
 
+      const filtered = filterUsers(normalizedUsers, searchTerm);
       setSearchResults(filtered);
     } catch (error) {
       console.error('Search error:', error);
-      setSearchResults([]);
+      const cachedUsers = safeGetItem('all_users', []);
+
+      if (cachedUsers.length > 0) {
+        const filtered = filterUsers(cachedUsers, searchTerm);
+        setSearchResults(filtered);
+        setErrorMessage('Không thể lấy dữ liệu mới từ máy chủ. Đang hiển thị kết quả được lưu tạm.');
+      } else {
+        setSearchResults([]);
+        setErrorMessage('Không thể tải danh sách người dùng. Vui lòng thử lại sau.');
+      }
     } finally {
       setIsSearching(false);
     }
@@ -80,6 +92,7 @@ function AddContactModal({ isOpen, onClose, onContactAdded }) {
     setSearchResults([]);
     setHasSearched(false);
     setIsSearching(false);
+    setErrorMessage('');
     onClose();
   };
 
@@ -135,6 +148,12 @@ function AddContactModal({ isOpen, onClose, onContactAdded }) {
               <>Search</>
             )}
           </button>
+
+          {errorMessage && (
+            <div className='mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400'>
+              {errorMessage}
+            </div>
+          )}
 
           {/* Search Results */}
           <div className='max-h-80 overflow-y-auto'>

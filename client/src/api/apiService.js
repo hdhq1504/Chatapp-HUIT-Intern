@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { safeSessionGetItem } from '../utils/storage/index';
 
 class ApiService {
   constructor() {
@@ -74,8 +75,11 @@ class ApiService {
   }
 
   async refreshToken() {
-    // For refresh token, we need to get it from localStorage and use it in headers
-    const refreshToken = localStorage.getItem('refresh_token');
+    // For refresh token, we need to get it from sessionStorage and use it in headers
+    const refreshToken = safeSessionGetItem('refresh_token', null);
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
     return this.axiosInstance.post(
       '/auth/refresh-token',
       {},
@@ -110,6 +114,7 @@ class ApiService {
 
   async getUserById(userId) {
     // Backend uses profile endpoint for current user
+    void userId;
     return this.axiosInstance.get('/users/profile');
   }
 
