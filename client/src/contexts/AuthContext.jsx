@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
                 roles: currentUser.data.roles || [],
               };
               setUser(updatedUser);
-              safeSessionGetItem('authenticated_user', updatedUser);
+              safeSetItem('authenticated_user', updatedUser);
             }
           } catch (error) {
             console.error('Token validation failed:', error);

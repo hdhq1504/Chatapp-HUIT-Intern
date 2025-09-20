@@ -209,18 +209,8 @@ export class GroupStorage extends BaseStorage {
   }
 }
 
-// Helpers để truy cập an toàn bộ nhớ trình duyệt
-const localStorageRef = typeof window !== 'undefined' ? window.localStorage : null;
-const sessionStorageRef = typeof window !== 'undefined' ? window.sessionStorage : null;
-
-const isQuotaError = (err) => {
-  if (!err) return false;
-  return err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED';
-};
-
-const safeStorageGetItem = (storage, key, defaultValue = null) => {
-  if (!storage) return defaultValue;
-
+// Storage Utils - Các hàm tiện ích cho localStorage
+export function safeGetItem(key, defaultValue = null) {
   try {
     const raw = storage.getItem(key);
     return raw ? JSON.parse(raw) : defaultValue;
@@ -237,14 +227,17 @@ const safeStorageSetItem = (storage, key, value) => {
     storage.setItem(key, JSON.stringify(value));
     return true;
   } catch (err) {
-    if (isQuotaError(err) && Array.isArray(value)) {
-      try {
-        const trimmed = value.slice(-50);
-        storage.setItem(key, JSON.stringify(trimmed));
-        return true;
-      } catch (fallbackErr) {
-        console.warn('safeStorageSetItem fallback failed', fallbackErr);
+    // Try a simple quota handling: trim arrays to keep recent items
+    try {
+      if (err && err.name === 'QuotaExceededError') {
+        if (Array.isArray(value)) {
+          const trimmed = value.slice(-50);
+          localStorage.setItem(key, JSON.stringify(trimmed));
+          return true;
+        }
       }
+    } catch (e) {
+      console.warn('safeSetItem fallback failed', e);
     }
 
     console.warn(`safeStorageSetItem(${key}) failed`, err);

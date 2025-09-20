@@ -70,7 +70,14 @@ function ChatPage() {
       const { senderId, message } = event.detail;
 
       setContacts((prevContacts) => {
-        const preview = message.content || message.text || 'New message';
+        return prevContacts.map((contact) => {
+          if (contact.id === senderId) {
+            const preview =
+              message.type === 'text'
+                ? message.content
+                : message.type === 'files'
+                  ? `Sent ${message.files ? message.files.length : 1} files`
+                  : message.content || 'New message';
 
         const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
           hour: '2-digit',
