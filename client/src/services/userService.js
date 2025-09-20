@@ -129,7 +129,7 @@ export class UserService {
         status: 'offline',
         lastSeen: new Date().toISOString(),
       };
-    } catch (error) {
+    } catch {
       // Return default status if API fails
       return {
         userId,

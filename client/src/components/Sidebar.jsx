@@ -18,13 +18,29 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, contact: null });
   const [searchTerm, setSearchTerm] = useState('');
   const { isUserOnline } = useChat();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const profile = {
     name: user?.name || user?.username || 'Guest User',
     avatar: user?.avatar || '',
     email: user?.email || '',
   };
+
+  const headerStatus = (() => {
+    if (!isAuthenticated) {
+      return {
+        text: 'Offline',
+        textClass: 'text-gray-500 dark:text-gray-400',
+        dotClass: 'bg-gray-400',
+      };
+    }
+
+    return {
+      text: 'Active Now',
+      textClass: 'text-green-600 dark:text-green-400',
+      dotClass: 'bg-green-500',
+    };
+  })();
 
   useEffect(() => {
     const handleProfileUpdate = (event) => {
@@ -113,7 +129,10 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
 
             <div className='min-w-0 flex-1'>
               <h2 className='truncate text-lg font-semibold'>{profile.name}</h2>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>Active Now</p>
+              <p className={`flex items-center gap-1 text-xs ${headerStatus.textClass}`}>
+                <span className={`animated-ping inline-block h-2 w-2 rounded-full ${headerStatus.dotClass}`} />
+                {headerStatus.text}
+              </p>
             </div>
 
             <div className='relative inline-block' ref={mainMenuRef}>

@@ -1,9 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage/index';
+import {
+  safeGetItem,
+  safeRemoveItem,
+  safeSessionGetItem,
+  safeSessionSetItem,
+  safeSessionRemoveItem,
+} from '../utils/storage/index';
 import { api } from '../api/apiService';
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -18,12 +25,34 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
 
-  // Load user from localStorage on app start
+  // Load user from storage on app start
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const parsedUser = safeGetItem('authenticated_user', null);
-        const authToken = safeGetItem('auth_token', null);
+        let parsedUser = safeSessionGetItem('authenticated_user', null);
+        let authToken = safeSessionGetItem('auth_token', null);
+
+        // Migrate legacy localStorage session if needed
+        if (!parsedUser || !authToken) {
+          const legacyUser = safeGetItem('authenticated_user', null);
+          const legacyToken = safeGetItem('auth_token', null);
+          const legacyRefreshToken = safeGetItem('refresh_token', null);
+
+          if (legacyUser && legacyToken) {
+            parsedUser = legacyUser;
+            authToken = legacyToken;
+
+            safeSessionSetItem('authenticated_user', legacyUser);
+            safeSessionSetItem('auth_token', legacyToken);
+            if (legacyRefreshToken) {
+              safeSessionSetItem('refresh_token', legacyRefreshToken);
+            }
+
+            safeRemoveItem('authenticated_user');
+            safeRemoveItem('auth_token');
+            safeRemoveItem('refresh_token');
+          }
+        }
 
         if (parsedUser && authToken) {
           setUser(parsedUser);
@@ -45,7 +74,7 @@ export const AuthProvider = ({ children }) => {
                 roles: currentUser.data.roles || [],
               };
               setUser(updatedUser);
-              safeSetItem('authenticated_user', updatedUser);
+              safeSessionGetItem('authenticated_user', updatedUser);
             }
           } catch (error) {
             console.error('Token validation failed:', error);
@@ -57,6 +86,9 @@ export const AuthProvider = ({ children }) => {
         console.error('Error loading user from storage:', error);
         // best-effort cleanup
         try {
+          safeSessionRemoveItem('authenticated_user');
+          safeSessionRemoveItem('auth_token');
+          safeSessionRemoveItem('refresh_token');
           safeRemoveItem('authenticated_user');
           safeRemoveItem('auth_token');
           safeRemoveItem('refresh_token');
@@ -95,9 +127,14 @@ export const AuthProvider = ({ children }) => {
           };
 
           // Save tokens and user data
-          safeSetItem('authenticated_user', userData);
-          safeSetItem('auth_token', accessToken);
-          safeSetItem('refresh_token', refreshToken);
+          safeRemoveItem('authenticated_user');
+          safeRemoveItem('auth_token');
+          safeRemoveItem('refresh_token');
+          safeSessionSetItem('authenticated_user', userData);
+          safeSessionSetItem('auth_token', accessToken);
+          if (refreshToken) {
+            safeSessionSetItem('refresh_token', refreshToken);
+          }
 
           setUser(userData);
           setToken(accessToken);
@@ -122,7 +159,7 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       setIsLoading(true);
-      const { password, confirmPassword, username, ...rest } = userData;
+      const { password, confirmPassword, username } = userData;
 
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
@@ -182,6 +219,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       // Always cleanup local state and storage
       try {
+        safeSessionRemoveItem('authenticated_user');
+        safeSessionRemoveItem('auth_token');
+        safeSessionRemoveItem('refresh_token');
         safeRemoveItem('authenticated_user');
         safeRemoveItem('auth_token');
         safeRemoveItem('refresh_token');
@@ -210,7 +250,7 @@ export const AuthProvider = ({ children }) => {
           avatar: response.data.avatar || user.avatar,
         };
 
-        safeSetItem('authenticated_user', updatedUser);
+        safeSessionSetItem('authenticated_user', updatedUser);
         setUser(updatedUser);
 
         // Dispatch event for other components
@@ -235,7 +275,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      const refreshTokenValue = safeGetItem('refresh_token', null);
+      const refreshTokenValue = safeSessionGetItem('refresh_token', null);
       if (!refreshTokenValue) {
         throw new Error('No refresh token available');
       }
@@ -246,9 +286,9 @@ export const AuthProvider = ({ children }) => {
         const { accessToken, refreshToken: newRefreshToken } = response.data;
 
         // Update tokens
-        safeSetItem('auth_token', accessToken);
+        safeSessionSetItem('auth_token', accessToken);
         if (newRefreshToken) {
-          safeSetItem('refresh_token', newRefreshToken);
+          safeSessionSetItem('refresh_token', newRefreshToken);
         }
 
         api.setToken(accessToken);

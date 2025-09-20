@@ -29,6 +29,203 @@ export const ChatProvider = ({ children }) => {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
+  const normalizeMessagesForConversation = useCallback(
+    (messages, { chatId, chatType = 'contact', otherUserId } = {}) => {
+      if (!Array.isArray(messages)) {
+        return [];
+      }
+
+      if (!user) {
+        return messages;
+      }
+
+      const resolvePeerId = () => {
+        if (otherUserId !== undefined && otherUserId !== null) {
+          return otherUserId;
+        }
+
+        if (chatType === 'room') {
+          return chatId;
+        }
+
+        return chatId;
+      };
+
+      const peerId = resolvePeerId();
+
+      return messages.map((storedMessage) => {
+        const candidateSenderId =
+          storedMessage.senderId ??
+          storedMessage.userId ??
+          storedMessage.sendUserId ??
+          storedMessage.fromUserId ??
+          storedMessage.fromId ??
+          storedMessage.authorId ??
+          storedMessage.sender?.id ??
+          storedMessage.sender?.userId ??
+          null;
+
+        const isCurrentUser = (value) => value !== null && value !== undefined && String(value) === String(user.id);
+
+        let normalizedSender = storedMessage.sender;
+
+        if (normalizedSender !== 'self' && normalizedSender !== 'other') {
+          if (candidateSenderId !== null && candidateSenderId !== undefined) {
+            normalizedSender = isCurrentUser(candidateSenderId) ? 'self' : 'other';
+          } else if (storedMessage.receiverId !== undefined && storedMessage.receiverId !== null) {
+            const receiverIsCurrentUser = String(storedMessage.receiverId) === String(user.id);
+            normalizedSender = receiverIsCurrentUser ? 'other' : 'self';
+          } else if (chatType !== 'room') {
+            const inferredToUserId = storedMessage.toUserId ?? storedMessage.recivedMessageUserId ?? null;
+            if (inferredToUserId !== null && inferredToUserId !== undefined) {
+              normalizedSender = String(inferredToUserId) === String(user.id) ? 'other' : 'self';
+            }
+          }
+        }
+
+        if (normalizedSender !== 'self' && normalizedSender !== 'other') {
+          normalizedSender = 'other';
+        }
+
+        const fallbackPeerId = peerId ?? storedMessage.chatId ?? storedMessage.receiverId ?? storedMessage.userId;
+
+        const ensuredSenderId =
+          candidateSenderId ?? storedMessage.senderId ?? (normalizedSender === 'self' ? user.id : fallbackPeerId);
+
+        const ensuredReceiverId = (() => {
+          if (storedMessage.receiverId !== undefined && storedMessage.receiverId !== null) {
+            return storedMessage.receiverId;
+          }
+
+          if (chatType === 'room') {
+            return chatId;
+          }
+
+          if (normalizedSender === 'self') {
+            return fallbackPeerId ?? chatId;
+          }
+
+          return user.id;
+        })();
+
+        return {
+          ...storedMessage,
+          senderId: ensuredSenderId,
+          receiverId: ensuredReceiverId,
+          sender: normalizedSender,
+        };
+      });
+    },
+    [user],
+  );
+
+  // Map backend message format to client format - MOVED UP BEFORE USAGE
+  const mapBackendMessageToClient = useCallback(
+    (backendMessage) => {
+      return {
+        id: backendMessage.id,
+        senderId: backendMessage.userId,
+        receiverId: user.id,
+        senderName: backendMessage.senderName || 'Unknown',
+        senderAvatar: backendMessage.senderAvatar || null,
+        content: backendMessage.content,
+        type: backendMessage.messageType?.toLowerCase() || 'text',
+        timestamp: new Date(backendMessage.dateSent).getTime(),
+        chatId: backendMessage.roomId || backendMessage.userId,
+        chatType: backendMessage.roomId ? 'room' : 'contact',
+        status: 'received',
+        sender: backendMessage.userId === user.id ? 'self' : 'other',
+      };
+    },
+    [user],
+  );
+
+  // Handle incoming direct messages
+  const handleIncomingMessage = useCallback(
+    (messageData) => {
+      const mappedMessage = mapBackendMessageToClient(messageData);
+
+      // Add to message history
+      const conversationKey = getConversationKey(messageData.userId, user.id);
+      const storageKey = `chat_${conversationKey}`;
+      const existingMessages = safeGetItem(storageKey, []);
+      const normalizedExistingMessages = normalizeMessagesForConversation(existingMessages, {
+        chatId: messageData.userId,
+        chatType: 'contact',
+        otherUserId: messageData.userId,
+      });
+
+      let messagesToPersist = null;
+
+      setMessageHistory((prev) => {
+        const messages = prev.get(conversationKey) || [];
+        const baseMessages = messages.length > 0 ? messages : normalizedExistingMessages;
+        const newMessages = [...baseMessages, mappedMessage];
+        messagesToPersist = newMessages;
+        const updatedHistory = new Map(prev);
+        updatedHistory.set(conversationKey, newMessages);
+        return updatedHistory;
+      });
+
+      safeSetItem(storageKey, messagesToPersist ?? [...normalizedExistingMessages, mappedMessage]);
+
+      // Update active chats
+      setActiveChats((prev) => {
+        const newChats = new Map(prev);
+        const chatHistory = newChats.get(messageData.userId) || [];
+        newChats.set(messageData.userId, [...chatHistory, mappedMessage]);
+        const baseChatHistory = chatHistory.length > 0 ? chatHistory : normalizedExistingMessages;
+        newChats.set(messageData.userId, [...baseChatHistory, mappedMessage]);
+        return newChats;
+      });
+
+      // Trigger event for UI updates
+      window.dispatchEvent(
+        new CustomEvent('message-received', {
+          detail: { senderId: messageData.userId, message: mappedMessage },
+        }),
+      );
+    },
+    [user, mapBackendMessageToClient, normalizeMessagesForConversation],
+  );
+
+  // Handle incoming room messages
+  const handleIncomingRoomMessage = useCallback(
+    (messageData) => {
+      const mappedMessage = mapBackendMessageToClient(messageData);
+
+      // Update room message history
+      const roomKey = `room_${messageData.roomId}`;
+      const existingMessages = safeGetItem(roomKey, []);
+      const normalizedExistingMessages = normalizeMessagesForConversation(existingMessages, {
+        chatId: messageData.roomId,
+        chatType: 'room',
+      });
+
+      let messagesToPersist = null;
+
+      setMessageHistory((prev) => {
+        const messages = prev.get(roomKey) || [];
+        const baseMessages = messages.length > 0 ? messages : normalizedExistingMessages;
+        const newMessages = [...baseMessages, mappedMessage];
+        messagesToPersist = newMessages;
+        const updatedHistory = new Map(prev);
+        updatedHistory.set(roomKey, newMessages);
+        return updatedHistory;
+      });
+
+      safeSetItem(roomKey, messagesToPersist ?? [...normalizedExistingMessages, mappedMessage]);
+
+      // Trigger event for UI updates
+      window.dispatchEvent(
+        new CustomEvent('room-message-received', {
+          detail: { roomId: messageData.roomId, message: mappedMessage },
+        }),
+      );
+    },
+    [mapBackendMessageToClient, normalizeMessagesForConversation],
+  );
+
   // Initialize WebSocket connection
   const connectWebSocket = useCallback(() => {
     if (!token || !user || stompClient.current) return;
@@ -127,7 +324,7 @@ export const ChatProvider = ({ children }) => {
     } catch (error) {
       console.error('Error connecting WebSocket:', error);
     }
-  }, [token, user]);
+  }, [token, user, handleIncomingMessage, handleIncomingRoomMessage]);
 
   // Disconnect WebSocket
   const disconnectWebSocket = useCallback(() => {
@@ -146,82 +343,6 @@ export const ChatProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Handle incoming direct messages
-  const handleIncomingMessage = useCallback(
-    (messageData) => {
-      const mappedMessage = mapBackendMessageToClient(messageData);
-
-      // Add to message history
-      const conversationKey = getConversationKey(messageData.userId, user.id);
-      setMessageHistory((prev) => {
-        const messages = prev.get(conversationKey) || [];
-        const newMessages = [...messages, mappedMessage];
-        const updatedHistory = new Map(prev);
-        updatedHistory.set(conversationKey, newMessages);
-        return updatedHistory;
-      });
-
-      // Update active chats
-      setActiveChats((prev) => {
-        const newChats = new Map(prev);
-        const chatHistory = newChats.get(messageData.userId) || [];
-        newChats.set(messageData.userId, [...chatHistory, mappedMessage]);
-        return newChats;
-      });
-
-      // Trigger event for UI updates
-      window.dispatchEvent(
-        new CustomEvent('message-received', {
-          detail: { senderId: messageData.userId, message: mappedMessage },
-        }),
-      );
-    },
-    [user],
-  );
-
-  // Handle incoming room messages
-  const handleIncomingRoomMessage = useCallback((messageData) => {
-    const mappedMessage = mapBackendMessageToClient(messageData);
-
-    // Update room message history
-    setMessageHistory((prev) => {
-      const roomKey = `room_${messageData.roomId}`;
-      const messages = prev.get(roomKey) || [];
-      const newMessages = [...messages, mappedMessage];
-      const updatedHistory = new Map(prev);
-      updatedHistory.set(roomKey, newMessages);
-      return updatedHistory;
-    });
-
-    // Trigger event for UI updates
-    window.dispatchEvent(
-      new CustomEvent('room-message-received', {
-        detail: { roomId: messageData.roomId, message: mappedMessage },
-      }),
-    );
-  }, []);
-
-  // Map backend message format to client format
-  const mapBackendMessageToClient = useCallback(
-    (backendMessage) => {
-      return {
-        id: backendMessage.id,
-        senderId: backendMessage.userId,
-        receiverId: user.id,
-        senderName: backendMessage.senderName || 'Unknown',
-        senderAvatar: backendMessage.senderAvatar || null,
-        content: backendMessage.content,
-        type: backendMessage.messageType?.toLowerCase() || 'text',
-        timestamp: new Date(backendMessage.dateSent).getTime(),
-        chatId: backendMessage.roomId || backendMessage.userId,
-        chatType: backendMessage.roomId ? 'room' : 'contact',
-        status: 'received',
-        sender: backendMessage.userId === user.id ? 'self' : 'other',
-      };
-    },
-    [user],
-  );
-
   // Send message function
   const sendMessage = useCallback(
     async (chatId, message, chatType = 'contact') => {
@@ -230,9 +351,10 @@ export const ChatProvider = ({ children }) => {
       }
 
       try {
+        const normalizedContent = (message.content ?? message.text ?? '').toString();
         const messageData = {
-          content: message.content || message.text,
-          messageType: (message.type || 'text').toUpperCase(),
+          content: normalizedContent,
+          messageType: 'TEXT',
           sendUserId: user.id,
           ...(chatType === 'room' ? { recivedMessageRoomId: chatId } : { recivedMessageUserId: chatId }),
         };
@@ -273,8 +395,8 @@ export const ChatProvider = ({ children }) => {
           receiverId: chatId,
           senderName: user.name || user.username,
           senderAvatar: user.avatar,
-          content: message.content || message.text,
-          type: message.type || 'text',
+          content: normalizedContent,
+          type: 'text',
           files: message.files || null,
           timestamp: new Date(response.dateSent || Date.now()).getTime(),
           chatId,
@@ -287,23 +409,36 @@ export const ChatProvider = ({ children }) => {
         const storageKey = chatType === 'room' ? `room_${chatId}` : `chat_${getConversationKey(user.id, chatId)}`;
 
         const existingMessages = safeGetItem(storageKey, []);
-        const updatedMessages = [...existingMessages, clientMessage];
-        safeSetItem(storageKey, updatedMessages);
+        const normalizedExistingMessages = normalizeMessagesForConversation(existingMessages, {
+          chatId,
+          chatType,
+          otherUserId: chatType === 'room' ? undefined : chatId,
+        });
+
+        let messagesToPersist = null;
 
         // Update message history
         setMessageHistory((prev) => {
           const key = chatType === 'room' ? `room_${chatId}` : getConversationKey(user.id, chatId);
-          const messages = prev.get(key) || [];
+          const previousMessages = prev.get(key) || [];
+          const baseMessages = previousMessages.length > 0 ? previousMessages : normalizedExistingMessages;
+          const newMessages = [...baseMessages, clientMessage];
+
+          messagesToPersist = newMessages;
+
           const updatedHistory = new Map(prev);
-          updatedHistory.set(key, [...messages, clientMessage]);
+          updatedHistory.set(key, newMessages);
           return updatedHistory;
         });
+
+        safeSetItem(storageKey, messagesToPersist ?? [...normalizedExistingMessages, clientMessage]);
 
         // Update active chats
         setActiveChats((prev) => {
           const newChats = new Map(prev);
           const chatHistory = newChats.get(chatId) || [];
-          newChats.set(chatId, [...chatHistory, clientMessage]);
+          const baseChatHistory = chatHistory.length > 0 ? chatHistory : normalizedExistingMessages;
+          newChats.set(chatId, [...baseChatHistory, clientMessage]);
           return newChats;
         });
 
@@ -316,7 +451,7 @@ export const ChatProvider = ({ children }) => {
         };
       }
     },
-    [user, isConnected],
+    [user, isConnected, normalizeMessagesForConversation],
   );
 
   // Get chat history
