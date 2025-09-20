@@ -48,6 +48,12 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm, isGroup = false }) {
           {/* Actions */}
           <div className='flex justify-end gap-2.5'>
             <button
+              onClick={handleClose}
+              className='cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-[#181818] hover:bg-gray-300 focus:outline-none dark:text-[#181818] dark:hover:bg-gray-300'
+            >
+              Cancel
+            </button>
+            <button
               onClick={() => {
                 onConfirm();
                 handleClose();
@@ -55,12 +61,6 @@ function DeleteChatDialog({ isOpen, onClose, onConfirm, isGroup = false }) {
               className='cursor-pointer rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none dark:bg-red-700 dark:hover:bg-red-800'
             >
               Delete
-            </button>
-            <button
-              onClick={handleClose}
-              className='cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-[#181818] hover:bg-gray-300 focus:outline-none dark:text-[#181818] dark:hover:bg-gray-300'
-            >
-              Cancel
             </button>
           </div>
         </div>

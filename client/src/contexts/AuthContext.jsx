@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   safeGetItem,
+  safeSetItem,
   safeRemoveItem,
   safeSessionGetItem,
   safeSessionSetItem,

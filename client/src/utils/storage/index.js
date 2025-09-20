@@ -143,22 +143,24 @@ export class GroupStorage extends BaseStorage {
 
   createGroup(groupData) {
     const groups = this.getData([]);
+    const now = Date.now();
     const newGroup = {
-      id: generateId('group'),
+      id: groupData.id || generateId('group'),
       name: groupData.name,
       members: groupData.members || [],
-      avatar: this.generateGroupAvatar(groupData.name),
-      createdAt: new Date().toISOString(),
-      lastMessageTime: '',
-      status: 'Group created',
-      unreadCount: 0,
-      lastMessageTimestamp: Date.now(),
+      avatar: groupData.avatar ?? this.generateGroupAvatar(groupData.name),
+      createdAt: groupData.createdAt || new Date().toISOString(),
+      lastMessageTime: groupData.lastMessageTime || '',
+      status: groupData.status || 'Group created',
+      unreadCount: groupData.unreadCount ?? 0,
+      lastMessageTimestamp: groupData.lastMessageTimestamp ?? now,
       type: 'group',
-      active: true,
+      active: groupData.active ?? true,
     };
 
-    groups.unshift(newGroup);
-    this.setData(groups);
+    const filteredGroups = groups.filter((group) => group.id !== newGroup.id);
+    filteredGroups.unshift(newGroup);
+    this.setData(filteredGroups);
     return newGroup;
   }
 
@@ -209,8 +211,19 @@ export class GroupStorage extends BaseStorage {
   }
 }
 
-// Storage Utils - Các hàm tiện ích cho localStorage
-export function safeGetItem(key, defaultValue = null) {
+// Helpers để truy cập an toàn bộ nhớ trình duyệt
+const localStorageRef = typeof window !== 'undefined' ? window.localStorage : null;
+const sessionStorageRef = typeof window !== 'undefined' ? window.sessionStorage : null;
+
+const isQuotaError = (err) => {
+  if (!err) return false;
+  return err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED';
+};
+
+// Storage utils shared helpers
+const safeStorageGetItem = (storage, key, defaultValue = null) => {
+  if (!storage) return defaultValue;
+
   try {
     const raw = storage.getItem(key);
     return raw ? JSON.parse(raw) : defaultValue;
@@ -227,17 +240,14 @@ const safeStorageSetItem = (storage, key, value) => {
     storage.setItem(key, JSON.stringify(value));
     return true;
   } catch (err) {
-    // Try a simple quota handling: trim arrays to keep recent items
-    try {
-      if (err && err.name === 'QuotaExceededError') {
-        if (Array.isArray(value)) {
-          const trimmed = value.slice(-50);
-          localStorage.setItem(key, JSON.stringify(trimmed));
-          return true;
-        }
+    if (isQuotaError(err) && Array.isArray(value)) {
+      try {
+        const trimmed = value.slice(-50);
+        storage.setItem(key, JSON.stringify(trimmed));
+        return true;
+      } catch (fallbackErr) {
+        console.warn('safeStorageSetItem fallback failed', fallbackErr);
       }
-    } catch (e) {
-      console.warn('safeSetItem fallback failed', e);
     }
 
     console.warn(`safeStorageSetItem(${key}) failed`, err);

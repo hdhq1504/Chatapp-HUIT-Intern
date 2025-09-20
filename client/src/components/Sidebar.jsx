@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive, UserPlus } from 'lucide-react';
-import AddContactModal from './AddContactModal';
+import { MoreHorizontal, UserRound, Settings, Search, Plus, LogOut, Archive } from 'lucide-react';
 import ContactItem from './ContactItem';
 import DeleteDialog from './DeleteDialog';
 import SettingModal from './SettingModal';
@@ -10,10 +9,9 @@ import { useChat } from '../contexts/ChatContext';
 import { useClickOutside, useMultipleClickOutside } from '../hooks/useClickOutside';
 import { scrollBar, getInitial } from '../storage/helpers';
 
-function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, onDeleteChat, onContactAdded }) {
+function Sidebar({ onChatSelect, onOpenCreateRoom, contacts = [], selectedContact, onDeleteChat }) {
   const [openSettings, setOpenSettings] = useState(false);
   const [showSettingModal, setShowSettingModal] = useState(false);
-  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [openUserSettingsId, setOpenUserSettingsId] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, contact: null });
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,15 +59,6 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
     } catch (error) {
       console.error('Logout failed:', error);
       alert('Logout failed. Please try again');
-    }
-  };
-
-  const handleContactAdded = (newContact) => {
-    const existingContact = contacts.find((c) => c.id === newContact.id);
-    if (!existingContact) {
-      onContactAdded(newContact);
-    } else {
-      alert('This user is already in your contact list!');
     }
   };
 
@@ -202,18 +191,10 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
               />
             </div>
 
-            {/* Add Contact Button */}
-            <button
-              className='flex-shrink-0 cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030]'
-              onClick={() => setShowAddContactModal(true)}
-            >
-              <UserPlus size={18} className='h-[20px] w-[20px]' />
-            </button>
-
             {/* Create Group Button */}
             <button
               className='flex-shrink-0 cursor-pointer rounded-full p-2 hover:bg-[#EFEFEF] dark:bg-[#181818] dark:hover:bg-[#303030]'
-              onClick={onCreateGroup}
+              onClick={onOpenCreateRoom}
             >
               <Plus size={18} className='h-[20px] w-[20px]' />
             </button>
@@ -266,13 +247,6 @@ function Sidebar({ onChatSelect, onCreateGroup, contacts = [], selectedContact, 
 
       {/* Settings Modal */}
       <SettingModal isOpen={showSettingModal} onClose={() => setShowSettingModal(false)} />
-
-      {/* Add Contact Modal */}
-      <AddContactModal
-        isOpen={showAddContactModal}
-        onClose={() => setShowAddContactModal(false)}
-        onContactAdded={handleContactAdded}
-      />
     </>
   );
 }

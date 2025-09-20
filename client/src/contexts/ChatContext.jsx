@@ -7,6 +7,7 @@ import { safeGetItem, safeSetItem, generateId } from '../utils/storage';
 
 const ChatContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (!context) {

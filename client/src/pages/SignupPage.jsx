@@ -37,7 +37,6 @@ function SignupPage() {
     phone: [
       (value) => validators.isRequired(value, 'Please enter the phone number'),
       (value) => validators.minLength(value, 10, 'Phone number must be at least 10 digits'),
-      (value) => /^[0-9+\-\s()]+$/.test(value) || 'Please enter a valid phone number',
     ],
     password: [
       (value) => validators.isRequired(value, 'Please enter the password'),

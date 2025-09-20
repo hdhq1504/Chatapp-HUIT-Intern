@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ChatContainer from '../components/ChatContainer';
 import ChatInfo from '../components/ChatInfo';
-import CreateGroupModal from '../components/CreateGroupModal';
+import CreateRoomModal from '../components/CreateRoomModal';
 import Sidebar from '../components/Sidebar';
 import WelcomeScreen from '../components/WelcomeScreen';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,7 +18,7 @@ function ChatPage() {
   const { user } = useAuth();
   const [showDetails, setShowDetails] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
 
   const [contacts, setContacts] = useState(() => {
@@ -70,14 +70,12 @@ function ChatPage() {
       const { senderId, message } = event.detail;
 
       setContacts((prevContacts) => {
-        return prevContacts.map((contact) => {
-          if (contact.id === senderId) {
-            const preview =
-              message.type === 'text'
-                ? message.content
-                : message.type === 'files'
-                  ? `Sent ${message.files ? message.files.length : 1} files`
-                  : message.content || 'New message';
+        const preview =
+          message.type === 'text'
+            ? message.content
+            : message.type === 'files'
+              ? `Sent ${message.files ? message.files.length : 1} files`
+              : message.content || 'New message';
 
         const timeString = new Date(message.timestamp).toLocaleTimeString('vi-VN', {
           hour: '2-digit',
@@ -210,7 +208,6 @@ function ChatPage() {
 
   const handleContactAdded = (newContact) => {
     setContacts((prevContacts) => {
-      // Check if contact already exists
       if (prevContacts.find((c) => c.id === newContact.id)) {
         return prevContacts;
       }
@@ -271,9 +268,8 @@ function ChatPage() {
           <div className='fixed inset-0 z-40 h-full w-full md:relative md:z-auto md:block md:w-80 lg:w-90'>
             <Sidebar
               onChatSelect={handleChatSelect}
-              onCreateGroup={() => setIsCreateGroupModalOpen(true)}
+              onOpenCreateRoom={() => setIsCreateRoomModalOpen(true)}
               onDeleteChat={handleDeleteChat}
-              onContactAdded={handleContactAdded}
               contacts={allChats}
               selectedContact={selectedContact}
             />
@@ -315,12 +311,14 @@ function ChatPage() {
           <div className='fixed inset-0 z-30 bg-black/50 md:hidden' onClick={() => handleToggleDetails(false)} />
         )}
 
-        {/* Create Group Modal */}
-        <CreateGroupModal
-          isOpen={isCreateGroupModalOpen}
-          onClose={() => setIsCreateGroupModalOpen(false)}
+        {/* Create Room Modal */}
+        <CreateRoomModal
+          isOpen={isCreateRoomModalOpen}
+          onClose={() => setIsCreateRoomModalOpen(false)}
+          onDirectChatCreated={handleContactAdded}
           contacts={contacts.filter((c) => c.type === 'contact')}
           onGroupCreated={handleGroupCreated}
+          existingContactIds={contacts.map((contact) => contact.id)}
         />
       </div>
     </ChatProvider>
