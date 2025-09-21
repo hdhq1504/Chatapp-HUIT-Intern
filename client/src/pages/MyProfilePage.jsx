@@ -87,7 +87,7 @@ function MyProfilePage() {
           name: formData.username.charAt(0).toUpperCase() + formData.username.slice(1), // Auto generate name from username
         };
 
-        const result = updateProfile(updateData);
+        const result = await updateProfile(updateData);
 
         if (result.success) {
           // Clear any validation errors

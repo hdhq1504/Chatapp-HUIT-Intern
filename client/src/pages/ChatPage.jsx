@@ -66,6 +66,42 @@ function ChatPage() {
   }, [contacts, groups]);
 
   useEffect(() => {
+    const handleGroupStorageUpdated = (event) => {
+      const updatedGroups = groupStorage.getGroups();
+      setGroups(updatedGroups);
+
+      if (!selectedContact || selectedContact.type !== 'group') {
+        return;
+      }
+
+      const { groupId } = event.detail || {};
+      const matchingGroup = updatedGroups.find((group) => group.id === selectedContact.id);
+
+      if (groupId && groupId !== selectedContact.id) {
+        if (!matchingGroup) {
+          return;
+        }
+      }
+
+      if (matchingGroup) {
+        setSelectedContact(matchingGroup);
+      } else {
+        setSelectedContact(null);
+        setShowDetails(false);
+        if (window.innerWidth < 768) {
+          setShowSidebar(true);
+        }
+      }
+    };
+
+    window.addEventListener('group-storage-updated', handleGroupStorageUpdated);
+
+    return () => {
+      window.removeEventListener('group-storage-updated', handleGroupStorageUpdated);
+    };
+  }, [selectedContact, setShowDetails, setShowSidebar]);
+
+  useEffect(() => {
     const handleMessageReceived = (event) => {
       const { senderId, message } = event.detail;
 

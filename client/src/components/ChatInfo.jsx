@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronUp,
   ChevronDown,
@@ -11,10 +11,13 @@ import {
   Check,
   Settings,
   X,
+  Loader2,
 } from 'lucide-react';
+import { api } from '../api/apiService';
+import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../contexts/ChatContext';
 import { groupStorage } from '../utils/storage';
 import { scrollBar, getInitial } from '../storage/helpers';
-import { useChat } from '../contexts/ChatContext';
 
 function ChatInfo({ onClose, selectedContact }) {
   const [chatSettingsOpen, setChatSettingsOpen] = useState(true);
@@ -22,36 +25,177 @@ function ChatInfo({ onClose, selectedContact }) {
   const [groupMembersOpen, setGroupMembersOpen] = useState(false);
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [editGroupName, setEditGroupName] = useState('');
+  const [localGroupMembers, setLocalGroupMembers] = useState(() => selectedContact?.members || []);
+  const [displayGroupName, setDisplayGroupName] = useState(() => selectedContact?.name || '');
+  const [memberActionLoading, setMemberActionLoading] = useState(null);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const { isUserOnline } = useChat();
+  const { user } = useAuth();
   const isGroup = selectedContact?.type === 'group';
-  const groupMembers = isGroup ? selectedContact?.members || [] : [];
+  const contactId = selectedContact?.id;
 
   useEffect(() => {
     if (isGroup && selectedContact) {
       setEditGroupName(selectedContact?.name || '');
+      setDisplayGroupName(selectedContact?.name || '');
+      setLocalGroupMembers(selectedContact?.members || []);
+    }
+    if (!isGroup) {
+      setLocalGroupMembers([]);
+      setDisplayGroupName(selectedContact?.name || '');
     }
   }, [isGroup, selectedContact]);
 
-  if (!selectedContact) {
-    return null;
-  }
+  const groupMembers = useMemo(() => {
+    if (!isGroup) return [];
+    return (localGroupMembers || []).map((member, index) => {
+      const rawRole = member?.role ? String(member.role).toLowerCase() : '';
+      const role = rawRole || (index === 0 ? 'admin' : 'member');
+      return { ...member, role };
+    });
+  }, [isGroup, localGroupMembers]);
+
+  const isCurrentUserAdmin = useMemo(() => {
+    if (!isGroup || !user) return false;
+
+    return groupMembers.some((member) => {
+      if (!member?.id) return false;
+      return String(member.id) === String(user.id) && member.role === 'admin';
+    });
+  }, [groupMembers, isGroup, user]);
+
+  const getMemberRoleLabel = (member) => (member.role === 'admin' ? 'Admin' : 'Member');
 
   const handleUpdateGroupName = () => {
-    if (!isGroup || !editGroupName.trim()) return;
+    if (!isGroup || !editGroupName.trim() || !contactId) return;
 
-    const updatedGroup = groupStorage.updateGroup(selectedContact.id, {
+    const updatedGroup = groupStorage.updateGroup(contactId, {
       name: editGroupName.trim(),
     });
 
     if (updatedGroup) {
       setIsEditingGroupName(false);
+      setDisplayGroupName(updatedGroup.name || editGroupName.trim());
+      window.dispatchEvent(
+        new CustomEvent('group-storage-updated', {
+          detail: { groupId: contactId, group: updatedGroup, action: 'group-renamed' },
+        }),
+      );
     } else {
       console.error('Failed to update group name');
     }
   };
 
-  const handleRemoveMember = () => {
-    // TODO: implement remove member's group function
+  const refreshGroupMembers = () => {
+    if (!contactId) return null;
+    const updated = groupStorage.getGroups().find((group) => group.id === contactId);
+    setLocalGroupMembers(updated?.members || []);
+    return updated;
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (!isGroup || !isCurrentUserAdmin || !contactId || !memberId) {
+      return;
+    }
+
+    const targetMemberIndex = groupMembers.findIndex((candidate) => String(candidate.id) === String(memberId));
+    if (targetMemberIndex === -1) {
+      return;
+    }
+
+    const targetMember = groupMembers[targetMemberIndex];
+
+    if (targetMember.role === 'admin') {
+      alert('Không thể xóa quản trị viên khỏi nhóm.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Bạn có chắc chắn muốn xóa ${targetMember.name} khỏi phòng không?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setMemberActionLoading(memberId);
+      await api.removeMemberFromRoom(contactId, memberId);
+    } catch (error) {
+      console.error('Failed to remove member from room:', error);
+      alert(error.response?.data?.message || 'Không thể xóa thành viên. Vui lòng thử lại.');
+      setMemberActionLoading(null);
+      return;
+    }
+
+    const updatedGroup = groupStorage.removeMemberFromGroup(contactId, memberId);
+
+    if (!updatedGroup) {
+      console.error('Failed to update local group storage after removing member');
+      setMemberActionLoading(null);
+      return;
+    }
+
+    const refreshedGroup = refreshGroupMembers();
+
+    if (!refreshedGroup || refreshedGroup.members.length === 0) {
+      groupStorage.deleteGroup(contactId);
+      window.dispatchEvent(
+        new CustomEvent('group-storage-updated', {
+          detail: { groupId: contactId, action: 'group-removed' },
+        }),
+      );
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('group-storage-updated', {
+          detail: {
+            groupId: contactId,
+            group: refreshedGroup,
+            action: 'member-removed',
+            memberId,
+          },
+        }),
+      );
+    }
+
+    setMemberActionLoading(null);
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!isGroup || !contactId || !user) {
+      return;
+    }
+
+    const isMember = groupMembers.some((member) => String(member.id) === String(user.id));
+    if (!isMember) {
+      alert('Bạn không còn trong phòng này.');
+      return;
+    }
+
+    const confirmed = window.confirm('Bạn có chắc chắn muốn rời khỏi phòng này không?');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsLeavingGroup(true);
+      await api.leaveRoom(contactId);
+    } catch (error) {
+      console.error('Failed to leave room:', error);
+      alert(error.response?.data?.message || 'Không thể rời khỏi phòng. Vui lòng thử lại.');
+      setIsLeavingGroup(false);
+      return;
+    }
+
+    groupStorage.removeMemberFromGroup(contactId, user.id);
+    groupStorage.deleteGroup(contactId);
+    setLocalGroupMembers([]);
+
+    window.dispatchEvent(
+      new CustomEvent('group-storage-updated', {
+        detail: { groupId: contactId, action: 'member-left', memberId: user.id },
+      }),
+    );
+
+    setIsLeavingGroup(false);
+    onClose?.();
   };
 
   const renderAvatar = () => {
@@ -89,6 +233,8 @@ function ChatInfo({ onClose, selectedContact }) {
     const statusText = online ? 'Active Now' : 'Offline';
     return <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>{statusText}</p>;
   };
+
+  if (!selectedContact) return null;
 
   return (
     <div className='flex h-screen w-full flex-col bg-[#F9F9F9] md:w-80 lg:w-90 dark:border-[#3F3F3F] dark:bg-[#181818]'>
@@ -128,7 +274,7 @@ function ChatInfo({ onClose, selectedContact }) {
             </div>
           ) : (
             <div className='mb-2 flex items-center justify-center gap-2'>
-              <h3 className='text-xl font-semibold md:text-lg'>{selectedContact.name}</h3>
+              <h3 className='text-xl font-semibold md:text-lg'>{displayGroupName || selectedContact.name}</h3>
               {isGroup && (
                 <button
                   onClick={() => setIsEditingGroupName(true)}
@@ -186,22 +332,27 @@ function ChatInfo({ onClose, selectedContact }) {
                           </div>
                           <div>
                             <p className='font-medium'>{member.name}</p>
-                            <p className='text-xs text-gray-500'>{index === 0 ? 'Admin' : 'Member'}</p>
+                            <p className='text-xs text-gray-500'>{getMemberRoleLabel(member)}</p>
                           </div>
                         </div>
 
                         <div className='flex items-center gap-1'>
-                          {index === 0 && (
+                          {member.role === 'admin' && (
                             <div className='rounded-full p-2.5'>
                               <Crown size={16} className='text-yellow-500' />
                             </div>
                           )}
-                          {index !== 0 && (
+                          {isCurrentUserAdmin && member.role !== 'admin' && (
                             <button
                               onClick={() => handleRemoveMember(member.id)}
-                              className='cursor-pointer rounded-full p-2.5'
+                              className='cursor-pointer rounded-full p-2.5 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-[#404040]'
+                              disabled={memberActionLoading === member.id}
                             >
-                              <UserMinus size={16} />
+                              {memberActionLoading === member.id ? (
+                                <Loader2 size={16} className='animate-spin text-gray-500' />
+                              ) : (
+                                <UserMinus size={16} />
+                              )}
                             </button>
                           )}
                         </div>
@@ -266,7 +417,13 @@ function ChatInfo({ onClose, selectedContact }) {
                     </>
                   ) : (
                     <>
-                      <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Leave Group</div>
+                      <button
+                        onClick={handleLeaveGroup}
+                        disabled={isLeavingGroup}
+                        className='w-full rounded-lg px-2 py-2 text-left text-sm font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70 dark:text-red-400 dark:hover:bg-red-500/10'
+                      >
+                        {isLeavingGroup ? 'Leaving group...' : 'Leave Group'}
+                      </button>
                       <div className='py-2 text-sm text-gray-600 dark:text-gray-400'>Report Group</div>
                     </>
                   )}

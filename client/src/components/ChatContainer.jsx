@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import InputMessage from './InputMessage';
 import MessageBubble from './MessageBubble';
 import MessageHeader from './MessageHeader';
@@ -12,18 +12,26 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
   const { sendMessage, getChatHistory, isUserOnline } = useChat();
   const [messages, setMessages] = useState([]);
 
+  const chatType = useMemo(() => {
+    if (!selectedContact) return 'contact';
+    if (selectedContact.type === 'group') {
+      return 'room';
+    }
+    return selectedContact.type || 'contact';
+  }, [selectedContact]);
+
   useEffect(() => {
     if (selectedContact) {
-      const history = getChatHistory(selectedContact.id);
+      const history = getChatHistory(selectedContact.id, chatType);
       setMessages(history);
     }
-  }, [selectedContact, getChatHistory]);
+  }, [selectedContact, chatType, getChatHistory]);
 
   useEffect(() => {
     if (!selectedContact) return;
 
     const pollForNewMessages = () => {
-      const history = getChatHistory(selectedContact.id);
+      const history = getChatHistory(selectedContact.id, chatType);
       setMessages(history);
     };
 
@@ -31,15 +39,14 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     const interval = setInterval(pollForNewMessages, 1000);
 
     return () => clearInterval(interval);
-  }, [selectedContact, getChatHistory]);
+  }, [selectedContact, chatType, getChatHistory]);
 
   useEffect(() => {
     const handleNewMessage = (event) => {
       const { senderId } = event.detail;
 
-      // Nếu đang chat với người vừa gửi tin nhắn
-      if (selectedContact && selectedContact.id === senderId) {
-        const history = getChatHistory(selectedContact.id);
+      if (chatType !== 'room' && selectedContact && selectedContact.id === senderId) {
+        const history = getChatHistory(selectedContact.id, chatType);
         setMessages(history);
         scrollToBottom();
       }
@@ -50,7 +57,25 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     return () => {
       window.removeEventListener('message-received', handleNewMessage);
     };
-  }, [selectedContact, getChatHistory]);
+  }, [selectedContact, chatType, getChatHistory]);
+
+  useEffect(() => {
+    const handleNewRoomMessage = (event) => {
+      const { roomId } = event.detail || {};
+
+      if (chatType === 'room' && selectedContact && selectedContact.id === roomId) {
+        const history = getChatHistory(selectedContact.id, chatType);
+        setMessages(history);
+        scrollToBottom();
+      }
+    };
+
+    window.addEventListener('room-message-received', handleNewRoomMessage);
+
+    return () => {
+      window.removeEventListener('room-message-received', handleNewRoomMessage);
+    };
+  }, [selectedContact, chatType, getChatHistory]);
 
   useEffect(() => {
     scrollToBottom();
@@ -64,7 +89,7 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     if (!selectedContact) return;
 
     const trimmedContent = messageContent?.trim();
-    if (trimmedContent) return;
+    if (!trimmedContent) return;
 
     try {
       const messageData = {
@@ -77,7 +102,7 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
       };
 
       // Send through chat context
-      const result = await sendMessage(selectedContact.id, messageData, selectedContact.type || 'contact');
+      const result = await sendMessage(selectedContact.id, messageData, chatType);
 
       if (result.success) {
         // Update local messages
