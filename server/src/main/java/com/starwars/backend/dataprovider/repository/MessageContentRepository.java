@@ -33,4 +33,19 @@ public interface MessageContentRepository extends JpaRepository<MessageContent, 
         List<MessageContent> findByRoomBefore(@Param("roomId") UUID roomId,
                         @Param("before") java.time.LocalDateTime before,
                         Pageable pageable);
+
+        @Query("SELECT mc FROM MessageContent mc WHERE mc.recivedMessageRoomId IS NULL"
+                        + " AND ((mc.sendUserId = :userId1 AND mc.recivedMessageUserId = :userId2)"
+                        + " OR (mc.sendUserId = :userId2 AND mc.recivedMessageUserId = :userId1))"
+                        + " ORDER BY mc.sendedAt DESC")
+        List<MessageContent> findChatBetweenUsers(@Param("userId1") UUID userId1,
+                        @Param("userId2") UUID userId2,
+                        Pageable pageable);
+
+        // Sửa lại: recivedMessageUserId trong message_content chính là ID của
+        // message_user (phòng 1-1)
+        @Query("SELECT mc FROM MessageContent mc WHERE mc.recivedMessageUserId = :messageUserId"
+                        + " ORDER BY mc.sendedAt DESC")
+        List<MessageContent> findByMessageUserId(@Param("messageUserId") UUID messageUserId,
+                        Pageable pageable);
 }

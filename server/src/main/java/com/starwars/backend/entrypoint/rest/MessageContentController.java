@@ -72,18 +72,19 @@ public class MessageContentController {
     }
 
     /**
-     * API để lấy danh sách tin nhắn chat 1-1 với user khác
-     * GET /api/v1/messageContents/user/{userId}?page=0&size=20
+     * API để lấy danh sách tin nhắn chat 1-1 theo message_user.id
+     * GET /api/v1/messageContents/user/{messageUserId}?page=0&size=20
      */
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user/{messageUserId}")
     public ResponseEntity<ApiResponse<List<MessageContentResponse>>> getMessagesByUser(
-            @PathVariable String userId,
+            @PathVariable String messageUserId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
 
-        UUID userUUID = UUID.fromString(userId);
+        UUID messageUserUUID = UUID.fromString(messageUserId);
         Pageable pageable = PageRequest.of(page, size);
-        List<MessageContentResponse> messages = messageContentService.getMessagesByUser(userUUID, pageable);
+        List<MessageContentResponse> messages = messageContentService.getMessagesByMessageUser(messageUserUUID,
+                pageable);
 
         return ResponseEntity.ok(ApiResponse.success("Lấy tin nhắn chat 1-1 thành công", messages));
     }

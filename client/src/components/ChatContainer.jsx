@@ -126,7 +126,7 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
         type: 'text',
         timestamp: Date.now(),
         sender: 'self',
-        senderName: user?.name || user?.username || 'You',
+        senderName: user?.name || user?.email || 'You',
         senderAvatar: user?.avatar,
       };
 

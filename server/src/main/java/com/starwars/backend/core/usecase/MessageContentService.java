@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -120,7 +121,7 @@ public class MessageContentService {
     }
 
     /**
-     * Lấy tin nhắn chat 1-1 với user khác
+     * Lấy tin nhắn chat 1-1 với user khác (2 chiều)
      */
     @Transactional(readOnly = true)
     public java.util.List<MessageContentResponse> getMessagesByUser(
@@ -130,8 +131,28 @@ public class MessageContentService {
             throw exceptionHandler.invalidRequest("ID người dùng không được rỗng");
         }
 
-        return messageContentRepository
-                .findByRecivedMessageUserIdAndRecivedMessageRoomIdIsNullOrderBySendedAt(otherUserId)
+        // Lấy current user từ security context
+        var currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UUID currentUserId = currentUser.getId();
+
+        return messageContentRepository.findChatBetweenUsers(currentUserId, otherUserId, pageable)
+                .stream()
+                .map(this::mapToMessageContentResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Lấy tin nhắn chat 1-1 theo message_user.id (đúng logic hệ thống)
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<MessageContentResponse> getMessagesByMessageUser(
+            java.util.UUID messageUserId,
+            Pageable pageable) {
+        if (messageUserId == null) {
+            throw exceptionHandler.invalidRequest("ID message user không được rỗng");
+        }
+
+        return messageContentRepository.findByMessageUserId(messageUserId, pageable)
                 .stream()
                 .map(this::mapToMessageContentResponse)
                 .collect(java.util.stream.Collectors.toList());

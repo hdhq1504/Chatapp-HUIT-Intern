@@ -56,7 +56,18 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (parsedUser && authToken) {
-          setUser(parsedUser);
+          const normalizedUser = {
+            id: parsedUser.id ?? null,
+            name: parsedUser.name ?? parsedUser.fullName ?? '',
+            email: parsedUser.email ?? parsedUser.username ?? '',
+            phone: parsedUser.phone ?? '',
+            avatar: parsedUser.avatar ?? null,
+            roles: parsedUser.roles ?? [],
+          };
+
+          setUser(normalizedUser);
+          safeSessionSetItem('authenticated_user', normalizedUser);
+          safeSetItem('authenticated_user', normalizedUser);
           setIsAuthenticated(true);
           setToken(authToken);
           api.setToken(authToken);
@@ -69,12 +80,13 @@ export const AuthProvider = ({ children }) => {
               const updatedUser = {
                 id: currentUser.data.id,
                 name: currentUser.data.name,
-                username: currentUser.data.email, // map email to username for compatibility
                 email: currentUser.data.email,
+                phone: currentUser.data.phone || '',
                 avatar: currentUser.data.avatar || null,
                 roles: currentUser.data.roles || [],
               };
               setUser(updatedUser);
+              safeSessionSetItem('authenticated_user', updatedUser);
               safeSetItem('authenticated_user', updatedUser);
             }
           } catch (error) {
@@ -121,8 +133,8 @@ export const AuthProvider = ({ children }) => {
           const userData = {
             id: userResponse.data.id,
             name: userResponse.data.name,
-            username: userResponse.data.email, // map email to username for compatibility
             email: userResponse.data.email,
+            phone: userResponse.data.phone || '',
             avatar: userResponse.data.avatar || null,
             roles: userResponse.data.roles || [],
           };
@@ -132,6 +144,7 @@ export const AuthProvider = ({ children }) => {
           safeRemoveItem('auth_token');
           safeRemoveItem('refresh_token');
           safeSessionSetItem('authenticated_user', userData);
+          safeSetItem('authenticated_user', userData);
           safeSessionSetItem('auth_token', accessToken);
           if (refreshToken) {
             safeSessionSetItem('refresh_token', refreshToken);
@@ -160,14 +173,14 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       setIsLoading(true);
-      const { password, confirmPassword, username } = userData;
+      const { password, confirmPassword, fullName } = userData;
 
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
       }
 
       const registerData = {
-        name: username,
+        name: fullName?.trim() || '',
         phone: userData.phone,
         email: userData.email,
         password: password,
@@ -243,15 +256,18 @@ export const AuthProvider = ({ children }) => {
       const response = await api.updateProfile(updates);
 
       if (response.data) {
+        const serverUser = response.data;
         const updatedUser = {
-          ...user,
-          name: response.data.name || user.name,
-          email: response.data.email || user.email,
-          username: response.data.email || user.username,
-          avatar: response.data.avatar || user.avatar,
+          id: serverUser.id ?? user?.id ?? null,
+          name: serverUser.name ?? updates?.name ?? user?.name ?? '',
+          email: serverUser.email ?? updates?.email ?? user?.email ?? '',
+          phone: serverUser.phone ?? updates?.phone ?? user?.phone ?? '',
+          avatar: serverUser.avatar ?? updates?.avatar ?? user?.avatar ?? null,
+          roles: serverUser.roles ?? user?.roles ?? [],
         };
 
         safeSessionSetItem('authenticated_user', updatedUser);
+        safeSetItem('authenticated_user', updatedUser);
         setUser(updatedUser);
 
         // Dispatch event for other components

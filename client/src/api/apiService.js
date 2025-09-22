@@ -132,7 +132,7 @@ class ApiService {
   }
 
   async updateProfile(userData) {
-    return this.axiosInstance.put('/users/update-profile', userData);
+    return this.axiosInstance.put('/users/update-info', userData);
   }
 
   // Message endpoints
@@ -280,7 +280,6 @@ class ApiService {
     return {
       id: backendUser.id,
       name: backendUser.name,
-      username: backendUser.name, // Map name to username for compatibility
       email: backendUser.email,
       phone: backendUser.phone,
       avatar: backendUser.avatar || null,

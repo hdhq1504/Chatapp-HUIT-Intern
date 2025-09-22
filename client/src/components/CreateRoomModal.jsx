@@ -43,9 +43,9 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
         .filter((candidate) => candidate?.id && candidate.id !== user.id)
         .map((candidate) => ({
           id: candidate.id,
-          name: candidate.name || candidate.username || candidate.email || 'Unknown user',
+          name: candidate.name || candidate.email || 'Unknown user',
           email: candidate.email || '',
-          username: candidate.username || candidate.name || candidate.email || '',
+          phone: candidate.phone || '',
           avatar: candidate.avatar || '',
         }));
 
@@ -87,8 +87,9 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
     return allUsers.filter((candidate) => {
       const name = candidate.name?.toLowerCase() || '';
       const email = candidate.email?.toLowerCase() || '';
-      const username = candidate.username?.toLowerCase() || '';
-      return name.includes(normalized) || email.includes(normalized) || username.includes(normalized);
+      const phoneValue = candidate.phone ?? '';
+      const phone = typeof phoneValue === 'string' ? phoneValue.toLowerCase() : String(phoneValue || '').toLowerCase();
+      return name.includes(normalized) || email.includes(normalized) || phone.includes(normalized);
     });
   }, [allUsers, searchTerm]);
 
@@ -171,7 +172,7 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
           id: targetUser.id,
           name: targetUser.name,
           email: targetUser.email,
-          username: targetUser.username,
+          phone: targetUser.phone,
           avatar: targetUser.avatar,
           type: 'contact',
           status: roomData?.lastMessage?.content || 'Click to start chatting',
@@ -194,7 +195,7 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
         const groupMembers = [
           {
             id: user.id,
-            name: user.name || user.username || user.email || 'You',
+            name: user.name || user.email || 'You',
             role: 'admin',
           },
           ...selectedUsers.map((member) => ({
@@ -209,7 +210,7 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
           name: trimmedName || roomData.name || 'New Room',
           members: groupMembers,
           avatar: '',
-          status: roomData?.lastMessage?.content || `${user.name || user.username || 'Bạn'} vừa tạo phòng trò chuyện`,
+          status: roomData?.lastMessage?.content || `${user.name || 'Bạn'} vừa tạo phòng trò chuyện`,
           lastMessageTime,
           unreadCount: 0,
           lastMessageTimestamp,
@@ -332,7 +333,7 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
                 type='text'
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder='Nhập tên, email hoặc username...'
+                placeholder='Nhập tên, email hoặc số điện thoại...'
                 className='w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 pl-10 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-none dark:bg-[#303030]'
               />
             </div>
@@ -372,7 +373,7 @@ function CreateRoomModal({ isOpen, onClose, onDirectChatCreated, onGroupCreated,
                     <div className='min-w-0 flex-1'>
                       <p className='truncate font-medium'>{candidate.name}</p>
                       <p className='truncate text-sm text-gray-500 dark:text-gray-400'>
-                        {candidate.email || candidate.username}
+                        {candidate.email || candidate.phone}
                       </p>
                       {alreadyInContacts && !isSelected && (
                         <p className='mt-1 text-xs text-blue-500 dark:text-blue-300'>

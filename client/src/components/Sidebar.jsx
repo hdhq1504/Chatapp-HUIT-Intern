@@ -19,7 +19,7 @@ function Sidebar({ onChatSelect, onOpenCreateRoom, contacts = [], selectedContac
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const profile = {
-    name: user?.name || user?.username || 'Guest User',
+    name: user?.name || user?.email || 'Guest User',
     avatar: user?.avatar || '',
     email: user?.email || '',
   };

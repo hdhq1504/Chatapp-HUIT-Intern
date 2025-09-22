@@ -145,13 +145,13 @@ export const ChatProvider = ({ children }) => {
         senderName:
           rawMessage?.userName ??
           fallback.senderName ??
-          (isSelf ? user?.name || user?.username || 'You' : rawMessage?.userName || ''),
+          (isSelf ? user?.name || user?.email || 'You' : rawMessage?.userName || ''),
         senderAvatar: rawMessage?.userAvatar ?? fallback.senderAvatar ?? null,
         edited: rawMessage?.edited ?? fallback.edited ?? false,
         deleted: rawMessage?.deleted ?? fallback.deleted ?? false,
       };
     },
-    [user?.id, user?.name, user?.username],
+    [user?.id, user?.name, user?.email],
   );
 
   const persistMessages = useCallback(
