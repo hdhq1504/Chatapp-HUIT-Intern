@@ -9,7 +9,7 @@ import { scrollBar, processMessagesForRendering } from '../storage/helpers';
 function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMessageSent }) {
   const messagesEndRef = useRef(null);
   const { user } = useAuth();
-  const { sendMessage, getChatHistory } = useChat();
+  const { sendMessage, getChatHistory, loadMessageHistory } = useChat();
   const [messages, setMessages] = useState([]);
 
   const chatType = useMemo(() => {
@@ -21,34 +21,60 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
   }, [selectedContact]);
 
   useEffect(() => {
-    if (selectedContact) {
-      const history = getChatHistory(selectedContact.id, chatType);
-      setMessages(history);
-    }
-  }, [selectedContact, chatType, getChatHistory]);
+    if (!selectedContact) return;
+
+    let isMounted = true;
+
+    const hydrateMessages = async () => {
+      const cached = getChatHistory(selectedContact.id, chatType);
+      if (isMounted) {
+        setMessages(cached);
+      }
+
+      const freshMessages = await loadMessageHistory(selectedContact.id, chatType);
+      if (isMounted && Array.isArray(freshMessages)) {
+        setMessages(freshMessages);
+      }
+    };
+
+    hydrateMessages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedContact, chatType, getChatHistory, loadMessageHistory]);
 
   useEffect(() => {
     if (!selectedContact) return;
 
-    const pollForNewMessages = () => {
-      const history = getChatHistory(selectedContact.id, chatType);
-      setMessages(history);
+    let isMounted = true;
+
+    const fetchLatest = async () => {
+      const fresh = await loadMessageHistory(selectedContact.id, chatType);
+      if (isMounted && Array.isArray(fresh)) {
+        setMessages(fresh);
+      }
     };
 
-    // Poll every second to check for new messages
-    const interval = setInterval(pollForNewMessages, 1000);
+    const interval = setInterval(fetchLatest, chatType === 'room' ? 5000 : 7000);
 
-    return () => clearInterval(interval);
-  }, [selectedContact, chatType, getChatHistory]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [selectedContact, chatType, loadMessageHistory]);
 
   useEffect(() => {
     const handleNewMessage = (event) => {
       const { senderId } = event.detail;
 
       if (chatType !== 'room' && selectedContact && selectedContact.id === senderId) {
-        const history = getChatHistory(selectedContact.id, chatType);
-        setMessages(history);
-        scrollToBottom();
+        loadMessageHistory(selectedContact.id, chatType).then((history) => {
+          if (Array.isArray(history)) {
+            setMessages(history);
+            scrollToBottom();
+          }
+        });
       }
     };
 
@@ -57,16 +83,19 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     return () => {
       window.removeEventListener('message-received', handleNewMessage);
     };
-  }, [selectedContact, chatType, getChatHistory]);
+  }, [selectedContact, chatType, loadMessageHistory]);
 
   useEffect(() => {
     const handleNewRoomMessage = (event) => {
       const { roomId } = event.detail || {};
 
       if (chatType === 'room' && selectedContact && selectedContact.id === roomId) {
-        const history = getChatHistory(selectedContact.id, chatType);
-        setMessages(history);
-        scrollToBottom();
+        loadMessageHistory(selectedContact.id, chatType).then((history) => {
+          if (Array.isArray(history)) {
+            setMessages(history);
+            scrollToBottom();
+          }
+        });
       }
     };
 
@@ -75,7 +104,7 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     return () => {
       window.removeEventListener('room-message-received', handleNewRoomMessage);
     };
-  }, [selectedContact, chatType, getChatHistory]);
+  }, [selectedContact, chatType, loadMessageHistory]);
 
   useEffect(() => {
     scrollToBottom();
