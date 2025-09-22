@@ -5,6 +5,7 @@ import CreateRoomModal from '../components/CreateRoomModal';
 import Sidebar from '../components/Sidebar';
 import WelcomeScreen from '../components/WelcomeScreen';
 import { useAuth } from '../contexts/AuthContext';
+import { ChatProvider } from '../contexts/ChatContext';
 import { useTheme } from '../hooks/useTheme';
 import { groupStorage, safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
 import { getConversationKey } from '../storage/helpers';

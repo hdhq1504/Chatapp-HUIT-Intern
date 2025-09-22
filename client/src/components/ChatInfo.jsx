@@ -28,7 +28,6 @@ function ChatInfo({ onClose, selectedContact }) {
   const [displayGroupName, setDisplayGroupName] = useState(() => selectedContact?.name || '');
   const [memberActionLoading, setMemberActionLoading] = useState(null);
   const [isLeavingGroup, setIsLeavingGroup] = useState(false);
-  const { isUserOnline } = useChat();
   const { user } = useAuth();
   const isGroup = selectedContact?.type === 'group';
   const contactId = selectedContact?.id;

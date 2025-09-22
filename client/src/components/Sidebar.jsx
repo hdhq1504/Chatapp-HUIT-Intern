@@ -5,6 +5,7 @@ import ContactItem from './ContactItem';
 import DeleteDialog from './DeleteDialog';
 import SettingModal from './SettingModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../contexts/ChatContext';
 import { useClickOutside, useMultipleClickOutside } from '../hooks/useClickOutside';
 import { scrollBar, getInitial } from '../storage/helpers';
 
