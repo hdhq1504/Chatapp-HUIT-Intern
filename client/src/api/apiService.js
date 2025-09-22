@@ -61,6 +61,28 @@ class ApiService {
     this.token = token;
   }
 
+  request(endpoint, options = {}) {
+    const {
+      method = 'GET',
+      params,
+      data,
+      body,
+      headers,
+      ...config
+    } = options;
+
+    const payload = data !== undefined ? data : body;
+
+    return this.axiosInstance.request({
+      url: endpoint,
+      method,
+      params,
+      data: payload,
+      headers,
+      ...config,
+    });
+  }
+
   // Authentication endpoints
   async login(credentials) {
     return this.axiosInstance.post('/auth/signin', credentials);
@@ -136,25 +158,43 @@ class ApiService {
     return this.axiosInstance.post('/messageContents/send', messageData);
   }
 
+  async sendRoomMessage(roomId, payload) {
+    return this.axiosInstance.post(`/messagerooms/${roomId}/messages`, payload);
+  }
+
+  async getRoomMessages(roomId, page = 0, size = 50) {
+    return this.axiosInstance.get(`/messageContents/room/${roomId}`, {
+      params: { page, size },
+    });
+  }
+
   async getConversationMessages(roomId, page = 0, size = 50) {
-    return this.axiosInstance.get(
-      `/messagerooms/find-message-room-at-least-one-content/${roomId}?page=${page}&size=${size}`,
-    );
+    return this.getRoomMessages(roomId, page, size);
+  }
+
+  async getUserMessages(userId, page = 0, size = 50) {
+    return this.axiosInstance.get(`/messageContents/user/${userId}`, {
+      params: { page, size },
+    });
   }
 
   async getConversation(userId1, userId2, page = 0, size = 50) {
-    // For direct messages between two users
-    return this.axiosInstance.get(
-      `/messageroomUsers/find-message-user-at-least-one-content/${userId1}?page=${page}&size=${size}`,
-    );
+    void userId1;
+    return this.getUserMessages(userId2, page, size);
   }
 
-  async getMessagesByRoomId(roomId, page = 0, size = 50, before = null) {
-    const params = new URLSearchParams({ page: page.toString(), limit: size.toString() });
+  async getMessagesByRoomId(roomId, { size = 50, before = null } = {}) {
+    const params = {};
     if (before) {
-      params.append('before', before);
+      params.before = before;
     }
-    return this.axiosInstance.get(`/messagerooms/${roomId}/messages?${params.toString()}`);
+    if (size !== undefined && size !== null) {
+      params.limit = size;
+    }
+
+    return this.axiosInstance.get(`/messagerooms/${roomId}/messages`, {
+      params,
+    });
   }
 
   async updateMessage(messageId, updates) {
@@ -165,8 +205,36 @@ class ApiService {
     return this.axiosInstance.delete(`/messageContents/${messageId}`);
   }
 
-  async markMessagesAsRead(roomId) {
-    return this.axiosInstance.put(`/messageContents/read`, { roomId });
+  async markMessagesAsRead(roomId, payload = {}) {
+    const body = {};
+
+    if (payload.messageId) {
+      body.messageId = payload.messageId;
+    }
+
+    if (payload.timestamp) {
+      body.timestamp = payload.timestamp;
+    }
+
+    if (!body.messageId && !body.timestamp) {
+      body.timestamp = new Date().toISOString();
+    }
+
+    return this.axiosInstance.post(`/messagerooms/${roomId}/read-receipts`, body);
+  }
+
+  async getReadReceipts(roomId) {
+    return this.axiosInstance.get(`/messagerooms/${roomId}/read-receipts`);
+  }
+
+  async pinMessage(roomId, messageId) {
+    return this.axiosInstance.post(`/messagerooms/${roomId}/pins`, {
+      messageId,
+    });
+  }
+
+  async listPinnedMessages(roomId) {
+    return this.axiosInstance.get(`/messagerooms/${roomId}/pins`);
   }
 
   // Room management endpoints
@@ -201,13 +269,13 @@ class ApiService {
   }
 
   async addMemberToRoom(roomId, userIds) {
-    return this.axiosInstance.post(`/messagerooms/${roomId}/members`, {
+    return this.axiosInstance.post(`/messagerooms/${roomId}/add-members`, {
       userIds: Array.isArray(userIds) ? userIds : [userIds],
     });
   }
 
   async removeMemberFromRoom(roomId, userId) {
-    return this.axiosInstance.delete(`/messagerooms/${roomId}/members/${userId}`);
+    return this.axiosInstance.delete(`/messagerooms/${roomId}/remove-members/${userId}`);
   }
 
   async leaveRoom(roomId) {

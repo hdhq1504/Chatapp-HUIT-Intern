@@ -6,7 +6,6 @@ import Sidebar from '../components/Sidebar';
 import WelcomeScreen from '../components/WelcomeScreen';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatProvider } from '../contexts/ChatContext';
-import { useChatStorage } from '../hooks/useChatStorage';
 import { useTheme } from '../hooks/useTheme';
 import { groupStorage, safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
 import { getConversationKey } from '../storage/helpers';
@@ -44,8 +43,6 @@ function ChatPage() {
   });
 
   const [allChats, setAllChats] = useState([]);
-
-  const { clearMessages } = useChatStorage(selectedContact?.id);
 
   useEffect(() => {
     if (!user) return;
@@ -210,10 +207,6 @@ function ChatPage() {
   };
 
   const handleDeleteChat = (chatId) => {
-    if (selectedContact?.id === chatId) {
-      clearMessages();
-    }
-
     const chat = allChats.find((c) => c.id === chatId);
 
     if (chat?.type === 'group') {
