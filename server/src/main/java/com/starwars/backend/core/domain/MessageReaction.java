@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import org.hibernate.annotations.GenericGenerator;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,22 +20,21 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "message_room")
-public class MessageRoom {
+@Table(name = "message_reaction")
+public class MessageReaction {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     private UUID id;
 
-    private String name;
-
-    private String description;
-
-    private String image; // hình nền của nhóm
-
-    @CreatedDate
-    private LocalDateTime createdAt;
+    @NotNull
+    private UUID messageContentId;
 
     @NotNull
-    private UUID createdBy;
+    private UUID userId;
+
+    @NotNull
+    private String emoji;
+
+    private LocalDateTime createdAt;
 }

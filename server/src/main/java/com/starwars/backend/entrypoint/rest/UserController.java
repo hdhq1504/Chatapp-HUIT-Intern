@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import com.starwars.backend.core.usecase.ChangePassUseCase;
 import com.starwars.backend.core.usecase.UserService;
 import com.starwars.backend.entrypoint.dto.request.ChangePassRequest;
+import com.starwars.backend.entrypoint.dto.request.UpdateUserInfoRequest;
 import com.starwars.backend.entrypoint.dto.request.UserRequest;
 import com.starwars.backend.entrypoint.dto.response.ApiResponse;
 import com.starwars.backend.entrypoint.dto.response.UserResponse;
@@ -43,6 +44,13 @@ public class UserController {
 	public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePassRequest request) {
 		changePassUseCase.changePassword(request);
 		return ResponseEntity.ok(ApiResponse.success("Đổi mật khẩu thành công", null));
+	}
+
+	@PutMapping("/update-info")
+	public ResponseEntity<ApiResponse<UserResponse>> updateCurrentUser(
+			@Valid @RequestBody UpdateUserInfoRequest request) {
+		UserResponse user = userService.updateCurrentUserInfo(request);
+		return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin user thành công", user));
 	}
 
 	@GetMapping("/profile")

@@ -82,9 +82,8 @@ public class AuthController {
     @PostMapping("/send-key")
     public ResponseEntity<ApiResponse<String>> sendKey(@Valid @RequestBody GetKeyRequest request) {
         String result = authService.sendKey(request.getEmail());
-
-        if ("Successfully".equals(result)) {
-            return ResponseEntity.ok(ApiResponse.success(result, null));
+        if (result.length() == 4 && result.matches("[A-Z0-9]+")) {
+            return ResponseEntity.ok(ApiResponse.success("Gửi key thành công", result));
         } else {
             return ResponseEntity.badRequest().body(ApiResponse.error("400", result));
         }

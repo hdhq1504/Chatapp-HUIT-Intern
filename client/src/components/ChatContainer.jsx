@@ -9,7 +9,7 @@ import { scrollBar, processMessagesForRendering } from '../storage/helpers';
 function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMessageSent }) {
   const messagesEndRef = useRef(null);
   const { user } = useAuth();
-  const { sendMessage, getChatHistory, isUserOnline } = useChat();
+  const { sendMessage, getChatHistory } = useChat();
   const [messages, setMessages] = useState([]);
 
   const chatType = useMemo(() => {
@@ -122,15 +122,6 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
     }
   };
 
-  const renderContactStatus = () => {
-    if (selectedContact.type === 'group') {
-      return `${selectedContact.members?.length || 0} members`;
-    } else {
-      const online = isUserOnline(selectedContact.id);
-      return online ? 'Online' : 'Last seen recently';
-    }
-  };
-
   const processedMessages = processMessagesForRendering(messages);
 
   return (
@@ -141,7 +132,6 @@ function ChatContainer({ setShowDetails, onBackToSidebar, selectedContact, onMes
           setShowDetails={setShowDetails}
           onBackToSidebar={onBackToSidebar}
           selectedContact={selectedContact}
-          contactStatus={renderContactStatus()}
         />
       </div>
 

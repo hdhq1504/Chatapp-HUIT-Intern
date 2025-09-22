@@ -11,6 +11,7 @@ import com.starwars.backend.dataprovider.repository.MessageRoomMemberRepository;
 import com.starwars.backend.dataprovider.repository.MessageRoomRepository;
 import com.starwars.backend.dataprovider.repository.MessageUserRepository;
 import com.starwars.backend.dataprovider.repository.UserRepository;
+import com.starwars.backend.entrypoint.dto.request.UpdateRoomRequest;
 import com.starwars.backend.entrypoint.dto.response.MessageContentResponse;
 import com.starwars.backend.entrypoint.dto.response.MessageRoomMemberResponse;
 import com.starwars.backend.entrypoint.dto.response.MessageRoomResponse;
@@ -96,7 +97,6 @@ public class MessageRoomService {
                                                         .orElse("Người dùng"))
                                         .createdAt(messageUser.getCreatedDate())
                                         .createdBy(creatorId)
-                                        .isGroup(false)
                                         .members(members.stream()
                                                         .map(member -> MessageRoomMemberResponse.builder()
                                                                         .userId(member.getId().toString())
@@ -163,7 +163,6 @@ public class MessageRoomService {
                                 .name(room.getName())
                                 .createdAt(room.getCreatedAt())
                                 .createdBy(room.getCreatedBy().toString())
-                                .isGroup(members.size() > 2)
                                 .members(members.stream()
                                                 .map(member -> MessageRoomMemberResponse.builder()
                                                                 .userId(member.getUserId().toString())
@@ -186,6 +185,47 @@ public class MessageRoomService {
                 MessageRoom room = messageRoomRepository.findById(roomId)
                                 .orElseThrow(() -> exceptionHandler.notFoundException(
                                                 "Không tìm thấy phòng với id: " + roomId));
+                return mapToMessageRoomResponse(room);
+        }
+
+        @Transactional
+        public MessageRoomResponse updateRoom(final UUID roomId, final String performedBy,
+                        final UpdateRoomRequest request) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+
+                UUID performer = UUID.fromString(performedBy);
+                boolean isMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId, performer);
+                if (!isMember) {
+                        throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
+                }
+
+                boolean isCreator = room.getCreatedBy() != null && room.getCreatedBy().equals(performer);
+                boolean isAdmin = messageRoomMemberRepository.findByMessageRoomId(roomId).stream()
+                                .anyMatch(m -> m.getUserId().equals(performer) && Boolean.TRUE.equals(m.getIsAdmin()));
+                if (!isCreator && !isAdmin) {
+                        throw exceptionHandler
+                                        .invalidRequest("Chỉ quản trị viên hoặc người tạo phòng mới được cập nhật");
+                }
+
+                boolean changed = false;
+                if (request.getName() != null && !request.getName().isBlank()) {
+                        room.setName(request.getName());
+                        changed = true;
+                }
+                if (request.getImage() != null) {
+                        room.setImage(request.getImage());
+                        changed = true;
+                }
+                if (request.getDescription() != null) {
+                        room.setDescription(request.getDescription());
+                        changed = true;
+                }
+
+                if (changed) {
+                        room = messageRoomRepository.save(room);
+                }
                 return mapToMessageRoomResponse(room);
         }
 
@@ -242,14 +282,12 @@ public class MessageRoomService {
                                 .orElseThrow(() -> exceptionHandler.notFoundException(
                                                 "Không tìm thấy phòng với id: " + roomId));
 
-                // Must be in the room to perform any action
                 boolean performerIsMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId,
                                 performedBy);
                 if (!performerIsMember) {
                         throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
                 }
 
-                // If removing someone else, require admin or creator
                 if (!performedBy.equals(targetUserId)) {
                         boolean isAdmin = messageRoomMemberRepository.findByMessageRoomId(roomId).stream()
                                         .anyMatch(m -> m.getUserId().equals(performedBy)
@@ -275,6 +313,72 @@ public class MessageRoomService {
         public MessageRoomResponse leaveRoom(final UUID roomId, final UUID userId) {
                 // Self-removal
                 return removeMember(roomId, userId, userId);
+        }
+
+        @Transactional
+        public MessageRoomResponse addAdmin(final UUID roomId, final UUID targetUserId, final UUID performedBy) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+                boolean performerIsMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId,
+                                performedBy);
+                if (!performerIsMember) {
+                        throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
+                }
+                boolean isCreator = room.getCreatedBy() != null && room.getCreatedBy().equals(performedBy);
+                boolean isAdmin = messageRoomMemberRepository.findByMessageRoomId(roomId).stream()
+                                .anyMatch(m -> m.getUserId().equals(performedBy)
+                                                && Boolean.TRUE.equals(m.getIsAdmin()));
+                if (!isCreator && !isAdmin) {
+                        throw exceptionHandler
+                                        .invalidRequest("Chỉ quản trị viên hoặc người tạo phòng mới được thêm admin");
+                }
+
+                var members = messageRoomMemberRepository.findByMessageRoomId(roomId);
+                members.stream().filter(m -> m.getUserId().equals(targetUserId)).findFirst().ifPresent(m -> {
+                        m.setIsAdmin(true);
+                        messageRoomMemberRepository.save(m);
+                });
+                return mapToMessageRoomResponse(room);
+        }
+
+        @Transactional
+        public MessageRoomResponse removeAdmin(final UUID roomId, final UUID targetUserId, final UUID performedBy) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+                boolean performerIsMember = messageRoomMemberRepository.existsByMessageRoomIdAndUserId(roomId,
+                                performedBy);
+                if (!performerIsMember) {
+                        throw exceptionHandler.invalidRequest("Bạn không thuộc phòng này");
+                }
+                boolean isCreator = room.getCreatedBy() != null && room.getCreatedBy().equals(performedBy);
+                if (!isCreator) {
+                        throw exceptionHandler.invalidRequest("Chỉ người tạo phòng mới được gỡ admin");
+                }
+                var members = messageRoomMemberRepository.findByMessageRoomId(roomId);
+                members.stream().filter(m -> m.getUserId().equals(targetUserId)).findFirst().ifPresent(m -> {
+                        m.setIsAdmin(false);
+                        messageRoomMemberRepository.save(m);
+                });
+                return mapToMessageRoomResponse(room);
+        }
+
+        @Transactional
+        public void deleteRoom(final UUID roomId, final UUID performedBy) {
+                MessageRoom room = messageRoomRepository.findById(roomId)
+                                .orElseThrow(() -> exceptionHandler.notFoundException(
+                                                "Không tìm thấy phòng với id: " + roomId));
+                boolean isCreator = room.getCreatedBy() != null && room.getCreatedBy().equals(performedBy);
+                if (!isCreator) {
+                        throw exceptionHandler.invalidRequest("Chỉ người tạo phòng mới được xóa phòng");
+                }
+                // delete members and messages then room
+                var members = messageRoomMemberRepository.findByMessageRoomId(roomId);
+                messageRoomMemberRepository.deleteAll(members);
+                var messages = messageContentRepository.findByRecivedMessageRoomIdOrderBySendedAt(roomId);
+                messageContentRepository.deleteAll(messages);
+                messageRoomRepository.delete(room);
         }
 
 }

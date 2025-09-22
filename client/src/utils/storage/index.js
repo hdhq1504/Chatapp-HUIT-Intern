@@ -1,3 +1,5 @@
+import { getConversationKey as buildConversationKey } from '../../storage/helpers'; 
+
 // Base Storage Class với các phương thức chung
 class BaseStorage {
   constructor(storageKey) {
@@ -71,7 +73,7 @@ export class GlobalMessageStorage extends BaseStorage {
   }
 
   getConversationKey(userId1, userId2) {
-    return [userId1, userId2].sort().join('_');
+    return buildConversationKey(userId1, userId2);
   }
 
   saveMessage(fromUserId, toUserId, message) {

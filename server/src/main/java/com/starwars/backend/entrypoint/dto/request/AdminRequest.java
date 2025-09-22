@@ -1,5 +1,6 @@
 package com.starwars.backend.entrypoint.dto.request;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,8 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateRoomRequest {
-    private String name;
-    private String image;
-    private String description;
+public class AdminRequest {
+    @NotEmpty
+    public String userId;
 }

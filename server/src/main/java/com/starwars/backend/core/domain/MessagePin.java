@@ -9,9 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import org.hibernate.annotations.GenericGenerator;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -21,22 +19,21 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "message_room")
-public class MessageRoom {
+@Table(name = "message_pin")
+public class MessagePin {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     private UUID id;
 
-    private String name;
-
-    private String description;
-
-    private String image; // hình nền của nhóm
-
-    @CreatedDate
-    private LocalDateTime createdAt;
+    @NotNull
+    private UUID roomId;
 
     @NotNull
-    private UUID createdBy;
+    private UUID messageId;
+
+    @NotNull
+    private UUID pinnedBy;
+
+    private LocalDateTime createdAt;
 }

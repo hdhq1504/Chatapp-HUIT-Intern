@@ -1,4 +1,3 @@
-// ...existing code...
 package com.starwars.backend.entrypoint.rest;
 
 import org.springframework.http.ResponseEntity;
@@ -30,7 +29,7 @@ public class MessageUserController {
         try {
             UUID uid = UUID.fromString(userId);
             List<MessageUserResponse> messageUsers = messageUserService.findMessageUserAtLeastOneContent(uid);
-            return ResponseEntity.ok(ApiResponse.success("Danh sách người dùng có ít nhất 1 tin nhắn", messageUsers));
+            return ResponseEntity.ok(ApiResponse.success("Danh sách phòng 1-1 có ít nhất 1 tin nhắn", messageUsers));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("400", "Invalid UUID: " + userId));
         }

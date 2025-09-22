@@ -18,7 +18,6 @@ public class MessageRoomResponse {
   private String name;
   private LocalDateTime createdAt;
   private String createdBy;
-  private Boolean isGroup;
   private List<MessageRoomMemberResponse> members;
   private MessageContentResponse lastMessage;
 }

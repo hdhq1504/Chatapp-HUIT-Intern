@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../api/apiService';
 import { safeGetItem, safeSetItem, generateId } from '../utils/storage';
+import { getConversationKey } from '../storage/helpers';
 
 const ChatContext = createContext();
 
@@ -15,8 +16,6 @@ export const useChat = () => {
   }
   return context;
 };
-
-const getConversationKey = (userId1, userId2) => [userId1, userId2].sort().join('_');
 
 export const ChatProvider = ({ children }) => {
   const { user, token, isAuthenticated } = useAuth();

@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateRoomRequest {
-    private String name;
-    private String image;
-    private String description;
+public class ReactionRequest {
+    public String emoji;
 }

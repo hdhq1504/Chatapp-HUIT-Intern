@@ -86,13 +86,11 @@ public class AuthenticationService {
         @Transactional
         public void register(final RegisterRequest request) {
                 userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
-                        exceptionHandler.throwException(Exceptions.USER_EXISTS.getCode(),
-                                        "Email đã được sử dụng: " + request.getEmail());
+                        exceptionHandler.throwException(Exceptions.EMAIL_EXISTS.getMessage());
                 });
 
                 userRepository.findByPhone(request.getPhone()).ifPresent(existingUser -> {
-                        exceptionHandler.throwException(Exceptions.USER_EXISTS.getCode(),
-                                        "Số điện thoại đã được sử dụng: " + request.getPhone());
+                        exceptionHandler.throwException(Exceptions.PHONE_EXISTS.getMessage());
                 });
 
                 Set<Role> roles = new HashSet<>();
@@ -106,7 +104,6 @@ public class AuthenticationService {
                 User user = modelMapper.map(request, User.class);
                 user.setRoles(roles);
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
-                user.setActivated(true);
 
                 userRepository.save(user);
         }
@@ -115,7 +112,8 @@ public class AuthenticationService {
         public void resetPasswordByAdmin(String email, String newPassword) {
                 if (!SecurityUtils.isAdmin()) {
                         exceptionHandler.throwException(Exceptions.NOTFOUND_ERROR.getCode(),
-                                        "Bạn không có quyền thực hiện hành động này.");
+                                        Exceptions.NOTFOUND_ERROR.getMessage(),
+                                        Exceptions.NOTFOUND_ERROR.getStatusCode());
                 }
 
                 User user = userRepository.findByEmail(email).orElseThrow();
@@ -147,10 +145,11 @@ public class AuthenticationService {
                         }
                         String key = keyBuilder.toString();
 
-                        user.setResetPasswordKey(key);
+                        user.setActivationKey(key);
+                        user.setActivationExpiredDate(LocalDateTime.now().plusHours(24));
                         userRepository.save(user);
 
-                        return "Successfully";
+                        return key;
                 } catch (Exception e) {
                         return "Thông tin không chính xác";
                 }

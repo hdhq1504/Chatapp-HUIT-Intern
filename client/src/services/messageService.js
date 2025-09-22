@@ -1,4 +1,5 @@
 import { api } from '../api/apiService';
+import { getConversationKey as buildConversationKey } from '../storage/helpers'; 
 
 export class MessageService {
   static instance = null;
@@ -40,7 +41,7 @@ export class MessageService {
   }
 
   getConversationKey(userId1, userId2) {
-    return [userId1, userId2].sort().join('_');
+    return buildConversationKey(userId1, userId2);
   }
 
   async getConversationMessages(roomId, page = 1, limit = 50, useCache = true) {

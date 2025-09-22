@@ -139,5 +139,15 @@ export function generateId(prefix = 'id') {
 }
 
 export function getConversationKey(id1, id2) {
-  return [id1, id2].sort().join('_');
+  const normalizedIds = [id1, id2]
+    .map((value) => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+
+      return value.toString();
+    })
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+  return normalizedIds.join('_');
 }

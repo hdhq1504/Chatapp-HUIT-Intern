@@ -8,8 +8,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Exceptions {
-    PASSWORD_INVALID("999", "Mật khẩu không hợp lệ", HttpStatus.BAD_REQUEST),
+    PASSWORD_INVALID("999", "Mat khau khong hop le", HttpStatus.BAD_REQUEST),
     USER_EXISTS("1000", "Người dùng đã tồn tại", HttpStatus.CONFLICT),
+    EMAIL_EXISTS("1009", "Email đã được sử dụng", HttpStatus.CONFLICT),
+    PHONE_EXISTS("1010", "Số điện thoại đã được sử dụng", HttpStatus.CONFLICT),
     NOTFOUND_ERROR("1001", "Không tìm thấy tài nguyên", HttpStatus.NOT_FOUND),
     INVALID_REQUEST("1002", "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_TOKEN("1003", "Token không hợp lệ hoặc đã hết hạn", HttpStatus.UNAUTHORIZED),

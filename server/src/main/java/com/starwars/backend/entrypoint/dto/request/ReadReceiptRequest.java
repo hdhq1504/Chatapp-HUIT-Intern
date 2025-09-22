@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateRoomRequest {
-    private String name;
-    private String image;
-    private String description;
+public class ReadReceiptRequest {
+  public String messageId; // optional
+  public String timestamp; // ISO-8601 optional
 }

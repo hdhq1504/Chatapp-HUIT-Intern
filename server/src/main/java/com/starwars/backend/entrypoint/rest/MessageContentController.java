@@ -7,12 +7,19 @@ import com.starwars.backend.entrypoint.dto.response.MessageContentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.constraints.Min;
 
 import jakarta.validation.Valid;
 
@@ -45,6 +52,40 @@ public class MessageContentController {
             @Valid @RequestBody MessageContentRequest request) {
         MessageContentResponse response = messageContentService.sendMessage(request);
         return ResponseEntity.ok(ApiResponse.success("Gửi tin nhắn thành công", response));
+    }
+
+    /**
+     * API để lấy danh sách tin nhắn của phòng với pagination
+     * GET /api/v1/messageContents/room/{roomId}?page=0&size=20
+     */
+    @GetMapping("/room/{roomId}")
+    public ResponseEntity<ApiResponse<List<MessageContentResponse>>> getMessagesByRoom(
+            @PathVariable String roomId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+
+        UUID roomUUID = UUID.fromString(roomId);
+        Pageable pageable = PageRequest.of(page, size);
+        List<MessageContentResponse> messages = messageContentService.getMessagesByRoom(roomUUID, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success("Lấy tin nhắn thành công", messages));
+    }
+
+    /**
+     * API để lấy danh sách tin nhắn chat 1-1 với user khác
+     * GET /api/v1/messageContents/user/{userId}?page=0&size=20
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<MessageContentResponse>>> getMessagesByUser(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+
+        UUID userUUID = UUID.fromString(userId);
+        Pageable pageable = PageRequest.of(page, size);
+        List<MessageContentResponse> messages = messageContentService.getMessagesByUser(userUUID, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success("Lấy tin nhắn chat 1-1 thành công", messages));
     }
 
 }

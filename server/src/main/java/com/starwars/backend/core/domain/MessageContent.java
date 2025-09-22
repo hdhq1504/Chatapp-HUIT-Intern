@@ -46,4 +46,9 @@ public class MessageContent {
 
     @NotNull
     private UUID sendUserId;
+
+    private Boolean edited;
+    private Boolean deleted;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 }

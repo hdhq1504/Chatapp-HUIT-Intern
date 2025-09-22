@@ -26,7 +26,7 @@ public class ChangePassUseCase {
         var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())
                 || !request.getNewPassword().equals(request.getConfirmationPassword())) {
-            exceptionHandler.throwException(Exceptions.PASSWORD_INVALID.getCode(), HttpStatus.BAD_REQUEST);
+            exceptionHandler.throwException(Exceptions.PASSWORD_INVALID.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

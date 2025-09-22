@@ -24,7 +24,11 @@ public interface MessageContentRepository extends JpaRepository<MessageContent, 
                         final List<UUID> recivedMessageUserIds);
 
         @Query("SELECT mc FROM MessageContent mc WHERE mc.recivedMessageRoomId = :roomId"
-                        + " AND (:before IS NULL OR mc.sendedAt < :before)"
+                        + " ORDER BY mc.sendedAt DESC")
+        List<MessageContent> findByRoomId(@Param("roomId") UUID roomId, Pageable pageable);
+
+        @Query("SELECT mc FROM MessageContent mc WHERE mc.recivedMessageRoomId = :roomId"
+                        + " AND mc.sendedAt < :before"
                         + " ORDER BY mc.sendedAt DESC")
         List<MessageContent> findByRoomBefore(@Param("roomId") UUID roomId,
                         @Param("before") java.time.LocalDateTime before,

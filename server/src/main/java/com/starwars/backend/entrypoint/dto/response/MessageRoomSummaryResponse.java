@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 public class MessageRoomSummaryResponse {
     private String roomId;
     private String name;
-    private Boolean isGroup;
     private LocalDateTime createdAt;
     private String createdBy;
     private MessageContentResponse lastMessage;

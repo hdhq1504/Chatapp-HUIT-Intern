@@ -19,4 +19,8 @@ public class MessageContentResponse {
     private LocalDateTime dateSent;
     private MessageType messageType;
     private String userId;
+    private String userName;
+    private String userAvatar;
+    private Boolean edited;
+    private Boolean deleted;
 }

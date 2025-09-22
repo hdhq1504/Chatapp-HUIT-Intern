@@ -4,49 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
 import { getInitial } from '../storage/helpers';
 
-function MessageHeader({ setShowDetails, onBackToSidebar, selectedContact, contactStatus }) {
-  const { isAuthenticated } = useAuth();
-  const { isUserOnline } = useChat();
+function MessageHeader({ setShowDetails, onBackToSidebar, selectedContact }) {
 
   if (!selectedContact) {
     return null;
   }
-
-  const isGroupChat = selectedContact.type === 'group';
-
-  const statusMeta = (() => {
-    if (!isAuthenticated) {
-      return {
-        label: 'Offline',
-        chipClass: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
-        dotClass: 'bg-gray-400',
-      };
-    }
-
-    if (isGroupChat) {
-      return {
-        label: `${selectedContact.members?.length || 0} members`,
-        chipClass: 'bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300',
-        dotClass: 'bg-blue-500',
-      };
-    }
-
-    const online = isUserOnline(selectedContact.id);
-
-    if (online) {
-      return {
-        label: 'Active Now',
-        chipClass: 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300',
-        dotClass: 'bg-green-500',
-      };
-    }
-
-    return {
-      label: contactStatus || 'Offline',
-      chipClass: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
-      dotClass: 'bg-gray-400',
-    };
-  })();
 
   return (
     <div className='sticky top-0 z-10 bg-[#F9F9F9] px-3 py-2.5 shadow-sm md:p-4 dark:bg-[#212121]'>
@@ -65,13 +27,6 @@ function MessageHeader({ setShowDetails, onBackToSidebar, selectedContact, conta
 
           <div className='flex min-w-0 flex-col'>
             <h3 className='truncate text-sm font-semibold md:text-base'>{selectedContact.name}</h3>
-
-            <span
-              className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.25 text-[10px] font-medium md:px-2 md:text-xs ${statusMeta.chipClass}`}
-            >
-              <span className={`inline-block h-1.5 w-1.5 rounded-full md:h-2 md:w-2 ${statusMeta.dotClass}`}></span>
-              {statusMeta.label}
-            </span>
           </div>
         </div>
 
