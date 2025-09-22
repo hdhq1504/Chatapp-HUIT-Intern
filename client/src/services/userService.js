@@ -16,14 +16,6 @@ export class UserService {
     return response.data || [];
   }
 
-  async connect() {
-    return api.request('/users/connect', { method: 'POST' });
-  }
-
-  async disconnect() {
-    return api.request('/users/disconnect', { method: 'POST' });
-  }
-
   async getUserById(userId, useCache = true) {
     const cacheKey = `user_${userId}`;
 

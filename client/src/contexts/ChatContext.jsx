@@ -121,20 +121,81 @@ export const ChatProvider = ({ children }) => {
 
   // Map backend message format to client format - MOVED UP BEFORE USAGE
   const mapBackendMessageToClient = useCallback(
-    (backendMessage) => {
+    (backendMessage, options = {}) => {
+      if (!backendMessage) return null;
+
+      const { chatId: forcedChatId = null, chatType: forcedChatType = null, otherUserId = null } = options;
+
+      const backendSenderId =
+        backendMessage.userId ??
+        backendMessage.sendUserId ??
+        backendMessage.senderId ??
+        backendMessage.sender?.id ??
+        backendMessage.authorId ??
+        null;
+
+      const inferredChatType =
+        forcedChatType ??
+        (backendMessage.recivedMessageRoomId || backendMessage.roomId || forcedChatId ? 'room' : 'contact');
+
+      const resolvedChatId =
+        forcedChatId ??
+        backendMessage.recivedMessageRoomId ??
+        backendMessage.roomId ??
+        backendMessage.chatId ??
+        (inferredChatType === 'room' ? null : (otherUserId ?? backendMessage.recivedMessageUserId ?? null));
+
+      const timestampSource =
+        backendMessage.dateSent ??
+        backendMessage.sendedAt ??
+        backendMessage.timestamp ??
+        backendMessage.createdAt ??
+        null;
+
+      const timestamp = timestampSource ? new Date(timestampSource).getTime() : Date.now();
+
+      const messageType = (backendMessage.messageType || backendMessage.type || 'text').toString().toLowerCase();
+
+      const senderId = backendSenderId ? backendSenderId.toString() : null;
+      const isSelf = senderId && user ? String(senderId) === String(user.id) : false;
+
+      const receiverId =
+        inferredChatType === 'room'
+          ? resolvedChatId
+          : isSelf
+            ? (otherUserId ?? backendMessage.recivedMessageUserId ?? resolvedChatId)
+            : (user?.id ?? null);
+
       return {
         id: backendMessage.id,
-        senderId: backendMessage.userId,
-        receiverId: user.id,
-        senderName: backendMessage.senderName || 'Unknown',
-        senderAvatar: backendMessage.senderAvatar || null,
+        senderId,
+        receiverId,
+        senderName:
+          backendMessage.userName ??
+          backendMessage.senderName ??
+          backendMessage.sender?.name ??
+          backendMessage.user?.name ??
+          'Unknown',
+        senderAvatar:
+          backendMessage.userAvatar ??
+          backendMessage.senderAvatar ??
+          backendMessage.sender?.avatar ??
+          backendMessage.user?.avatar ??
+          null,
         content: backendMessage.content,
-        type: backendMessage.messageType?.toLowerCase() || 'text',
-        timestamp: new Date(backendMessage.dateSent).getTime(),
-        chatId: backendMessage.roomId || backendMessage.userId,
-        chatType: backendMessage.roomId ? 'room' : 'contact',
-        status: 'received',
-        sender: backendMessage.userId === user.id ? 'self' : 'other',
+        type: messageType,
+        timestamp,
+        chatId:
+          resolvedChatId ??
+          (inferredChatType === 'contact'
+            ? (otherUserId ?? backendMessage.recivedMessageUserId ?? backendMessage.userId ?? null)
+            : null),
+        chatType: inferredChatType,
+        status: backendMessage.deleted ? 'deleted' : 'received',
+        deleted: backendMessage.deleted ?? false,
+        edited: backendMessage.edited ?? false,
+        sender: isSelf ? 'self' : 'other',
+        roomId: inferredChatType === 'room' ? (resolvedChatId ?? null) : undefined,
       };
     },
     [user],
@@ -143,16 +204,27 @@ export const ChatProvider = ({ children }) => {
   // Handle incoming direct messages
   const handleIncomingMessage = useCallback(
     (messageData) => {
-      const mappedMessage = mapBackendMessageToClient(messageData);
+      const peerId =
+        messageData.userId ?? messageData.senderId ?? messageData.sendUserId ?? messageData.sender?.id ?? null;
+
+      const mappedMessage = mapBackendMessageToClient(messageData, {
+        chatType: 'contact',
+        chatId: peerId,
+        otherUserId: peerId,
+      });
+
+      if (!mappedMessage || !peerId) {
+        return;
+      }
 
       // Add to message history
-      const conversationKey = getConversationKey(messageData.userId, user.id);
+      const conversationKey = getConversationKey(peerId, user.id);
       const storageKey = `chat_${conversationKey}`;
       const existingMessages = safeGetItem(storageKey, []);
       const normalizedExistingMessages = normalizeMessagesForConversation(existingMessages, {
-        chatId: messageData.userId,
+        chatId: peerId,
         chatType: 'contact',
-        otherUserId: messageData.userId,
+        otherUserId: peerId,
       });
 
       let messagesToPersist = null;
@@ -172,17 +244,16 @@ export const ChatProvider = ({ children }) => {
       // Update active chats
       setActiveChats((prev) => {
         const newChats = new Map(prev);
-        const chatHistory = newChats.get(messageData.userId) || [];
-        newChats.set(messageData.userId, [...chatHistory, mappedMessage]);
-        const baseChatHistory = chatHistory.length > 0 ? chatHistory : normalizedExistingMessages;
-        newChats.set(messageData.userId, [...baseChatHistory, mappedMessage]);
+        const existingHistory = newChats.get(peerId) || [];
+        const baseChatHistory = existingHistory.length > 0 ? existingHistory : normalizedExistingMessages;
+        newChats.set(peerId, [...baseChatHistory, mappedMessage]);
         return newChats;
       });
 
       // Trigger event for UI updates
       window.dispatchEvent(
         new CustomEvent('message-received', {
-          detail: { senderId: messageData.userId, message: mappedMessage },
+          detail: { senderId: peerId, message: mappedMessage },
         }),
       );
     },
@@ -192,34 +263,57 @@ export const ChatProvider = ({ children }) => {
   // Handle incoming room messages
   const handleIncomingRoomMessage = useCallback(
     (messageData) => {
-      const mappedMessage = mapBackendMessageToClient(messageData);
+      const resolvedRoomId =
+        messageData.roomId ?? messageData.recivedMessageRoomId ?? messageData.chatId ?? messageData.roomID ?? null;
+
+      if (!resolvedRoomId) {
+        return;
+      }
+
+      const mappedMessage = mapBackendMessageToClient(messageData, {
+        chatType: 'room',
+        chatId: resolvedRoomId,
+      });
+
+      if (!mappedMessage) {
+        return;
+      }
 
       // Update room message history
-      const roomKey = `room_${messageData.roomId}`;
+      const roomKey = `room_${resolvedRoomId}`;
       const existingMessages = safeGetItem(roomKey, []);
       const normalizedExistingMessages = normalizeMessagesForConversation(existingMessages, {
-        chatId: messageData.roomId,
+        chatId: resolvedRoomId,
         chatType: 'room',
       });
 
       let messagesToPersist = null;
 
       setMessageHistory((prev) => {
-        const messages = prev.get(roomKey) || [];
+        const updatedHistory = new Map(prev);
+        const messages = updatedHistory.get(roomKey) || [];
         const baseMessages = messages.length > 0 ? messages : normalizedExistingMessages;
         const newMessages = [...baseMessages, mappedMessage];
         messagesToPersist = newMessages;
-        const updatedHistory = new Map(prev);
         updatedHistory.set(roomKey, newMessages);
         return updatedHistory;
       });
 
       safeSetItem(roomKey, messagesToPersist ?? [...normalizedExistingMessages, mappedMessage]);
 
+      // Update active chats
+      setActiveChats((prev) => {
+        const newChats = new Map(prev);
+        const chatHistory = newChats.get(resolvedRoomId) || [];
+        const baseChatHistory = chatHistory.length > 0 ? chatHistory : normalizedExistingMessages;
+        newChats.set(resolvedRoomId, [...baseChatHistory, mappedMessage]);
+        return newChats;
+      });
+
       // Trigger event for UI updates
       window.dispatchEvent(
         new CustomEvent('room-message-received', {
-          detail: { roomId: messageData.roomId, message: mappedMessage },
+          detail: { roomId: resolvedRoomId, message: mappedMessage },
         }),
       );
     },
@@ -262,7 +356,13 @@ export const ChatProvider = ({ children }) => {
           client.subscribe(`/topic/room/+`, (message) => {
             try {
               const data = JSON.parse(message.body);
-              handleIncomingRoomMessage(data);
+              const destination = message.headers?.destination || '';
+              const roomIdFromDestination = destination.split('/').pop();
+              const enriched = {
+                ...data,
+                roomId: data.roomId ?? data.recivedMessageRoomId ?? roomIdFromDestination ?? data.chatId,
+              };
+              handleIncomingRoomMessage(enriched);
             } catch (error) {
               console.error('Error parsing room message:', error);
             }
@@ -380,29 +480,46 @@ export const ChatProvider = ({ children }) => {
             console.warn('WebSocket send failed, using REST API:', wsError);
             // Fallback to REST API
             const restResponse = await api.sendMessage(messageData);
-            response = restResponse.data;
+            response = restResponse.data ?? restResponse;
           }
         } else {
           // Use REST API
           const restResponse = await api.sendMessage(messageData);
-          response = restResponse.data;
+          response = restResponse.data ?? restResponse;
         }
 
-        // Map response to client format
+        const mappedResponse = mapBackendMessageToClient(
+          response
+            ? {
+                ...response,
+                content: response.content ?? normalizedContent,
+              }
+            : null,
+          {
+            chatType,
+            chatId,
+            otherUserId: chatType === 'room' ? undefined : chatId,
+          },
+        );
+
         const clientMessage = {
-          id: response.id,
+          id: mappedResponse?.id ?? response?.id ?? generateId('msg'),
           senderId: user.id,
-          receiverId: chatId,
+          receiverId: chatType === 'room' ? chatId : chatId,
           senderName: user.name || user.username,
           senderAvatar: user.avatar,
           content: normalizedContent,
-          type: 'text',
+          type: mappedResponse?.type ?? 'text',
           files: message.files || null,
-          timestamp: new Date(response.dateSent || Date.now()).getTime(),
+          timestamp:
+            mappedResponse?.timestamp ?? (response?.dateSent ? new Date(response.dateSent).getTime() : Date.now()),
           chatId,
           chatType,
           status: 'sent',
           sender: 'self',
+          roomId: chatType === 'room' ? chatId : mappedResponse?.roomId,
+          edited: mappedResponse?.edited ?? false,
+          deleted: mappedResponse?.deleted ?? false,
         };
 
         // Store message locally
@@ -451,7 +568,7 @@ export const ChatProvider = ({ children }) => {
         };
       }
     },
-    [user, isConnected, normalizeMessagesForConversation],
+    [user, isConnected, normalizeMessagesForConversation, mapBackendMessageToClient],
   );
 
   // Get chat history
@@ -489,13 +606,28 @@ export const ChatProvider = ({ children }) => {
         let response;
 
         if (chatType === 'room') {
-          response = await api.getConversationMessages(contactId);
+          response = await api.getRoomMessages(contactId);
         } else {
           // For direct messages, we might need to get conversation between two users
           response = await api.getConversation(user.id, contactId);
         }
 
-        const messages = (response.data || response.content || []).map((msg) => mapBackendMessageToClient(msg));
+        const rawMessages = response?.data || response?.content || [];
+        const mappedMessages = rawMessages
+          .map((msg) =>
+            mapBackendMessageToClient(msg, {
+              chatType,
+              chatId: contactId,
+              otherUserId: chatType === 'room' ? undefined : contactId,
+            }),
+          )
+          .filter(Boolean);
+
+          const messages = mappedMessages.sort((a, b) => {
+          const aTimestamp = a.timestamp ?? a.timestampMs ?? 0;
+          const bTimestamp = b.timestamp ?? b.timestampMs ?? 0;
+          return aTimestamp - bTimestamp;
+        });
 
         // Store in memory and localStorage
         const key = chatType === 'room' ? `room_${contactId}` : getConversationKey(user.id, contactId);
@@ -520,7 +652,7 @@ export const ChatProvider = ({ children }) => {
   // Mark message as read
   const markMessageAsRead = useCallback(async (chatId, messageId) => {
     try {
-      await api.markMessagesAsRead(chatId);
+      await api.markMessagesAsRead(chatId, { messageId });
 
       // Update local message status
       setMessageHistory((prev) => {

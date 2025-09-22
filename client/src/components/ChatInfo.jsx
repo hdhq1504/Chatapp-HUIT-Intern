@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { api } from '../api/apiService';
 import { useAuth } from '../contexts/AuthContext';
-import { useChat } from '../contexts/ChatContext';
 import { groupStorage } from '../utils/storage';
 import { scrollBar, getInitial } from '../storage/helpers';
 
@@ -228,10 +227,6 @@ function ChatInfo({ onClose, selectedContact }) {
     if (isGroup) {
       return <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>{groupMembers.length} members</p>;
     }
-
-    const online = isUserOnline(selectedContact.id);
-    const statusText = online ? 'Active Now' : 'Offline';
-    return <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>{statusText}</p>;
   };
 
   if (!selectedContact) return null;

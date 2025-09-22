@@ -1,9 +1,7 @@
-// ==================== STRING UTILITIES ====================
 export function getInitial(name = '') {
   return name?.trim()?.charAt(0)?.toUpperCase() || '';
 }
 
-// ==================== TIME & DATE UTILITIES ====================
 export const getTimeDifferenceInMinutes = (timestamp1, timestamp2) => {
   const date1 = new Date(timestamp1);
   const date2 = new Date(timestamp2);

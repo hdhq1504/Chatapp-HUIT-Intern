@@ -1,4 +1,4 @@
-import { getConversationKey as buildConversationKey } from '../../storage/helpers'; 
+import { getConversationKey as buildConversationKey } from '../../storage/helpers';
 
 // Base Storage Class với các phương thức chung
 class BaseStorage {

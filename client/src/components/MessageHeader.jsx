@@ -1,11 +1,8 @@
 import React from 'react';
 import { Phone, Video, Info, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useChat } from '../contexts/ChatContext';
 import { getInitial } from '../storage/helpers';
 
 function MessageHeader({ setShowDetails, onBackToSidebar, selectedContact }) {
-
   if (!selectedContact) {
     return null;
   }
